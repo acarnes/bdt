@@ -10,6 +10,7 @@
 // _______________________Includes_______________________________________//
 ///////////////////////////////////////////////////////////////////////////
 
+#include "Utilities.h"
 #include "DrawPlots.h"
 #include "TH1F.h"
 #include "TTreeIndex.h"
@@ -30,13 +31,6 @@
 #include <cmath>
 #include <iostream>
 
-
-// Global array of GeV values for plotting.
-float ptscale[31] =  { 0,
-                      1.5,   2.0,   2.5,   3.0,   3.5,   4.0,
-                      4.5,   5.0,   6.0,   7.0,   8.0,  10.0,  12.0,  14.0,
-                      16.0,  18.0,  20.0,  25.0,  30.0,  35.0,  40.0,  45.0,
-                      50.0,  60.0,  70.0,  80.0,  90.0, 100.0, 120.0, 140.0 };
 
 float customScaling(float BDTPt, int Quality, float PrelimFit)
 {

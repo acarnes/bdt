@@ -34,10 +34,12 @@
 // ______________________Run Program____________________________________//
 /////////////////////////////////////////////////////////////////////////
 
-void runRegression(Int_t nodes, Int_t trees, Double_t l, bool isLog)
+void buildAndEvaluateForest(Forest* forest, Int_t nodes, Int_t trees, Double_t l, bool isLog)
 {
+    bool trackError = true;
+    bool isTwoJets = true;
+    bool saveTrees = false;
 
-    Forest* forest = new Forest();
     LeastSquares* lf = new LeastSquares();
    
     // Output the parameters of the current run. 
@@ -50,31 +52,12 @@ void runRegression(Int_t nodes, Int_t trees, Double_t l, bool isLog)
     forest->readInTestingAndTrainingEventsFromDat("./jamie/2jets_loose.dat",lf, isLog);
 
     // Where to save our trees. 
-    TString savetrees("./jamie/2jets_loose/trees");
+    TString treesDirectory("./jamie/2jets_loose/trees");
 
     // Do the regression and save the trees.
-    forest->doRegression(nodes, trees, l, lf, savetrees);
+    forest->doRegression(nodes, trees, l, lf, treesDirectory, saveTrees, trackError, isTwoJets);
     // Rank the variable importance and output it.
     forest->rankVariables();
- 
-    delete forest;
-}
-
-Double_t evaluateSystem(Int_t nodes, Int_t trees, Double_t l, bool isLog)
-{
-    Forest* forest = new Forest();
-    LeastSquares* lf = new LeastSquares();
-
-    // Global array of GeV values for plotting.
-    float twoJets_scale[16] =  { 0,
-                               0.5,   1.0,   2.0,   3.0,   4.0,   5.0, 10.0, 20.0, 50.0,
-                               100,   500,   1000,   5000,   7500,  50000};
-
-
-    forest->readInTestingAndTrainingEventsFromDat("./jamie/2jets_loose.dat",lf, isLog);
-    TString loadtrees("./jamie/2jets_loose/trees");
-    forest->loadForestFromXML(loadtrees, trees);
-    forest->predictTestEvents();
 
     // Where to save the ntuple with the test results.
     TString directory("./jamie/2jets_loose/ntuples/");
@@ -85,87 +68,27 @@ Double_t evaluateSystem(Int_t nodes, Int_t trees, Double_t l, bool isLog)
     else testEventsFileName = directory+savefile;
 
     // Save the results of the regression on the test set.
+    // forest->predictTestEvents();
     forest->saveTestEventsForJamie(testEventsFileName, isLog);
-
-    // Would be better to have access to testEvents instead of having to retrieve
-    // the saved ntuple. Oh well.
-
-    // Determine the success of the regression on the test set.
-    TFile* file = new TFile(testEventsFileName);
-    TNtuple* ntuple = (TNtuple*)file->Get("BDTresults");
-
-    Float_t tval, pval;
-    ntuple->SetBranchAddress("trueValue", &tval);
-    ntuple->SetBranchAddress("predictedValue", &pval);
-
-    // Now we wish to determine how well this regression worked. We define a metric of success.
-
-    // We define our metric of success to be 1/N SUM |true-predicted|/<true> = < |true-predicted|/<true> >
-    // Which becoems SUM_over_intervals{ N_in_interval/N_total * 1/N_in_interval*SUM[ |true-predicted|/<true> ] }
-    // Which reduces to SUM_over_intervals{ 1/N_total * 1/<true>*SUM_events_in_interval[ |true-predicted| ]}
-
-    // There are fifteen trueValue intervals I am interested in.
-    // The bounds of these intervals are given by 2jets_scale. 
-    // Calculate the error in each interval.
-    std::vector<Double_t> N(15,0);
-    std::vector<Double_t> sum_true(15,0);
-    std::vector<Double_t> sum_errors(15,0);
-
-    for(unsigned int i=0; i<ntuple->GetEntries(); i++)
-    {
-        // Grab an entry.
-        ntuple->GetEntry(i);
-
-        // Loop through the intervals to see which one the event belongs to.
-        for(unsigned int t=0; t<15; t++)
-        {
-            Double_t mint = twoJets_scale[t];
-            Double_t maxt = twoJets_scale[t+1];
-
-            // The event belongs to the current interval.
-            // Increment the number of events, the sum of true values,
-            // and the sum of errors in the interval.
-            if(tval >= mint && tval < maxt)
-            {
-                N[t]++;
-                sum_true[t]+=tval;
-                sum_errors[t]+=TMath::Abs(pval-tval);
-                break;
-            }
-        }
-    }
-
-    Double_t metric_of_success = 0;
-
-    // Loop through the intervals.
-    for(unsigned int t=0; t<15; t++)
-    {
-        Double_t interval_avg = (N[t]!=0)?sum_true[t]/N[t]:0;
-        if(N[t]!=0) metric_of_success += sum_errors[t]/interval_avg;
-    }
-    
-    metric_of_success = metric_of_success/ntuple->GetEntries();
-    return metric_of_success;
-
-    delete forest;
 }
+
 void determineBestParameters()
 {
-
+    bool isLog = false;
     std::vector<int> NODES;
     std::vector<int> TREES;
     std::vector<double> LR;
 
-    NODES.push_back(5);
-    NODES.push_back(10);
-    NODES.push_back(15);
-    NODES.push_back(20);
+    //NODES.push_back(5);
+    //NODES.push_back(10);
+    //NODES.push_back(15);
+    //NODES.push_back(20);
     NODES.push_back(50);
-    NODES.push_back(100);
-    NODES.push_back(250);
-    NODES.push_back(500);
-    NODES.push_back(1000);
-    NODES.push_back(5000);
+    //NODES.push_back(100);
+    //NODES.push_back(250);
+    //NODES.push_back(500);
+    //NODES.push_back(1000);
+    //NODES.push_back(5000);
 
     TREES.push_back(1);
     TREES.push_back(10);
@@ -175,58 +98,72 @@ void determineBestParameters()
     TREES.push_back(500);
     TREES.push_back(1000);
     TREES.push_back(2000);
-    TREES.push_back(5000);
-    TREES.push_back(10000);
+    //TREES.push_back(5000);
+    //TREES.push_back(10000);
 
-    LR.push_back(0.01);  
-    LR.push_back(0.02); 
-    LR.push_back(0.03); 
-    LR.push_back(0.04); 
-    LR.push_back(0.05); 
-    LR.push_back(0.06); 
-    LR.push_back(0.07); 
-    LR.push_back(0.08); 
-    LR.push_back(0.09); 
-    LR.push_back(0.1);  
-    LR.push_back(0.2); 
+    //LR.push_back(0.01);  
+    //LR.push_back(0.03); 
+    //LR.push_back(0.05); 
+    //LR.push_back(0.07); 
+    //LR.push_back(0.09); 
+    //LR.push_back(0.1);  
     LR.push_back(0.3); 
-    LR.push_back(0.4); 
-    LR.push_back(0.5); 
-    LR.push_back(0.6); 
-    LR.push_back(0.7); 
-    LR.push_back(0.8); 
-    LR.push_back(0.9); 
-    LR.push_back(1); 
+    //LR.push_back(0.5); 
+    //LR.push_back(0.7); 
+    //LR.push_back(1); 
 
 
     // The ntuple in which we will save the goodness of fit for given parameters.
-    TNtuple* ntuple = new TNtuple("BDTresults", "BDTresults", "percent_error:nodes:trees:lr"); 
+    TNtuple* abs = new TNtuple("abs_percent_error", "abs_percent_error", "error:nodes:trees:lr:islog"); 
+    TNtuple* rms = new TNtuple("rms_error", "rms_error", "error:nodes:trees:lr:log"); 
 
     for(unsigned int lr=0; lr<LR.size(); lr++)
     {
         for(unsigned int nodes=0; nodes<NODES.size(); nodes++)
         {
+            // The learning rate for the forest.
             Double_t l = LR[lr];
+            // The number of nodes per tree.
             Int_t n = NODES[nodes];
+            // The number of trees for our forest.
             Int_t t = TREES[TREES.size()-1];
- 
+
             // Need to reduce number of trees depending on the number of nodes.
+            // Since a large number of nodes takes way too long. 
+            if(n==5000) t=100;
+            if(n==500) t=1000;
+            if(n==250) t=2000;
 
-            runRegression(n,t,l,false);
+            // Build the forest.
+            Forest* forest = new Forest();
+            buildAndEvaluateForest(forest,n,t,l,isLog);
 
-            for(unsigned int trees=0; trees<TREES.size(); trees++)
+            // When trackError is true in doRegression we have vectors with the error
+            // at index i where index i is the number of trees when the error was calculated.
+            std::vector<Double_t>& testResolution = forest->testResolution;
+            std::vector<Double_t>& testRMS = forest->testRMS;
+
+            // Store the error for a given number of trees, nodes, and lr. 
+            for(unsigned int trees=0; TREES[trees]-1<forest->size(); trees++)
             {
-                Double_t error = evaluateSystem(n,t,l,false);
-                ntuple->Fill(error, n, t, l);
+                Double_t abs_error = testResolution[TREES[trees]-1];
+                Double_t rms_error = testRMS[TREES[trees]-1];
+
+                abs->Fill(abs_error, n, trees, l, (float) isLog);
+                rms->Fill(rms_error, n, trees, l, (float) isLog);
             }
+            delete forest;
         }
     }
 
     // Save.
     TFile* tuplefile = new TFile("jamie/2jets_loose/ntuples/parameter_evaluation.root", "RECREATE");
     tuplefile->cd();
-    ntuple->Write();
-    delete ntuple;
+    abs->Write();
+    rms->Write();
+
+    delete abs;
+    delete rms;
     delete tuplefile;
 }
 
@@ -237,5 +174,6 @@ void determineBestParameters()
 
 int main(int argc, char* argv[])
 {
+    determineBestParameters();
     return 0;
 }

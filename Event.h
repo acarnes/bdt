@@ -45,6 +45,8 @@ struct Event
         std::cout << std::endl;
      
     }
+  
+    void resetPredictedValue(){ predictedValue = 0; }
 };
 
 #endif

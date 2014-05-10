@@ -12,6 +12,8 @@ class Forest
         Forest();
         ~Forest();
 
+        void resetTestEventPredictions();
+
         void listEvents(std::vector< std::vector<Event*> >& e);
         void sortEventVectors(std::vector< std::vector<Event*> >& e);
 
@@ -21,7 +23,7 @@ class Forest
         void loadUnknownEvents(const char* loadfile);
         void loadForestFromXML(const char* directory, int numTrees); 
 
-        void doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRate, LossFunction* l, const char* savetreesdirectory);
+        void doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRate, LossFunction* l, const char* savetreesdirectory, bool saveTrees, bool trackError, bool isTwoJets);
 
         void predictTestEvents();
         void predictUnknownEvents();
@@ -39,9 +41,15 @@ class Forest
 
         Double_t returnRMS(std::vector<Event*>& v);
         Double_t returnResolution(std::vector<Event*>& v);
-        Double_t returnInvResolution(std::vector<Event*>& v);
+        Double_t returnDiscretizedAbsResolution(std::vector<Event*>& v, std::vector<Double_t> bins);
+        
         void rankVariables();
+        unsigned int size();
 
+        std::vector<Double_t> trainResolution;
+        std::vector<Double_t> testResolution;
+        std::vector<Double_t> trainRMS;
+        std::vector<Double_t> testRMS;
 
     private:
         std::vector< std::vector<Event*> > events;

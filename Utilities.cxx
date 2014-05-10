@@ -20,6 +20,28 @@
 #include "TMath.h"
 
 //////////////////////////////////////////////////////////////////////////
+// ------------------Some Helpful Arrays----------------------------------
+//////////////////////////////////////////////////////////////////////////
+
+// Array of GeV values for error calculation.
+const Double_t ptscale[31] =  { 0,
+                 1.5,   2.0,   2.5,   3.0,   3.5,   4.0,
+                 4.5,   5.0,   6.0,   7.0,   8.0,  10.0,  12.0,  14.0,
+                 16.0,  18.0,  20.0,  25.0,  30.0,  35.0,  40.0,  45.0,
+                 50.0,  60.0,  70.0,  80.0,  90.0, 100.0, 120.0, 140.0 };
+
+const std::vector<Double_t> ptScale = std::vector<Double_t>(ptscale, ptscale + sizeof ptscale / sizeof ptscale[0]);
+
+// Array of counts for error calculation.
+const Double_t twoJets_scale[16] =  { 0,
+                       0.5,   1.0,   2.0,   3.0,   4.0,   5.0, 10.0, 20.0, 50.0,
+                       100,   500,   1000,   5000,   7500,  50000};
+
+const std::vector<Double_t> twoJetsScale = std::vector<Double_t>(twoJets_scale, twoJets_scale + sizeof twoJets_scale / sizeof twoJets_scale[0]);
+
+
+
+//////////////////////////////////////////////////////////////////////////
 // ------------------Some Helpful Functions-------------------------------
 //////////////////////////////////////////////////////////////////////////
 
@@ -27,11 +49,6 @@ float processPrediction(float BDTPt, int Quality, float PrelimFit)
 {
 // Discretize and scale the BDTPt prediction 
 
-    float ptscale[31] =  { 0,
-                          1.5,   2.0,   2.5,   3.0,   3.5,   4.0,
-                          4.5,   5.0,   6.0,   7.0,   8.0,  10.0,  12.0,  14.0,
-                          16.0,  18.0,  20.0,  25.0,  30.0,  35.0,  40.0,  45.0,
-                          50.0,  60.0,  70.0,  80.0,  90.0, 100.0, 120.0, 140.0 };
 
     // Fix terrible predictions
     if(BDTPt < 0) BDTPt = PrelimFit;
