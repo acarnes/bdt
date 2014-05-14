@@ -10,8 +10,8 @@
 // _______________________Includes_______________________________________//
 ///////////////////////////////////////////////////////////////////////////
 
-#include "Forest.h"
-#include "Utilities.h"
+#include "./lib/Forest.h"
+#include "./lib/Utilities.h"
 
 #include "TRandom3.h"
 #include "TStopwatch.h"
@@ -49,10 +49,10 @@ void buildAndEvaluateForest(Forest* forest, Int_t nodes, Int_t trees, Double_t l
     std::cout << "Loss Function: " << lf->name().c_str() << std::endl;
 
     // Read in the training, testing data
-    forest->readInTestingAndTrainingEventsFromDat("./jamie/2jets_loose.dat",lf, isLog);
+    forest->readInTestingAndTrainingEventsFromDat("./studies/jamie/2jets_loose.dat",lf, isLog);
 
     // Where to save our trees. 
-    TString treesDirectory("./jamie/2jets_loose/trees");
+    TString treesDirectory("./studies/jamie/2jets_loose/trees");
 
     // Do the regression and save the trees.
     forest->doRegression(nodes, trees, lr, lf, treesDirectory, saveTrees, trackError, isTwoJets);
@@ -60,7 +60,7 @@ void buildAndEvaluateForest(Forest* forest, Int_t nodes, Int_t trees, Double_t l
     forest->rankVariables();
 
     // Where to save the ntuple with the test results.
-    TString directory("./jamie/2jets_loose/ntuples/");
+    TString directory("./studies/jamie/2jets_loose/ntuples/");
     TString savefile(numToStr<Int_t>(nodes)+"_"+numToStr<Int_t>(trees)+"_"+numToStr<Double_t>(lr)+".root");
     TString log("LOG_");
     TString testEventsFileName;
