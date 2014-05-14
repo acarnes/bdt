@@ -448,8 +448,8 @@ void Forest::doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRat
             testRMS.push_back(returnRMS(testEvents));
             testResolution.push_back(returnDiscretizedAbsResolution(testEvents, (isTwoJets==true)?twoJetsScale:ptScale));
 
-            std::cout << "----RMS Error: " << trainRMS[i] << ", " << testRMS[i] << std::endl;
-            std::cout << "----Discrete : " << trainResolution[i] << ", " << testResolution[i] << std::endl;
+            std::cout << "    RMS Error: " << trainRMS[i] << ", " << testRMS[i] << std::endl;
+            std::cout << "    Discrete : " << trainResolution[i] << ", " << testResolution[i] << std::endl;
         }
     }
     std::cout << std::endl;
