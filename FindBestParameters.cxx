@@ -79,16 +79,17 @@ void determineBestParameters()
     std::vector<int> TREES;
     std::vector<double> LR;
 
-    //NODES.push_back(5);
-    //NODES.push_back(10);
-    //NODES.push_back(15);
-    //NODES.push_back(20);
+    NODES.push_back(5);
+    NODES.push_back(10);
+    NODES.push_back(15);
+    NODES.push_back(20);
     NODES.push_back(50);
-    //NODES.push_back(100);
-    //NODES.push_back(250);
-    //NODES.push_back(500);
-    //NODES.push_back(1000);
-    //NODES.push_back(5000);
+    NODES.push_back(100);
+    NODES.push_back(250);
+    NODES.push_back(500);
+    NODES.push_back(1000);
+    NODES.push_back(5000);
+    NODES.push_back(10000);
 
     TREES.push_back(1);
     TREES.push_back(10);
@@ -98,8 +99,8 @@ void determineBestParameters()
     TREES.push_back(500);
     TREES.push_back(1000);
     TREES.push_back(2000);
-    //TREES.push_back(5000);
-    //TREES.push_back(10000);
+    TREES.push_back(5000);
+    TREES.push_back(10000);
 
     //LR.push_back(0.01);  
     //LR.push_back(0.03); 
@@ -107,7 +108,7 @@ void determineBestParameters()
     //LR.push_back(0.07); 
     //LR.push_back(0.09); 
     //LR.push_back(0.1);  
-    LR.push_back(0.3); 
+    //LR.push_back(0.3); 
     //LR.push_back(0.5); 
     //LR.push_back(0.7); 
     //LR.push_back(1); 
@@ -130,9 +131,7 @@ void determineBestParameters()
 
             // Need to reduce number of trees depending on the number of nodes.
             // Since a large number of nodes takes way too long. 
-            if(n==5000) t=100;
-            if(n==500) t=1000;
-            if(n==250) t=2000;
+            if(n>=5000) t=200;
 
             // Build the forest.
             Forest* forest = new Forest();
@@ -149,8 +148,8 @@ void determineBestParameters()
                 Double_t abs_error = testResolution[TREES[trees]-1];
                 Double_t rms_error = testRMS[TREES[trees]-1];
 
-                abs->Fill(abs_error, n, trees, l, (float) isLog);
-                rms->Fill(rms_error, n, trees, l, (float) isLog);
+                abs->Fill(abs_error, n, TREES[trees], l, (float) isLog);
+                rms->Fill(rms_error, n, TREES[trees], l, (float) isLog);
             }
             delete forest;
         }
