@@ -6,7 +6,7 @@ CC = g++
 CFLAGS = -c `root-config --cflags`
 LIBFLAGS = `root-config --libs` -lXMLIO -lMLP -lMinuit
 
-FindBestParameters: Utilities.o Node.o Tree.o Forest.o FindBestParameters.o
+FindBestParameters: FindBestParameters.o
 	$(CC) $(LIBFLAGS) ./lib/Utilities.o ./lib/Node.o ./lib/Tree.o ./lib/Forest.o FindBestParameters.o -o FindBestParameters
 
 FindBestParameters.o: FindBestParameters.cxx
@@ -26,5 +26,8 @@ Forest.o: ./lib/Forest.cxx
 
 
 clean:
+	rm *.o
+
+cleanall:
 	rm *.o
 	rm ./lib/*.o

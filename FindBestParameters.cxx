@@ -36,6 +36,8 @@
 
 void buildAndEvaluateForest(Forest* forest, Int_t nodes, Int_t trees, Double_t lr, bool isLog, TNtuple* rms, TNtuple* abs)
 {
+// Build a forest with certain parameters then evaluate its success.
+
     bool trackError = true;
     bool isTwoJets = true;
     bool saveTrees = false;
@@ -67,7 +69,7 @@ void buildAndEvaluateForest(Forest* forest, Int_t nodes, Int_t trees, Double_t l
     if(isLog) testEventsFileName = directory+log+savefile;
     else testEventsFileName = directory+savefile;
 
-    // Save the results of the regression on the test set.
+    // Save the regression's predictions of the test set.
     // forest->predictTestEvents();
     // forest->saveTestEventsForJamie(testEventsFileName, isLog);
 
@@ -89,72 +91,16 @@ void buildAndEvaluateForest(Forest* forest, Int_t nodes, Int_t trees, Double_t l
 
 }
 
-void determineBestParameters()
+void determineBestParameters(TNtuple* abs, TNtuple* rms, Int_t nodes, Int_t trees, Double_t lr, bool isLog)
 {
-    bool isLog = false;
-    std::vector<int> NODES;
-    std::vector<int> TREES;
-    std::vector<double> LR;
+    // Since a large number of nodes takes too long, we reduce the number of trees for these runs. 
+    if(nodes>=250 && nodes<5000) trees = 5000;
+    if(nodes>=5000) trees=300;
 
-    NODES.push_back(5);
-//    NODES.push_back(10);
-//    NODES.push_back(15);
-//    NODES.push_back(20);
-//    NODES.push_back(50);
-//    NODES.push_back(100);
-//    NODES.push_back(250);
-//    NODES.push_back(500);
-//    NODES.push_back(1000);
-//    NODES.push_back(5000);
-//    NODES.push_back(10000);
-
-    //LR.push_back(0.01);  
-    //LR.push_back(0.03); 
-    //LR.push_back(0.05); 
-    //LR.push_back(0.07); 
-    //LR.push_back(0.09); 
-    LR.push_back(0.1);  
-    //LR.push_back(0.3); 
-    //LR.push_back(0.5); 
-    //LR.push_back(0.7); 
-    //LR.push_back(1); 
-
-    // The ntuples in which we will save the error vs given parameters.
-    TNtuple* abs = new TNtuple("abs_percent_error", "abs_percent_error", "error:nodes:trees:lr:islog"); 
-    TNtuple* rms = new TNtuple("rms_error", "rms_error", "error:nodes:trees:lr:islog"); 
-
-    for(unsigned int lr=0; lr<LR.size(); lr++)
-    {
-        for(unsigned int nodes=0; nodes<NODES.size(); nodes++)
-        {
-            // The learning rate for the forest.
-            Double_t l = LR[lr];
-            // The number of nodes per tree.
-            Int_t n = NODES[nodes];
-            // The number of trees for our forest.
-            Int_t t = 10000;
-
-            // Since a large number of nodes takes too long, we reduce the number of trees for these runs. 
-            if(n>=250 < 5000) t = 5000;
-            if(n>=5000) t=300;
-            t=11;
-
-            // Build the forest.
-            Forest* forest = new Forest();
-            buildAndEvaluateForest(forest,n,t,l,isLog,rms,abs);
-            delete forest;
-        }
-    }
-
-    // Save.
-    TFile* tuplefile = new TFile("jamie/2jets_loose/ntuples/parameter_evaluation.root", "RECREATE");
-    tuplefile->cd();
-    abs->Write();
-    rms->Write();
-
-    delete abs;
-    delete rms;
-    delete tuplefile;
+    // Build the forest.
+    Forest* forest = new Forest();
+    buildAndEvaluateForest(forest,nodes,trees,lr,isLog,rms,abs);
+    delete forest;
 }
 
 
@@ -164,6 +110,43 @@ void determineBestParameters()
 
 int main(int argc, char* argv[])
 {
-    determineBestParameters();
+// Save the error vs parameters for a forest with parameters given by the command line input.
+
+    bool isLog = false;
+
+    // Assuming "./FindBestParameters nodes trees lr" as input from the terminal.
+    Int_t nodes;
+    Int_t trees;
+    Double_t lr; 
+
+    for(int i=1; i<argc; i++)
+    {
+        std::stringstream ss;
+        ss << argv[i];
+        if(i==1) ss >> nodes; 
+        if(i==2) ss >> trees; 
+        if(i==3) ss >> lr; 
+    }
+
+    // The ntuples in which we will save the error vs learning parameters info.
+    TNtuple* abs = new TNtuple("abs_percent_error", "abs_percent_error", "error:nodes:trees:lr:islog"); 
+    TNtuple* rms = new TNtuple("rms_error", "rms_error", "error:nodes:trees:lr:log"); 
+
+    determineBestParameters(abs, rms, nodes, trees, lr, isLog);
+
+    // Save.
+    std::stringstream savetuplesto;
+    savetuplesto << "studies/jamie/2jets_loose/ntuples/parameter_evaluation_" << nodes << "_" << trees << "_" << lr; 
+    if(isLog) savetuplesto << "_LOG";
+    savetuplesto << ".root";
+
+    TFile* tuplefile = new TFile(savetuplesto.str().c_str(), "RECREATE");
+    tuplefile->cd();
+    abs->Write();
+    rms->Write();
+
+    delete abs;
+    delete rms;
+    delete tuplefile;
     return 0;
 }
