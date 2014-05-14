@@ -6,8 +6,8 @@ CC = g++
 CFLAGS = -c `root-config --cflags`
 LIBFLAGS = `root-config --libs` -lXMLIO -lMLP -lMinuit
 
-FindBestParameters: Utilities.o Node.o Tree.o DrawPlots.o Forest.o FindBestParameters.o
-	$(CC) $(LIBFLAGS) Utilities.o Node.o Tree.o DrawPlots.o Forest.o FindBestParameters.o -o FindBestParameters
+FindBestParameters: Utilities.o Node.o Tree.o Forest.o FindBestParameters.o
+	$(CC) $(LIBFLAGS) Utilities.o Node.o Tree.o Forest.o FindBestParameters.o -o FindBestParameters
 
 Utilities.o: Utilities.cxx
 	$(CC) $(CFLAGS) Utilities.cxx
@@ -17,9 +17,6 @@ Node.o: Node.cxx
 
 Tree.o: Tree.cxx
 	$(CC) $(CFLAGS) Tree.cxx  
-
-DrawPlots.o: DrawPlots.cxx
-	$(CC) $(CFLAGS) DrawPlots.cxx  
 
 Forest.o: Forest.cxx
 	$(CC) $(CFLAGS) Forest.cxx  

@@ -69,7 +69,7 @@ void buildAndEvaluateForest(Forest* forest, Int_t nodes, Int_t trees, Double_t l
 
     // Save the results of the regression on the test set.
     // forest->predictTestEvents();
-    forest->saveTestEventsForJamie(testEventsFileName, isLog);
+    // forest->saveTestEventsForJamie(testEventsFileName, isLog);
 }
 
 void determineBestParameters()
@@ -107,7 +107,7 @@ void determineBestParameters()
     //LR.push_back(0.05); 
     //LR.push_back(0.07); 
     //LR.push_back(0.09); 
-    //LR.push_back(0.1);  
+    LR.push_back(0.1);  
     //LR.push_back(0.3); 
     //LR.push_back(0.5); 
     //LR.push_back(0.7); 
@@ -131,7 +131,7 @@ void determineBestParameters()
 
             // Need to reduce number of trees depending on the number of nodes.
             // Since a large number of nodes takes way too long. 
-            if(n>=5000) t=200;
+            if(n>=5000) t=300;
 
             // Build the forest.
             Forest* forest = new Forest();
