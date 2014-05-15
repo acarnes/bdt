@@ -99,10 +99,6 @@ void buildAndEvaluateForest(Forest* forest, Int_t nodes, Int_t trees, Double_t l
 
 void determineBestParameters(TNtuple* abs, TNtuple* rms, Int_t nodes, Int_t trees, Double_t lr, bool isLog)
 {
-    // Since a large number of nodes takes too long, we reduce the number of trees for these runs. 
-    if(nodes>=250 && nodes<5000) trees = 5000;
-    if(nodes>=5000) trees=300;
-
     // Build the forest.
     Forest* forest = new Forest();
     buildAndEvaluateForest(forest,nodes,trees,lr,isLog,rms,abs);
