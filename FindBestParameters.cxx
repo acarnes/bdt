@@ -61,17 +61,6 @@ void buildAndEvaluateForest(Forest* forest, Int_t nodes, Int_t trees, Double_t l
     // Rank the variable importance and output it.
     forest->rankVariables();
 
-    // Where to save the ntuple with the test results.
-    TString directory("./studies/jamie/2jets_loose/ntuples/");
-    TString savefile(numToStr<Int_t>(nodes)+"_"+numToStr<Int_t>(trees)+"_"+numToStr<Double_t>(lr)+".root");
-    TString log("LOG_");
-    TString testEventsFileName;
-    if(isLog) testEventsFileName = directory+log+savefile;
-    else testEventsFileName = directory+savefile;
-
-    // Save the regression's predictions of the test set.
-    // forest->predictTestEvents();
-    // forest->saveTestEventsForJamie(testEventsFileName, isLog);
 
     // When trackError is true in doRegression we have vectors that track the net error
     // for a given number of trees.
@@ -89,6 +78,23 @@ void buildAndEvaluateForest(Forest* forest, Int_t nodes, Int_t trees, Double_t l
         rms->Fill(rms_error, nodes, tree+1, lr, (float) isLog);
     }
 
+    // The directory to store the test results.
+    TString directory("./studies/jamie/2jets_loose/ntuples/testresults/");
+    // Append this if we use a log transformation of the trueValue.
+    TString log("LOG_");
+    // Predict the test set using a certain number of trees from the forest and save the results each time.
+    for(Double_t useNtrees=1; useNtrees<=forest->size(); useNtrees+=(forest->size()-1)/4.0)
+    {
+        // Where to save the ntuple with the test results.
+        TString savefile(numToStr<Int_t>(nodes)+"_"+numToStr<Int_t>((Int_t)useNtrees)+"_"+numToStr<Double_t>(lr)+".root");
+        TString testEventsFileName;
+        if(isLog) testEventsFileName = directory+log+savefile;
+        else testEventsFileName = directory+savefile;
+
+        // Save the regression's predictions of the test set.
+        forest->predictTestEvents((unsigned int) useNtrees);
+        forest->saveTestEventsForJamie(testEventsFileName, isLog);
+    }
 }
 
 void determineBestParameters(TNtuple* abs, TNtuple* rms, Int_t nodes, Int_t trees, Double_t lr, bool isLog)
@@ -136,7 +142,7 @@ int main(int argc, char* argv[])
 
     // Save.
     std::stringstream savetuplesto;
-    savetuplesto << "studies/jamie/2jets_loose/ntuples/parameter_evaluation_" << nodes << "_" << trees << "_" << lr; 
+    savetuplesto << "studies/jamie/2jets_loose/ntuples/evaluation/parameter_evaluation_" << nodes << "_" << trees << "_" << lr; 
     if(isLog) savetuplesto << "_LOG";
     savetuplesto << ".root";
 

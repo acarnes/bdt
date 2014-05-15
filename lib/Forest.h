@@ -25,7 +25,7 @@ class Forest
 
         void doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRate, LossFunction* l, const char* savetreesdirectory, bool saveTrees, bool trackError, bool isTwoJets);
 
-        void predictTestEvents();
+        void predictTestEvents(Int_t trees);
         void predictUnknownEvents();
 
         void saveTestEvents(const char* savefilename);

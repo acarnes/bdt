@@ -462,18 +462,23 @@ void Forest::doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRat
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::predictTestEvents()
+void Forest::predictTestEvents(Int_t numtrees)
 {
 // After building a forest, test on a separate data set to see how well the prediction
 // works. This function returns the resolution, which quantifies the error. It also 
 // produces resolution plots.
 
-    std::cout << std::endl << "Predicting testEvents ... " << std::endl;
+    std::cout << std::endl << "## Using " << numtrees << " trees from the forest to predict testEvents ... " << std::endl;
+    if(numtrees > trees.size())
+    {
+        std::cout << std::endl << "!! Input greater than the forest size. Using forest.size() = " << trees.size() << " to predict instead." << std::endl;
+        numtrees = trees.size();
+    }
 
     resetTestEventPredictions();
 
     // i iterates through the trees in the forest. Each tree adds more complexity to the fit.
-    for(unsigned int i=0; i < trees.size(); i++) 
+    for(unsigned int i=0; i < numtrees; i++) 
     {   
         Tree* tree = trees[i];
         tree->filterEvents(testEvents); 
@@ -484,7 +489,7 @@ void Forest::predictTestEvents()
 
     // We want to return the minimum resolution so that we can analyze the
     // success of the BDT system with different settings.
-    std::cout << "Done." << std::endl << std::endl;
+    std::cout << "## Done." << std::endl << std::endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -1310,6 +1315,7 @@ void Forest::saveTestEventsForJamie(const char* savefilename, bool isLog)
 {
 // After using the forest to predict values for the test events, save the test events along with their predicted values into an ntuple.
 
+    std::cout << std::endl << "## Saving the predictions on testEvents into " << savefilename << "..." << std::endl;
 
     // Make a new root file.
     TFile* f = new TFile(savefilename, "RECREATE");
@@ -1343,4 +1349,5 @@ void Forest::saveTestEventsForJamie(const char* savefilename, bool isLog)
     f->Close();
     //delete n;
     delete f;
+    std::cout << "## Done." << std::endl;
 }
