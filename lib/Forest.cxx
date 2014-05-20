@@ -232,7 +232,7 @@ Double_t Forest::returnResolution(std::vector<Event*>& v)
 
 Double_t Forest::returnRMS(std::vector<Event*>& v)
 {
-// Square each residual then add the
+// RMS error
 
     Double_t avgValue = 0;
     Double_t errorSum = 0;
@@ -788,7 +788,7 @@ void Forest::readInTestingAndTrainingEventsFromDat(const char* inputfilename, Lo
         // Put the correct info into our event data structure.
         Double_t trueValue = vx[0];
         Event* e = new Event();
-        if(isLog && trueValue == 0 && linenumber<=111515) continue;
+        if(isLog && trueValue == 0 && linenumber<=167253) continue;
         if(isLog) e->trueValue = log(trueValue);
         else e->trueValue = trueValue;
 
