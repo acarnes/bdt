@@ -10,8 +10,9 @@
 // _______________________Includes_______________________________________//
 ///////////////////////////////////////////////////////////////////////////
 
-#include "./lib/Forest.h"
-#include "./lib/Utilities.h"
+#include "Forest.h"
+#include "Utilities.h"
+#include "LoadSaveEvents.h"
 
 #include "TRandom3.h"
 #include "TStopwatch.h"
@@ -51,10 +52,10 @@ void buildAndEvaluateForest(Forest* forest, Int_t nodes, Int_t trees, Double_t l
     std::cout << "Loss Function: " << lf->name().c_str() << std::endl;
 
     // Read in the training, testing data
-    forest->readInTestingAndTrainingEventsFromDat("./studies/jamie/2jets_loose.dat",lf, isLog);
+    readInTestingAndTrainingEvents("/home/andrew/projects/bdt/studies/jamie/2jets_loose/2jets_loose.dat", forest, lf, isLog);
 
     // Where to save our trees. 
-    TString treesDirectory("./studies/jamie/2jets_loose/trees");
+    TString treesDirectory("/home/andrew/projects/bdt/studies/jamie/2jets_loose/ntuples/trees");
 
     // Do the regression and save the trees.
     forest->doRegression(nodes, trees, lr, lf, treesDirectory, saveTrees, trackError, isTwoJets);
@@ -79,7 +80,7 @@ void buildAndEvaluateForest(Forest* forest, Int_t nodes, Int_t trees, Double_t l
     }
 
     // The directory to store the test results.
-    TString directory("./studies/jamie/2jets_loose/ntuples/testresults/");
+    TString directory("/home/andrew/projects/bdt/studies/jamie/2jets_loose/ntuples/testresults/");
     // Append this if we use a log transformation of the trueValue.
     TString log("LOG_");
     // Predict the test set using a certain number of trees from the forest and save the results each time.
@@ -93,7 +94,7 @@ void buildAndEvaluateForest(Forest* forest, Int_t nodes, Int_t trees, Double_t l
 
         // Save the regression's predictions of the test set.
         forest->predictTestEvents((unsigned int) useNtrees);
-        forest->saveTestEventsForJamie(testEventsFileName, isLog);
+        saveTestEvents(testEventsFileName, forest, isLog);
     }
 }
 
@@ -138,7 +139,7 @@ int main(int argc, char* argv[])
 
     // Save.
     std::stringstream savetuplesto;
-    savetuplesto << "studies/jamie/2jets_loose/ntuples/evaluation/parameter_evaluation_" << nodes << "_" << trees << "_" << lr; 
+    savetuplesto << "/home/andrew/projects/bdt/studies/jamie/2jets_loose/ntuples/evaluation/parameter_evaluation_" << nodes << "_" << trees << "_" << lr; 
     if(isLog) savetuplesto << "_LOG";
     savetuplesto << ".root";
 

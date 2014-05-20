@@ -1,3 +1,4 @@
+//////////////////////////////////////////////////////////////////////////
 //                            Forest.cxx                                //
 // =====================================================================//
 // This is the object implementation of a forest of decision trees.     //
@@ -44,6 +45,16 @@ Forest::Forest()
     events = std::vector< std::vector<Event*> >(1);
 }
 
+//////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////
+
+Forest::Forest(std::vector<Event*>& trainingEvents, std::vector<Event*>& testingEvents)
+{
+    setTrainingEvents(trainingEvents);
+    setTestEvents(testingEvents);
+}
+
 /////////////////////////////////////////////////////////////////////////
 // _______________________Destructor____________________________________//
 //////////////////////////////////////////////////////////////////////////
@@ -65,6 +76,43 @@ Forest::~Forest()
         delete testEvents[j];
     }   
 }
+//////////////////////////////////////////////////////////////////////////
+// ______________________Get/Set_Functions______________________________//
+//////////////////////////////////////////////////////////////////////////
+
+void Forest::setTrainingEvents(std::vector<Event*>& trainingEvents)
+{
+    // Store the training events into the class. 
+    Event* e = trainingEvents[0];
+    
+    events = std::vector< std::vector<Event*> >(20, std::vector<Event*>(10));
+
+    for(unsigned int i=0; i<e->data.size(); i++) 
+    {    
+        events[i] = std::vector<Event*>(trainingEvents);
+    }    
+}
+
+//////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////
+
+void Forest::setTestEvents(std::vector<Event*>& testingEvents)
+{   
+    testEvents = testingEvents; 
+}
+
+//////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////
+
+std::vector<Event*> Forest::getTrainingEvents(){ return events[0]; }
+
+//////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////
+
+std::vector<Event*> Forest::getTestEvents(){ return testEvents; }
 
 //////////////////////////////////////////////////////////////////////////
 // ______________________Various_Helpful_Functions______________________//
@@ -737,105 +785,6 @@ void Forest::generate(Int_t n, Int_t m, Double_t sigma)
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::readInTestingAndTrainingEventsFromDat(const char* inputfilename, LossFunction* l, bool isLog)
-{
-// We read the events from a column separated data file rather than an ntuple.
-
-    // The inputfile.
-    std::ifstream infile;
-    infile.open(inputfilename);
-
-    // We know there are twenty variables in twenty separate columns.
-    Double_t x[20];
-
-    // Store events we are interested in.
-    std::vector<Event*> v;
-
-    // Make sure the file reads.
-    if(infile.fail())
-    {   
-        std::cout << "failed to open file" << std::endl;
-        return;
-    }   
-
-    // Keep track of the line we are reading.
-    int linenumber = 1;
-
-    std::cout << std::endl << "Reading in Testing and Training Events... " << std::endl;
-
-    // Read the file line by line.
-    while(!infile.eof())
-    {   
-        for(unsigned int i=0; i<20; i++)
-        {  
-            // Store the ith column from the current line into the array.
-            infile >> x[i];
-        }   
-
-        // The event class requires a vector where the 0th entry is the target variable.
-        // In the file the 20th column holds the target variable which corresponds to x[19].
-        std::vector<Double_t> vx(20,-999);
-
-        // Put the target variable in the correct spot.
-        vx[0] = x[19];
-
-        // Put x[0]->x[18] into vx[1]->vx[19].
-        for(unsigned int i=1; i<20; i++)
-        {
-            vx[i] = x[i-1]; 
-        }
-
-        // Put the correct info into our event data structure.
-        Double_t trueValue = vx[0];
-        Event* e = new Event();
-        if(isLog && trueValue == 0 && linenumber<=167253) continue;
-        if(isLog) e->trueValue = log(trueValue);
-        else e->trueValue = trueValue;
-
-        e->predictedValue = 0;
-        e->id = linenumber;
-        e->data = vx;
-        if(isLog) e->data[0] = log(trueValue);
-        else e->data[0] = trueValue;
-
-        // Irrelevant to the current analysis.
-        e->tmvaPt = -999;
-        e->tmvaPt1 = -999;
-        e->DTPt = -999;
-        e->Mode = -999;
-        e->Quality = -999;
-
-        // Store the event.
-        v.push_back(e);
-
-        // Increment the line number.
-        linenumber++;
-    }   
-
-    infile.close();
-
-    // Store some training events. 
-    events = std::vector< std::vector<Event*> >(20, std::vector<Event*>(10));
-
-    for(unsigned int i=0; i<events.size(); i++)
-    {
-        events[i] = std::vector<Event*>(v.begin(), v.end()-0.5*v.size());
-    }
-
-    // Store the rest for testing.
-    testEvents = std::vector<Event*>(v.end()-0.5*v.size(), v.end()-0.25*v.size()); 
-
-    std::cout << "Total Instances Available: " <<  v.size() << std::endl;
-    std::cout << "Training Instances: " <<  events[0].size() << std::endl;
-    std::cout << "Testing Instances: " <<  testEvents.size() << std::endl;
-    std::cout << std::endl;
-
-}
-
-//////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------
-//////////////////////////////////////////////////////////////////////////
-
 void Forest::readInTestingAndTrainingEvents(const char* inputfilename, LossFunction* l)
 {
 // Read in the events for training and testing from an NTuple.
@@ -1240,13 +1189,12 @@ void Forest::saveUnknownEvents(const char* savefile)
 
 void Forest::predictUnknownEvents()
 { 
-// This function predicts values for events with unknown true values and
-// produces rate plots.
+// This function predicts values for events with unknown true values.
 
     std::cout << "Number of Tracks in Ntuple = " << unknownEvents.size() << std::endl;
 
     // ======================================= 
-    // Predict the values of the unknown data.
+    // Predict the values for the unknown data.
     // =======================================
 
     // Run the events through all the trees in the forest updating the prediction after each tree.
@@ -1257,14 +1205,6 @@ void Forest::predictUnknownEvents()
 
         // Update the events with their new prediction.
         updateUnknownEvents(tree);
-
-        if( (i+1) == 64 )
-        {   
-            // Store the results of our predictions into a root file and produce Rate plots and
-            // save the plots as well.
-            //const char* ntuplefile = saveUnknownEventResults(w, numToStr(nodes).c_str(), numToStr(i+1).c_str(), numToStr(lr).c_str(), l->name().c_str());
-            //plotUnknownEventResults(ntuplefile, plotsfile, numToStr(nodes).c_str(), numToStr(i+1).c_str(), numToStr(lr).c_str(), l->name().c_str());
-        }   
     }   
 
 }
@@ -1305,49 +1245,4 @@ void Forest::saveTestEvents(const char* savefilename)
     f->Write();
     delete n;
     delete f;
-}
-
-//////////////////////////////////////////////////////////////////////////
-// ______________________Save Test Results______________________________//
-//////////////////////////////////////////////////////////////////////////
-
-void Forest::saveTestEventsForJamie(const char* savefilename, bool isLog)
-{
-// After using the forest to predict values for the test events, save the test events along with their predicted values into an ntuple.
-
-    std::cout << std::endl << "## Saving the predictions on testEvents into " << savefilename << "..." << std::endl;
-
-    // Make a new root file.
-    TFile* f = new TFile(savefilename, "RECREATE");
-
-    // Make a new ntuple.
-    TNtuple* n = new TNtuple("BDTresults", "BDTresults", "trueValue:predictedValue:x1:x2:x3:x4:x5:x6:x7:x8:x9:x10:x11:x12:x13:x14:x15:x16:x17:x18:x19"); 
-
-    // Add events to the ntuple.
-    // Process the BDT Predictions.
-    for(unsigned int i=0; i<testEvents.size(); i++)
-    {
-        Event* ev = testEvents[i];
-        Float_t predictedValue = ev->predictedValue;
-        Float_t trueValue = ev->trueValue;
-
-        if(isLog) predictedValue = exp(predictedValue);
-        if(isLog) trueValue = exp(trueValue);
-
-        std::vector<Float_t> x(21,-999);
-        x[0] = trueValue; 
-        x[1] = predictedValue;
-
-        for(unsigned int j=1; j<ev->data.size(); j++)
-            x[j+1] = (Float_t) ev->data[j];
-
-        n->Fill(&x[0]);
-    }
-
-    // Save.
-    f->Write();
-    f->Close();
-    //delete n;
-    delete f;
-    std::cout << "## Done." << std::endl;
 }
