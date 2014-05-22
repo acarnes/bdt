@@ -102,12 +102,15 @@ class Log : public TransformFunction
 
         bool transform(Event* e)
         {
+            bool flag = false;
+            if(e->trueValue > 0) flag = false;
+            else return flag = true;
+
             if(e->trueValue > 0) e->trueValue = log(e->trueValue);
             else std::cout << "ERROR: LOG(" << e->trueValue << ") " << "is UNDEFINED" << std::endl;
             if(e->predictedValue > 0) e->predictedValue = log(e->predictedValue); 
 
-            if(e->trueValue > 0) return false;
-            else return true;
+            return flag;
         }
         bool invertTransformation(Event* e)
         { 
@@ -129,22 +132,28 @@ class Inverse : public TransformFunction
 
         bool transform(Event* e)
         {
+            bool flag = false;
+            if(e->trueValue != 0) flag = false;
+            else return flag = true;
+
             if(e->trueValue != 0) e->trueValue = 1/e->trueValue;
             else std::cout << "ERROR: 1/" << e->trueValue <<  " = inf" << std::endl;
             if(e->predictedValue != 0) e->predictedValue = 1/e->predictedValue; 
-
-            if(e->trueValue != 0) return false;
-            else return true;
+          
+            return flag;
         }
         bool invertTransformation(Event* e)
         { 
+            bool flag = false;
+            if(e->trueValue == 0 || e->predictedValue == 0) flag = true;
+            else flag = false;
+
             if(e->trueValue != 0) e->trueValue = 1/e->trueValue;
             else std::cout << "ERROR: 1/" << e->trueValue <<  " = inf" << std::endl;
             if(e->predictedValue != 0) e->predictedValue = 1/e->predictedValue; 
             else std::cout << "ERROR: 1/" << e->predictedValue <<  " = inf" << std::endl;
 
-            if(e->trueValue == 0 || e->predictedValue == 0) return true;
-            else return false;
+            return flag;
         }
         const char* name(){ return "INVERSE"; }
 };

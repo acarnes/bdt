@@ -6,12 +6,17 @@ CC = g++
 LIBFLAGS = `root-config --libs` -lXMLIO -lMLP -lMinuit
 LIBDIR = /home/andrew/projects/bdt/lib/
 CFLAGS = -I${LIBDIR} -c `root-config --cflags`
+DEPS = LoadSaveEvents.h Functions.h
 
-FindBestParameters: Utilities.o Node.o Tree.o Forest.o FindBestParameters.o
+CompileStuff: Utilities.o Node.o Tree.o Forest.o FindBestParameters.o TestPrelimFits.o
 	$(CC) $(LIBFLAGS) ${LIBDIR}Utilities.o ${LIBDIR}Node.o ${LIBDIR}Tree.o ${LIBDIR}Forest.o FindBestParameters.o -o FindBestParameters
+	$(CC) $(LIBFLAGS) ${LIBDIR}Utilities.o ${LIBDIR}Node.o ${LIBDIR}Tree.o ${LIBDIR}Forest.o TestPrelimFits.o -o TestPrelimFits
 
-FindBestParameters.o: FindBestParameters.cxx
+FindBestParameters.o: FindBestParameters.cxx ${DEPS}
 	$(CC) $(CFLAGS) FindBestParameters.cxx  
+
+TestPrelimFits.o: TestPrelimFits.cxx ${DEPS} 
+	$(CC) $(CFLAGS) TestPrelimFits.cxx  
 
 Utilities.o: ${LIBDIR}Utilities.cxx
 	$(CC) $(CFLAGS) ${LIBDIR}Utilities.cxx -o ${LIBDIR}Utilities.o

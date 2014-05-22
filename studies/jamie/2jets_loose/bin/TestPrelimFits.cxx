@@ -1,9 +1,8 @@
 //////////////////////////////////////////////////////////////////////////
-//                            FindBestParameters.cxx                    //
+//                            TestPrelimFits.cxx                        //
 // =====================================================================//
 //                                                                      //
-//   Build a bunch of forests and cross validate to find the            //
-//   best parameters for the forest.                                    //
+//   See if different prelimfits improve the regression.                //
 //                                                                      //
 //////////////////////////////////////////////////////////////////////////
 
@@ -37,9 +36,13 @@
 // ______________________Run Program____________________________________//
 /////////////////////////////////////////////////////////////////////////
 
-void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction* lf, PreliminaryFit* prelimfit, TransformFunction* transform, TNtuple* rms, TNtuple* abs) 
+void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction* lf, PreliminaryFit* prelimfit, TransformFunction* transform) 
 {
 // Build a forest with certain parameters then evaluate its success.
+
+    // The ntuples in which we will save the error vs learning parameters info.
+    TNtuple* abs = new TNtuple("abs_percent_error", "abs_percent_error", "error:nodes:trees:lr"); 
+    TNtuple* rms = new TNtuple("rms_error", "rms_error", "error:nodes:trees:lr"); 
 
     bool trackError = true;
     bool isTwoJets = true;
@@ -73,7 +76,6 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
     else std::cout << "Transform Function: None" << std::endl;
     std::cout << "=======================================" << std::endl;
 
-
     // Where to save our trees. 
     TString treesDirectory("/home/andrew/projects/bdt/studies/jamie/2jets_loose/ntuples/trees");
 
@@ -105,15 +107,16 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
     // Predict the test set using a certain number of trees from the forest and save the results each time.
     for(Double_t useNtrees=1; (unsigned int) useNtrees<=forest->size(); useNtrees+=(forest->size()-1)/10.0)
     {
-        std::stringstream saveTestName;
-        saveTestName << nodes << "_" << trees << "_" << lr;
 
+        std::stringstream saveTestName;
+        saveTestName << nodes << "_" << trees << "_" << lr; 
+    
         std::stringstream savetestto;
         savetestto << testDir.str().c_str();
-
+    
         if(prelimfit!=0) savetestto << prelimfit->name() << "_";
         if(transform!=0) savetestto << transform->name() << "_";
-
+    
         savetestto << saveTestName.str().c_str() << ".root";
 
         // Save the regression's predictions of the test set.
@@ -124,6 +127,30 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
         std::cout << "-----" << std::endl;
     }
 
+    // Save.
+    std::stringstream ntupleDir;
+    ntupleDir << "/home/andrew/projects/bdt/studies/jamie/2jets_loose/ntuples/evaluation/";
+
+    std::stringstream saveNtuplename;
+    saveNtuplename << "parameter_evaluation_" << nodes << "_" << trees << "_" << lr; 
+
+    std::stringstream savetuplesto;
+    savetuplesto << ntupleDir.str().c_str();
+
+    if(prelimfit!=0) savetuplesto << prelimfit->name() << "_";
+    if(transform!=0) savetuplesto << transform->name() << "_";
+
+    savetuplesto << saveNtuplename.str().c_str() << ".root";
+
+    std::cout << "Saving parameter evaluation ntuple to " << savetuplesto.str().c_str() << std::endl;
+    TFile* tuplefile = new TFile(savetuplesto.str().c_str(), "RECREATE");
+    tuplefile->cd();
+    abs->Write();
+    rms->Write();
+
+    delete abs;
+    delete rms;
+    delete tuplefile;
     delete forest;
 }
 
@@ -133,49 +160,31 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
 
 int main(int argc, char* argv[])
 {
-// Save the error vs parameters for a forest with parameters given by the command line input.
+// Test out the effectiveness of some Preliminary Fits.
 
-    // Assuming "./FindBestParameters nodes trees lr" as input from the terminal.
-    Int_t nodes;
-    Int_t trees;
-    Double_t lr; 
-
-    for(int i=1; i<argc; i++)
-    {
-        std::stringstream ss;
-        ss << argv[i];
-        if(i==1) ss >> nodes; 
-        if(i==2) ss >> trees; 
-        if(i==3) ss >> lr; 
-    }
-    //Loss Function
+    // Nodes, trees, lr, loss function are the same for each test.
+    Int_t nodes = 2;
+    Int_t trees = 10;
+    Double_t lr = 0.1; 
     LeastSquares* lf = new LeastSquares();
 
-    // Preprocessing
-    PreliminaryFit* prelimfit = 0;
-    // TransformFunction* transform = 0;
-    Log* transform = new Log();
+    std::vector<PreliminaryFit*> prelimfits;
+    std::vector<TransformFunction*> transformfunctions;
 
-    // The ntuples in which we will save the error vs learning parameters info.
-    TNtuple* abs = new TNtuple("abs_percent_error", "abs_percent_error", "error:nodes:trees:lr"); 
-    TNtuple* rms = new TNtuple("rms_error", "rms_error", "error:nodes:trees:lr"); 
+    transformfunctions.push_back(0);
+    transformfunctions.push_back(new Log());
 
-    buildAndEvaluateForest(nodes, trees, lr, lf, prelimfit, transform, abs, rms);
+    prelimfits.push_back(0);
+    prelimfits.push_back(new twoJetsLogFit());
+    prelimfits.push_back(new twoJetsPolyFit());
 
-    // Save.
-    std::stringstream savetuplesto;
-    savetuplesto << "/home/andrew/projects/bdt/studies/jamie/2jets_loose/ntuples/evaluation/parameter_evaluation_" << nodes << "_" << trees << "_" << lr; 
-    if(transform!=0) savetuplesto << transform->name() << "_";
-    if(prelimfit!=0) savetuplesto << prelimfit->name();
-    savetuplesto << ".root";
+    for(unsigned int p=0; p<prelimfits.size(); p++)
+    {
+        for(unsigned int t=0; t<transformfunctions.size(); t++)
+        {
+            buildAndEvaluateForest(nodes, trees, lr, lf, prelimfits[p], transformfunctions[t]);
+        }
+    }
 
-    TFile* tuplefile = new TFile(savetuplesto.str().c_str(), "RECREATE");
-    tuplefile->cd();
-    abs->Write();
-    rms->Write();
-
-    delete abs;
-    delete rms;
-    delete tuplefile;
     return 0;
 }
