@@ -47,6 +47,8 @@ Tree::Tree(std::vector< std::vector<Event*> >& cEvents)
 
 Tree::~Tree()
 {
+// When the tree is destroyed it will delete all of the nodes in the tree.
+// The deletion begins with the rootnode and continues recursively.
     delete rootNode;
 }
 

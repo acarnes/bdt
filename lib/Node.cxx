@@ -58,6 +58,7 @@ Node::Node(std::string cName)
 
 Node::~Node()
 {
+// Recursively delete all nodes in the tree.
     delete leftDaughter;
     delete rightDaughter;
 }

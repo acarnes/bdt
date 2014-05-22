@@ -11,6 +11,7 @@
 #define ADD_LOADEVENTS
 
 #include "Forest.h"
+#include "Functions.h"
 #include "TFile.h"
 #include "TNtuple.h"
 #include <vector>
@@ -20,10 +21,107 @@
 #include <algorithm>
 
 // ========================================================
+// ================ Reset  ================================
+//=========================================================
+
+void resetEvents(std::vector<Event*>& events, LossFunction* lf, PreliminaryFit* prelimfit, TransformFunction* transform)
+{
+// Reset events so that they may be predicted again.
+    Int_t failed = 0;
+
+    std::cout << "Resetting events ... " << std::endl;
+    // Invert the trueValue transformation back to the original input.
+    if(transform == 0) return;
+    for(unsigned int i=0; i<events.size(); i++)
+    {
+        Event* e = events[i];
+        transform->invertTransformation(e); 
+    }
+    
+    // If the forest was built using a preliminary fit and/or a transformation
+    // then apply these to the events so that the regression will work properly.
+    for(unsigned int i=0; i<events.size(); i++)
+    {
+        bool transformfailure = false;
+
+        Event* e = events[i];
+         
+        // Apply a preliminary fit.
+        if(prelimfit != 0) prelimfit->fit(e);
+        else e->predictedValue = 0;
+
+        // Transform the true and predicted values.
+        if(transform != 0) transformfailure = transform->transform(e); 
+
+        // The transformation failed for this event.
+        // Remove the problematic event from the training/testing set.
+        if(transformfailure)
+        {
+            failed++;
+            std::cout << "Event " << i << " has been removed from the collection." << std::endl;
+            events.erase(events.begin()+i);
+            delete e;
+            i--;
+        }
+        else e->data[0] = lf->target(e);
+    }
+}
+
+// ========================================================
+// ================ Preprocess  ===========================
+//=========================================================
+void preprocess(std::vector<Event*>& events, LossFunction* lf, PreliminaryFit* prelimfit, TransformFunction* transform)
+{
+    std::cout << "Preprocessing events ... " << std::endl;
+    Int_t failed = 0;
+
+    for(unsigned int i=0; i<events.size(); i++)
+    {
+        bool transformfailure = false;
+
+        Event* e = events[i];
+
+        if(prelimfit != 0) prelimfit->fit(e);
+        else e->predictedValue = 0;
+
+        if(transform != 0) transformfailure = transform->transform(e); 
+
+        // The transformation failed for this event.
+        // Don't include the problematic events in training/testing.
+        if(transformfailure)
+        {
+            failed++;
+            std::cout << "Event " << i << " has been removed from the collection." << std::endl;
+            events.erase(events.begin()+i);
+            delete e;
+            i--;
+        }
+        else e->data[0] = lf->target(e);
+    }
+
+    std::cout << "==== NUM FAILED TRANSFORMATIONS: " << failed << std::endl;
+}
+
+// ========================================================
+// ================ Postprocess  ==========================
+//=========================================================
+void postprocess(std::vector<Event*>& events, TransformFunction* transform)
+{
+    std::cout << "Postprocessing events ... " << std::endl;
+    if(transform == 0) return;
+
+    for(unsigned int i=0; i<events.size(); i++)
+    {
+        Event* e = events[i];
+        transform->invertTransformation(e); 
+    }
+}
+
+// ========================================================
 // ================ Load Events ===========================
 //=========================================================
 
-void readInTestingAndTrainingEvents(const char* inputfilename, Forest* forest, LossFunction* l, bool isLog)
+void readInTestingAndTrainingEvents(const char* inputfilename, std::vector<Event*>& trainingEvents, std::vector<Event*>& testingEvents)
 {
 // In this study we read the events from a column separated data file rather than an ntuple.
 
@@ -72,16 +170,14 @@ void readInTestingAndTrainingEvents(const char* inputfilename, Forest* forest, L
 
         // Put the correct info into our event data structure.
         Double_t trueValue = vx[0];
+        // We are going to use transformations for which this will cause issues.
         Event* e = new Event();
-        if(isLog && trueValue == 0 && linenumber<=167253) continue;
-        if(isLog) e->trueValue = log(trueValue);
-        else e->trueValue = trueValue;
+        e->trueValue = trueValue;
 
         e->predictedValue = 0;
         e->id = linenumber;
         e->data = vx;
-        if(isLog) e->data[0] = log(trueValue);
-        else e->data[0] = trueValue;
+        e->data[0] = trueValue;
 
         // Irrelevant to the current analysis.
         e->tmvaPt = -999;
@@ -99,37 +195,27 @@ void readInTestingAndTrainingEvents(const char* inputfilename, Forest* forest, L
     infile.close();
 
     // Store some for training.
-    std::vector<Event*> trainingEvents = std::vector<Event*>(v.begin(), v.end()-0.5*v.size());
+    trainingEvents = std::vector<Event*>(v.begin(), v.end()-0.5*v.size());
 
     // Store another portion for testing.
-    std::vector<Event*> testingEvents = std::vector<Event*>(v.end()-0.5*v.size(), v.end()-0.25*v.size());
-
-    // Put these into the forest.
-    forest->setTrainingEvents(trainingEvents);
-    forest->setTestEvents(testingEvents);
-
-    std::cout << "Total Instances Available: " <<  v.size() << std::endl;
-    std::cout << "Training Instances: " <<  trainingEvents.size() << std::endl;
-    std::cout << "Testing Instances: " <<  testingEvents.size() << std::endl;
-    std::cout << std::endl;
+    testingEvents = std::vector<Event*>(v.end()-0.5*v.size(), v.end()-0.25*v.size());
 }
 
 //////////////////////////////////////////////////////////////////////////
 // ______________________Save Test Results______________________________//
 //////////////////////////////////////////////////////////////////////////
 
-void saveTestEvents(const char* savefilename, Forest* forest, bool isLog)
+void saveTestEvents(const char* savefilename, std::vector<Event*>& testEvents)
 {
-// After using the forest to predict values for the test events, save the test events along with their predicted values into an ntuple.
+// After using the forest to predict values for the test events, save them along with their predicted values into an ntuple.
 
-    std::cout << std::endl << "## Saving the predictions on testEvents into " << savefilename << "..." << std::endl;
+    std::cout << "Saving testEvents into " << savefilename << "..." << std::endl;
 
     // Make a new root file.
     TFile* f = new TFile(savefilename, "RECREATE");
 
     // Make a new ntuple.
     TNtuple* n = new TNtuple("BDTresults", "BDTresults", "trueValue:predictedValue:x1:x2:x3:x4:x5:x6:x7:x8:x9:x10:x11:x12:x13:x14:x15:x16:x17:x18:x19"); 
-    std::vector<Event*> testEvents = forest->getTestEvents();
 
     // Add events to the ntuple.
     // Process the BDT Predictions.
@@ -138,12 +224,6 @@ void saveTestEvents(const char* savefilename, Forest* forest, bool isLog)
         Event* ev = testEvents[i];
         Float_t predictedValue = ev->predictedValue;
         Float_t trueValue = ev->trueValue;
-
-        if(isLog) predictedValue = exp(predictedValue);
-        if(isLog) trueValue = exp(trueValue);
-
-        if(isLog) predictedValue = exp(predictedValue);
-        if(isLog) trueValue = exp(trueValue);
 
         std::vector<Float_t> x(21,-999);
         x[0] = trueValue;
@@ -160,6 +240,5 @@ void saveTestEvents(const char* savefilename, Forest* forest, bool isLog)
     f->Close();
     //delete n;
     delete f;
-    std::cout << "## Done." << std::endl;
 }
 #endif

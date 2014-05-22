@@ -61,6 +61,11 @@ Forest::Forest(std::vector<Event*>& trainingEvents, std::vector<Event*>& testing
 
 Forest::~Forest()
 {
+// When the forest is destroyed it will delete the trees as well as the
+// events from the training and testing sets.
+// The user may want the events to remain after they destroy the forest
+// this should be changed in future upgrades.
+
     for(unsigned int i=0; i < trees.size(); i++)
     { 
         delete trees[i];
@@ -82,7 +87,8 @@ Forest::~Forest()
 
 void Forest::setTrainingEvents(std::vector<Event*>& trainingEvents)
 {
-    // Store the training events into the class. 
+// tell the forest which events to use for training
+
     Event* e = trainingEvents[0];
     
     events = std::vector< std::vector<Event*> >(20, std::vector<Event*>(10));
@@ -99,6 +105,7 @@ void Forest::setTrainingEvents(std::vector<Event*>& trainingEvents)
 
 void Forest::setTestEvents(std::vector<Event*>& testingEvents)
 {   
+// tell the forest which events to use for testing
     testEvents = testingEvents; 
 }
 
@@ -106,34 +113,31 @@ void Forest::setTestEvents(std::vector<Event*>& testingEvents)
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
+// return a copy of the training events
 std::vector<Event*> Forest::getTrainingEvents(){ return events[0]; }
 
 //////////////////////////////////////////////////////////////////////////
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
+// return a copy of the testEvents
 std::vector<Event*> Forest::getTestEvents(){ return testEvents; }
 
 //////////////////////////////////////////////////////////////////////////
 // ______________________Various_Helpful_Functions______________________//
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::resetTestEventPredictions()
-{
-    for(unsigned int i=0; i<testEvents.size(); i++)
-    {
-        testEvents[i]->resetPredictedValue();
-    }
-}
-
-//////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------
-//////////////////////////////////////////////////////////////////////////
-
 unsigned int Forest::size()
 {
+// Return the number of trees in the forest.
     return trees.size();
 }
+
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+//*** Need to make a data structure that includes the next few functions ***
+//*** pertaining to events. These don't really have much to do with the  ***
+//*** forest class.                                                      ***
+//!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 //////////////////////////////////////////////////////////////////////////
 // ----------------------------------------------------------------------
@@ -304,6 +308,9 @@ void Forest::rankVariables()
 // in determining the fit. Use a low learning rate for better results.
 // Separates completely useless variables from useful ones well,
 // but isn't the best at separating variables of similar importance. 
+// This is calculated using the error reduction on the training set. The function
+// should be changed to use the testing set, but this works fine for now.
+// I will try to change this in the future.
 
     // Initialize the vector v, which will store the total error reduction
     // for each variable i in v[i].
@@ -418,35 +425,6 @@ void Forest::updateTestEvents(Tree* tree)
     }   
 }
 
-/////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------
-/////////////////////////////////////////////////////////////////////////
-
-void Forest::updateUnknownEvents(Tree* tree)
-{
-// Prepare the unknown events for the next tree.
-
-    // Get the list of terminal nodes for this tree.
-    std::list<Node*>& tn = tree->getTerminalNodes();
-
-    // Loop through the terminal nodes.
-    for(std::list<Node*>::iterator it=tn.begin(); it!=tn.end(); it++)
-    {   
-        std::vector<Event*>& v = (*it)->getEvents()[0];
-        Double_t fit = (*it)->getFitValue();
-
-        // Loop through each event in the terminal region and update the
-        // the global event it maps to.
-        for(unsigned int j=0; j<v.size(); j++)
-        {   
-            Event* e = v[j];
-            e->predictedValue += fit;
-        }   
-
-        // Release memory.
-        (*it)->getEvents() = std::vector< std::vector<Event*> >();
-    }   
-}
 //////////////////////////////////////////////////////////////////////////
 // ____________________Do/Test_the Regression___________________________//
 //////////////////////////////////////////////////////////////////////////
@@ -457,8 +435,12 @@ void Forest::doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRat
 
     std::cout << std::endl << "--Building Forest..." << std::endl << std::endl;
 
-    // Keeping copies of the events sorted according to each variable
-    // saves us a lot of computation time.
+    // The trees work with a matrix of events where the rows have the same set of events. Each row however
+    // is sorted according to the feature variable given by event->data[row].
+    // If we only had one set of events we would have to sort it according to the
+    // feature variable every time we want to calculate the best split point for that feature.
+    // By keeping sorted copies we avoid the sorting operation during splint point calculation
+    // and save computation time. If we do not sort each of the rows the regression will fail.
     sortEventVectors(events);
 
     // See how long the regression takes.
@@ -512,18 +494,14 @@ void Forest::doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRat
 
 void Forest::predictTestEvents(Int_t numtrees)
 {
-// After building a forest, test on a separate data set to see how well the prediction
-// works. This function returns the resolution, which quantifies the error. It also 
-// produces resolution plots.
+// Predict values for the testEvents by running them through the forest.
 
-    std::cout << std::endl << "## Using " << numtrees << " trees from the forest to predict testEvents ... " << std::endl;
+    std::cout << "Using " << numtrees << " trees from the forest to predict testEvents ... " << std::endl;
     if(numtrees > trees.size())
     {
         std::cout << std::endl << "!! Input greater than the forest size. Using forest.size() = " << trees.size() << " to predict instead." << std::endl;
         numtrees = trees.size();
     }
-
-    resetTestEventPredictions();
 
     // i iterates through the trees in the forest. Each tree adds more complexity to the fit.
     for(unsigned int i=0; i < numtrees; i++) 
@@ -534,10 +512,6 @@ void Forest::predictTestEvents(Int_t numtrees)
         // Update the test events with their new prediction.
         updateTestEvents(tree);
     }   
-
-    // We want to return the minimum resolution so that we can analyze the
-    // success of the BDT system with different settings.
-    std::cout << "## Done." << std::endl << std::endl;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -673,7 +647,7 @@ void Forest::doStochasticRegression(Int_t nodeLimit, Int_t treeLimit, Double_t l
     std::cout << std::endl << "Total calculation time: " << timer.RealTime() << std::endl;
 }
 //////////////////////////////////////////////////////////////////////////
-// ______________________Generate/Read_In_Events________________________//
+// ______________________Generate_Events________________________________//
 //////////////////////////////////////////////////////////////////////////
 
 void Forest::generate(Int_t n, Int_t m, Double_t sigma)
@@ -779,470 +753,4 @@ void Forest::generate(Int_t n, Int_t m, Double_t sigma)
 
     trainData.close();
     testData.close();
-}
-
-//////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------
-//////////////////////////////////////////////////////////////////////////
-
-void Forest::readInTestingAndTrainingEvents(const char* inputfilename, LossFunction* l)
-{
-// Read in the events for training and testing from an NTuple.
-
-    TFile* f = new TFile(inputfilename);
-
-    TTree* t = (TTree*)f->Get("theNtuple_DT");
-
-    Float_t SimPt, DTeta, Mode, event, tmvaPt, tmvaPt1, DTPt, NDTtracks;
-    Float_t dPhi12, dPhi14, dPhi13, dPhi24, dPhi23, dPhi34;
-    Float_t Phib1, Phib2, Phib3, Phib4; 
-
-    // =========================================================
-    // Load training and testing events from the same ntuple, t.
-    // =========================================================
-
-    // Tells us which stations had hits.
-    t->SetBranchAddress("Mode", &Mode);
-
-    // Target variable.
-    t->SetBranchAddress("SimPt", &SimPt);
-
-    // Predictions from other systems
-    t->SetBranchAddress("tmvaPt", &tmvaPt);
-    t->SetBranchAddress("tmvaPt1", &tmvaPt1);
-    t->SetBranchAddress("DTPt", &DTPt);
-
-    // Determining Variables.
-    t->SetBranchAddress("dPhi12", &dPhi12);
-    t->SetBranchAddress("dPhi14", &dPhi14);
-    t->SetBranchAddress("dPhi13", &dPhi13);
-    t->SetBranchAddress("dPhi24", &dPhi24);
-    t->SetBranchAddress("dPhi23", &dPhi23);
-    t->SetBranchAddress("dPhi34", &dPhi34);
-
-    t->SetBranchAddress("Phib1", &Phib1);
-    t->SetBranchAddress("Phib2", &Phib2);
-    t->SetBranchAddress("Phib3", &Phib3);
-    t->SetBranchAddress("Phib4", &Phib4);
-
-    t->SetBranchAddress("DTeta", &DTeta);
-
-    // Some other stuff.
-    t->SetBranchAddress("Event", &event);
-    t->SetBranchAddress("NDTtracks", &NDTtracks);
-
-    // Total number of events.
-    unsigned int nentries_t = t->GetEntries();
-
-    // Store events we are interested in.
-    std::vector<Event*> v;
-
-    // This is commented out since we already determined the event number during preprocessing.
-    //t->GetEntry(0);
-    //Int_t eventNumber = 0;
-    //Int_t nextEventTrack = NDTtracks;
-
-    for(unsigned int i=0; i<nentries_t; i++)
-    {
-        t->GetEntry(i);
-      
-        // Commented out due to preprocessing. 
-        //if(i == nextEventTrack)
-        //{
-        //    eventNumber++;
-        //    nextEventTrack = i+NDTtracks;
-        //}
-
-        std::vector<Double_t> x(6);
-        Double_t dPhiAB = -999;
-        Double_t PhibA = -999;
-        Double_t PhibB = -999;
-        Int_t Quality = -1; 
-
-        // We provide the BDT system with an initial prediction in hopes of
-        // minimizing the number of trees and nodes needed.
-        Double_t prelimFit = 0;
-
-        // The mode tells us which stations had hits and therefore determines
-        // the phi variables to use.
-        if((int)Mode == 0x3)
-        {
-            prelimFit = 0.001585*TMath::Abs(dPhi12) - 0.000002272*dPhi12*dPhi12;
-            dPhiAB = (Double_t) dPhi12;
-            PhibA = (Double_t) Phib1;
-            PhibB = (Double_t) Phib2;
-            Quality = 3;
-        }
-
-        else if((int)Mode == 0x9)
-        {
-            prelimFit = 0.0007276*TMath::Abs(dPhi14) - 0.0000005725*dPhi14*dPhi14;
-            dPhiAB = (Double_t) dPhi14;
-            PhibA = (Double_t) Phib1;
-            PhibB = (Double_t) Phib4;
-            Quality = 3;
-        }
-
-        else if((int)Mode == 0x5)
-        {
-            prelimFit = 0.0007155*TMath::Abs(dPhi13);
-            dPhiAB = (Double_t) dPhi13;
-            PhibA = (Double_t) Phib1;
-            PhibB = (Double_t) Phib3;
-            Quality = 3;
-        }
-
-        else if((int)Mode == 0xa)
-        {
-            prelimFit = 0.0013340*TMath::Abs(dPhi24);
-            dPhiAB = (Double_t) dPhi24;
-            PhibA = (Double_t) Phib2;
-            PhibB = (Double_t) Phib4;
-            Quality = 2;
-        }
-
-        else if((int)Mode == 0x6)
-        {
-            prelimFit = 0.0018820*TMath::Abs(dPhi23);
-            dPhiAB = (Double_t) dPhi23;
-            PhibA = (Double_t) Phib2;
-            PhibB = (Double_t) Phib3;
-            Quality = 2;
-        }
-
-        else if((int)Mode == 0xc)
-        {
-            prelimFit = 0.0040690*TMath::Abs(dPhi34);
-            dPhiAB = (Double_t) dPhi34;
-            PhibA = (Double_t) Phib3;
-            PhibB = (Double_t) Phib4;
-            Quality = 1;
-        }
-
-        else 
-        {
-            prelimFit = 0;         
-            dPhiAB = -999;
-            PhibA = -999;
-            PhibB = -999;
-            Quality = -1;
-        }
-
-        Event* e = new Event();
-        e->trueValue = (Double_t) 1/SimPt;
-        e->predictedValue = prelimFit;
-        e->id = event;
-        e->Mode = Mode;
-        e->Quality = Quality;
-
-        x[1] = dPhiAB;
-        x[2] = PhibA;
-        x[3] = PhibB;
-        x[4] = DTeta; 
-        x[5] = prelimFit;
-
-        e->data = x;
-        e->data[0] = l->target(e);
-
-        e->tmvaPt = tmvaPt;
-        e->tmvaPt1 = tmvaPt1;
-        e->DTPt = DTPt;
-        v.push_back(e);
-        
-    }
-
-    // =========================================================
-    // Store training and testing events into permanent vectors. 
-    // =========================================================
-
-    // Randomize the order.
-    shuffle(v.begin(), v.end(), v.size());
- 
-    // Store some training events. 
-    events = std::vector< std::vector<Event*> >(6, std::vector<Event*>(10));
-
-    for(unsigned int i=0; i<events.size(); i++)
-    {
-        events[i] = std::vector<Event*>(v.begin(), v.end()-0.25*v.size());
-    }
-
-    // Store the rest for testing.
-    testEvents = std::vector<Event*>(v.end()-0.25*v.size(), v.end()); 
-
-    // We want the tracks sorted by ID for the rate plots.
-    std::sort(testEvents.begin(), testEvents.end(), compareEventsById);
-
-    // Output the number of events we are  using for training and testing.
-    std::cout << std::endl << "Num Training Tracks: " << events[0].size() << std::endl;
-    std::cout << "Num Testing Tracks: " << testEvents.size() << std::endl << std::endl;
-
-    delete t;
-    delete f;
-}
-
-//////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------
-//////////////////////////////////////////////////////////////////////////
-
-void Forest::loadUnknownEvents(const char* loadfile)
-{
-    // ========================================================
-    // Load the events with unknown true values from an ntuple.
-    // ========================================================
-
-    // Get the ntuple.
-    TFile* g = new TFile(loadfile);
-    TTree* u = (TTree*)g->Get("theNtuple_DT");
-
-    // Used to store the ntuple values into the appropriate variables.
-    Float_t SimPt, dPhi12, dPhi13, dPhi14, dPhi23, dPhi24, dPhi34, Phib1, Phib2, Phib3, Phib4, DTeta, Mode, event, DTPt, tmvaPt, tmvaPt1, DTwheel, NDTtracks;
-
-    // Tells us which stations had hits.
-    u->SetBranchAddress("Mode", &Mode);
-    u->SetBranchAddress("DTwheel", &DTwheel);
-
-    // The number of tracks.
-    u->SetBranchAddress("NDTtracks", &NDTtracks);
-
-    // The event id the track belongs to.
-    u->SetBranchAddress("Event", &event);
-
-    // The Pt predictions from the other systems.
-    u->SetBranchAddress("DTPt", &DTPt);
-    u->SetBranchAddress("tmvaPt", &tmvaPt);
-    u->SetBranchAddress("tmvaPt1", &tmvaPt1);
-
-    // Determining Variables.
-    u->SetBranchAddress("dPhi12", &dPhi12);
-    u->SetBranchAddress("dPhi14", &dPhi14);
-    u->SetBranchAddress("dPhi13", &dPhi13);
-    u->SetBranchAddress("dPhi24", &dPhi24);
-    u->SetBranchAddress("dPhi23", &dPhi23);
-    u->SetBranchAddress("dPhi34", &dPhi34);
-    u->SetBranchAddress("Phib1", &Phib1);
-    u->SetBranchAddress("Phib2", &Phib2);
-    u->SetBranchAddress("Phib3", &Phib3);
-    u->SetBranchAddress("Phib4", &Phib4);
-    u->SetBranchAddress("DTeta", &DTeta);
-
-    // Total number of events.
-    unsigned int nentries_u = u->GetEntries();
-
-    // Store events we are interested in.
-    // std::vector<Event*> w;
-
-    for(unsigned int i=0; i<nentries_u; i++)
-    {
-        u->GetEntry(i);
-
-        std::vector<Double_t> x(6);
-        Double_t dPhiAB = -999;
-        Double_t PhibA = -999;
-        Double_t PhibB = -999;
-        Int_t Quality = -1; 
-
-        // We provide the BDT system with an initial prediction in hopes of
-        // minimizing the number of trees and nodes needed.
-        Double_t prelimFit = 0;
-
-        if((int)Mode == 0x3)
-        {
-            prelimFit = 0.001585*TMath::Abs(dPhi12) - 0.000002272*dPhi12*dPhi12;
-            dPhiAB = (Double_t) dPhi12;
-            PhibA = (Double_t) Phib1;
-            PhibB = (Double_t) Phib2;
-            Quality = 3;
-        }
-
-        else if((int)Mode == 0x9)
-        {
-            prelimFit = 0.0007276*TMath::Abs(dPhi14) - 0.0000005725*dPhi14*dPhi14;
-            dPhiAB = (Double_t) dPhi14;
-            PhibA = (Double_t) Phib1;
-            PhibB = (Double_t) Phib4;
-            Quality = 3;
-        }
-
-        else if((int)Mode == 0x5)
-        {
-            prelimFit = 0.0007155*TMath::Abs(dPhi13);
-            dPhiAB = (Double_t) dPhi13;
-            PhibA = (Double_t) Phib1;
-            PhibB = (Double_t) Phib3;
-            Quality = 3;
-        }
-
-        else if((int)Mode == 0xa)
-        {
-            prelimFit = 0.0013340*TMath::Abs(dPhi24);
-            dPhiAB = (Double_t) dPhi24;
-            PhibA = (Double_t) Phib2;
-            PhibB = (Double_t) Phib4;
-            Quality = 2;
-        }
-
-        else if((int)Mode == 0x6)
-        {
-            prelimFit = 0.0018820*TMath::Abs(dPhi23);
-            dPhiAB = (Double_t) dPhi23;
-            PhibA = (Double_t) Phib2;
-            PhibB = (Double_t) Phib3;
-            Quality = 2;
-        }
-
-        else if((int)Mode == 0xc)
-        {
-            prelimFit = 0.0040690*TMath::Abs(dPhi34);
-            dPhiAB = (Double_t) dPhi34;
-            PhibA = (Double_t) Phib3;
-            PhibB = (Double_t) Phib4;
-            Quality = 1;
-        }
-
-        else 
-        {
-            prelimFit = 0;         
-            dPhiAB = -999;
-            PhibA = -999;
-            PhibB = -999;
-            Quality = -1;
-        }
-
-        Event* e = new Event();
-        e->trueValue = -999;
-        e->predictedValue = prelimFit;
-        e->id = event;
-        e->Mode = Mode;
-        e->Quality = Quality;
-
-        x[1] = dPhiAB;
-        x[2] = PhibA;
-        x[3] = PhibB;
-        x[4] = DTeta; 
-        x[5] = prelimFit;
-
-        e->data = x;
-        e->data[0] = prelimFit;
-
-        e->tmvaPt = tmvaPt;
-        e->tmvaPt1 = tmvaPt1;
-        e->DTPt = DTPt;
-        unknownEvents.push_back(e);
-        
-    }
-
-    std::cout << "Done loading." << std::endl;
-
-    // Clean up.
-    delete u;
-    delete g;
-}    
-
-
-//////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------
-//////////////////////////////////////////////////////////////////////////
-
-void Forest::saveUnknownEvents(const char* savefile)
-{
-// This function will take events that have already been predicted by predictUnknownEvents 
-// and save them to a root file. It also produces Rate plots for these events.
-
-    // =====================================
-    // Save the predictions into an ntuple.
-    // =====================================
-
-    // We want the tracks sorted by ID.
-    std::sort(unknownEvents.begin(), unknownEvents.end(), compareEventsById);
-
-    // Make a new root file.
-    TFile* f = new TFile(savefile, "RECREATE");
-
-    // Make a new ntuple.
-    TNtuple* n = new TNtuple("BDTresults", "BDTresults", "truePt:BDTPt:BDTPt1:Event:Mode:Quality:dPhiAB:PhibA:PhibB:DTeta:PrelimFit:DTPt:tmvaPt:tmvaPt1"); 
-
-    // Add an event to the ntuple.
-    for(unsigned int i=0; i<unknownEvents.size(); i++)
-    {
-        Event* ev = unknownEvents[i];
-        float BDTPt = 1/ev->predictedValue;
-        float PrelimFit = ev->data[5];
-
-        // Fix terrible predictions
-        if(BDTPt < 0) BDTPt = PrelimFit;
-        if(BDTPt > 250) BDTPt = PrelimFit;
-
-        float BDTPt1 = processPrediction(BDTPt, (int) ev->Quality, ev->data[5]);
-
-        n->Fill(-999, BDTPt, BDTPt1, ev->id, ev->Mode, ev->Quality, ev->data[1], ev->data[2], ev->data[3], ev->data[4], ev->data[5], ev->DTPt, ev->tmvaPt, ev->tmvaPt1);
-    }
-
-    // Save.
-    f->Write();
-    delete n;
-    delete f;
-}
-
-//////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------
-//////////////////////////////////////////////////////////////////////////
-
-void Forest::predictUnknownEvents()
-{ 
-// This function predicts values for events with unknown true values.
-
-    std::cout << "Number of Tracks in Ntuple = " << unknownEvents.size() << std::endl;
-
-    // ======================================= 
-    // Predict the values for the unknown data.
-    // =======================================
-
-    // Run the events through all the trees in the forest updating the prediction after each tree.
-    for(unsigned int i=0; i < trees.size(); i++) 
-    {   
-        Tree* tree = trees[i];
-        tree->filterEvents(unknownEvents); 
-
-        // Update the events with their new prediction.
-        updateUnknownEvents(tree);
-    }   
-
-}
-
-//////////////////////////////////////////////////////////////////////////
-// ______________________Save Test Results______________________________//
-//////////////////////////////////////////////////////////////////////////
-
-void Forest::saveTestEvents(const char* savefilename)
-{
-// After using the forest to predict values for the test events, save the test events along with their predicted values into an ntuple.
-
-
-    // Make a new root file.
-    TFile* f = new TFile(savefilename, "RECREATE");
-
-    // Make a new ntuple.
-    TNtuple* n = new TNtuple("BDTresults", "BDTresults", "truePt:BDTPt:BDTPt1:Event:Mode:Quality:dPhiAB:PhibA:PhibB:DTeta:PrelimFit:DTPt:tmvaPt:tmvaPt1"); 
-
-    // Add events to the ntuple.
-    // Scale and discretize the BDT Predictions.
-    for(unsigned int i=0; i<testEvents.size(); i++)
-    {
-        Event* ev = testEvents[i];
-        float BDTPt = 1/ev->predictedValue;
-        float PrelimFit = ev->data[5];
-
-        // Fix terrible predictions
-        if(BDTPt < 0) BDTPt = PrelimFit;
-        if(BDTPt > 250) BDTPt = PrelimFit;
-
-        float BDTPt1 = processPrediction(BDTPt, (int) ev->Quality, ev->data[5]);
-
-        n->Fill(1/ev->trueValue, BDTPt, BDTPt1, ev->id, ev->Mode, ev->Quality, ev->data[1], ev->data[2], ev->data[3], ev->data[4], ev->data[5], ev->DTPt, ev->tmvaPt, ev->tmvaPt1);
-    }
-
-    // Save.
-    f->Write();
-    delete n;
-    delete f;
 }

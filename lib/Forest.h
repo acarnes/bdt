@@ -21,21 +21,11 @@ class Forest
         std::vector<Event*> getTrainingEvents();
         std::vector<Event*> getTestEvents();
 
-        // Info
+        // Returns the number of trees in the forest.
         unsigned int size();
 
-
-        // ------------------------------------------------------------------------------------------------
-        // To Be Separated Out
-        // ------------------------------------------------------------------------------------------------
-        void readInTestingAndTrainingEvents(const char* inputfilename, LossFunction* l);
-        void saveTestEvents(const char* savefilename);
-        void loadUnknownEvents(const char* loadfile);
-        void saveUnknownEvents(const char* savefilename);
-        // ------------------------------------------------------------------------------------------------
-        //
-        // ------------------------------------------------------------------------------------------------
-
+        // Get info on variable importance.
+        void rankVariables();
 
         // Helpful operations
         void listEvents(std::vector< std::vector<Event*> >& e);
@@ -44,20 +34,19 @@ class Forest
         void loadForestFromXML(const char* directory, int numTrees); 
 
         // Perform the regression
-        void doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRate, LossFunction* l, const char* savetreesdirectory, bool saveTrees, bool trackError, bool isTwoJets);
         void updateRegTargets(Tree *tree, Double_t learningRate, LossFunction* l);
-        void doStochasticRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRate, Double_t fraction, LossFunction* l);
+        void doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRate, LossFunction* l, 
+                          const char* savetreesdirectory, bool saveTrees, bool trackError, bool isTwoJets);
+
+        // Stochastic Gradient Boosting
         void prepareRandomSubsample(Double_t fraction);
+        void doStochasticRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRate, 
+                                    Double_t fraction, LossFunction* l);
 
-        // Get info on variable importance.
-        void rankVariables();
 
-        // Predict testEvents/unknownEvents
-        void resetTestEventPredictions();
-        void predictTestEvents(Int_t trees);
-        void predictUnknownEvents();
+        // Predict testEvents
         void updateTestEvents(Tree* tree);
-        void updateUnknownEvents(Tree* tree);
+        void predictTestEvents(Int_t trees);
 
         // Calculate different types of error for a set of events(e.g. testEvents, unknownEvents, trainingEvents).
         Double_t returnRMS(std::vector<Event*>& v);

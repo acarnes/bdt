@@ -1,3 +1,4 @@
+//////////////////////////////////////////////////////////////////////////
 //                            FindBestParameters.cxx                    //
 // =====================================================================//
 //                                                                      //
@@ -11,6 +12,7 @@
 ///////////////////////////////////////////////////////////////////////////
 
 #include "Forest.h"
+#include "Functions.h"
 #include "Utilities.h"
 #include "LoadSaveEvents.h"
 
@@ -35,7 +37,7 @@
 // ______________________Run Program____________________________________//
 /////////////////////////////////////////////////////////////////////////
 
-void buildAndEvaluateForest(Forest* forest, Int_t nodes, Int_t trees, Double_t lr, bool isLog, TNtuple* rms, TNtuple* abs)
+void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction* lf, PreliminaryFit* prelimfit, TransformFunction* transform, TNtuple* rms, TNtuple* abs) 
 {
 // Build a forest with certain parameters then evaluate its success.
 
@@ -43,16 +45,27 @@ void buildAndEvaluateForest(Forest* forest, Int_t nodes, Int_t trees, Double_t l
     bool isTwoJets = true;
     bool saveTrees = false;
 
-    LeastSquares* lf = new LeastSquares();
+    // Read In events.
+    std::vector<Event*> trainingEvents;
+    std::vector<Event*> testingEvents;
+    readInTestingAndTrainingEvents("/home/andrew/projects/bdt/studies/jamie/2jets_loose/2jets_loose.dat", trainingEvents, testingEvents);
+
+    // Preprocess datasets.
+    preprocess(trainingEvents, lf, prelimfit, transform); 
+    preprocess(testingEvents, lf, prelimfit, transform); 
+
+    std::cout << std::endl << "Number of training events: " << trainingEvents.size() << std::endl;
+    std::cout << "Number of test events: " << testingEvents.size() << std::endl << std::endl;
+
+
+    // Build the forest.
+    Forest* forest = new Forest(trainingEvents, testingEvents);
    
     // Output the parameters of the current run. 
     std::cout << "Nodes: " << nodes << std::endl;
     std::cout << "Trees: " << trees << std::endl;
     std::cout << "Learning Rate: " << lr << std::endl;
     std::cout << "Loss Function: " << lf->name().c_str() << std::endl;
-
-    // Read in the training, testing data
-    readInTestingAndTrainingEvents("/home/andrew/projects/bdt/studies/jamie/2jets_loose/2jets_loose.dat", forest, lf, isLog);
 
     // Where to save our trees. 
     TString treesDirectory("/home/andrew/projects/bdt/studies/jamie/2jets_loose/ntuples/trees");
@@ -75,37 +88,39 @@ void buildAndEvaluateForest(Forest* forest, Int_t nodes, Int_t trees, Double_t l
         Double_t abs_error = testResolution[tree];
         Double_t rms_error = testRMS[tree];
 
-        abs->Fill(abs_error, nodes, tree+1, lr, (float) isLog);
-        rms->Fill(rms_error, nodes, tree+1, lr, (float) isLog);
+        abs->Fill(abs_error, nodes, tree+1, lr);
+        rms->Fill(rms_error, nodes, tree+1, lr);
     }
 
     // The directory to store the test results.
     TString directory("/home/andrew/projects/bdt/studies/jamie/2jets_loose/ntuples/testresults/");
-    // Append this if we use a log transformation of the trueValue.
-    TString log("LOG_");
+
+    // Append these if we use a transformation/preliminaryFit.
+    TString transformationString;
+    TString preliminaryFitString;
+    if(prelimfit != 0) preliminaryFitString = prelimfit->name();
+    if(transform != 0) transformationString = transform->name();
+
     // Predict the test set using a certain number of trees from the forest and save the results each time.
-    for(Double_t useNtrees=1; useNtrees<=forest->size(); useNtrees+=(forest->size()-1)/4.0)
+    for(Double_t useNtrees=1; (unsigned int) useNtrees<=forest->size(); useNtrees+=(forest->size()-1)/10.0)
     {
         // Where to save the ntuple with the test results.
         TString savefile(numToStr<Int_t>(nodes)+"_"+numToStr<Int_t>((Int_t)useNtrees)+"_"+numToStr<Double_t>(lr)+".root");
         TString testEventsFileName;
-        if(isLog) testEventsFileName = directory+log+savefile;
-        else testEventsFileName = directory+savefile;
+        if(prelimfit!=0) testEventsFileName = preliminaryFitString+"_";
+        if(transformationString!=0) testEventsFileName+=transformationString+"_";
+        testEventsFileName = directory+testEventsFileName+savefile;
 
         // Save the regression's predictions of the test set.
+        resetEvents(testingEvents, lf, prelimfit, transform);
         forest->predictTestEvents((unsigned int) useNtrees);
-        saveTestEvents(testEventsFileName, forest, isLog);
+        postprocess(testingEvents, transform);
+        saveTestEvents(testEventsFileName, testingEvents);
+        std::cout << "-----" << std::endl;
     }
-}
 
-void determineBestParameters(TNtuple* abs, TNtuple* rms, Int_t nodes, Int_t trees, Double_t lr, bool isLog)
-{
-    // Build the forest.
-    Forest* forest = new Forest();
-    buildAndEvaluateForest(forest,nodes,trees,lr,isLog,rms,abs);
     delete forest;
 }
-
 
 //////////////////////////////////////////////////////////////////////////
 // ______________________Main___________________________________________//
@@ -114,8 +129,6 @@ void determineBestParameters(TNtuple* abs, TNtuple* rms, Int_t nodes, Int_t tree
 int main(int argc, char* argv[])
 {
 // Save the error vs parameters for a forest with parameters given by the command line input.
-
-    bool isLog = false;
 
     // Assuming "./FindBestParameters nodes trees lr" as input from the terminal.
     Int_t nodes;
@@ -130,17 +143,25 @@ int main(int argc, char* argv[])
         if(i==2) ss >> trees; 
         if(i==3) ss >> lr; 
     }
+    //Loss Function
+    LeastSquares* lf = new LeastSquares();
+
+    // Preprocessing
+    PreliminaryFit* prelimfit = 0;
+    // TransformFunction* transform = 0;
+    Log* transform = new Log();
 
     // The ntuples in which we will save the error vs learning parameters info.
-    TNtuple* abs = new TNtuple("abs_percent_error", "abs_percent_error", "error:nodes:trees:lr:islog"); 
-    TNtuple* rms = new TNtuple("rms_error", "rms_error", "error:nodes:trees:lr:log"); 
+    TNtuple* abs = new TNtuple("abs_percent_error", "abs_percent_error", "error:nodes:trees:lr"); 
+    TNtuple* rms = new TNtuple("rms_error", "rms_error", "error:nodes:trees:lr"); 
 
-    determineBestParameters(abs, rms, nodes, trees, lr, isLog);
+    buildAndEvaluateForest(nodes, trees, lr, lf, prelimfit, transform, abs, rms);
 
     // Save.
     std::stringstream savetuplesto;
     savetuplesto << "/home/andrew/projects/bdt/studies/jamie/2jets_loose/ntuples/evaluation/parameter_evaluation_" << nodes << "_" << trees << "_" << lr; 
-    if(isLog) savetuplesto << "_LOG";
+    if(transform!=0) savetuplesto << transform->name() << "_";
+    if(prelimfit!=0) savetuplesto << prelimfit->name();
     savetuplesto << ".root";
 
     TFile* tuplefile = new TFile(savetuplesto.str().c_str(), "RECREATE");
