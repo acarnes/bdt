@@ -21,49 +21,15 @@
 #include <algorithm>
 
 // ========================================================
-// ================ Reset  ================================
+// ================ debug  ================================
 //=========================================================
 
-void resetEvents(std::vector<Event*>& events, LossFunction* lf, PreliminaryFit* prelimfit, TransformFunction* transform)
+void listEvents(std::vector<Event*>& events, unsigned int numtolist)
 {
-// Reset events so that they may be predicted again.
-    Int_t failed = 0;
-
-    std::cout << "Resetting events ... " << std::endl;
-    // Invert the trueValue transformation back to the original input.
-    if(transform == 0) return;
-    for(unsigned int i=0; i<events.size(); i++)
+    for(unsigned int i=0; i<numtolist; i++)
     {
         Event* e = events[i];
-        transform->invertTransformation(e); 
-    }
-    
-    // If the forest was built using a preliminary fit and/or a transformation
-    // then apply these to the events so that the regression will work properly.
-    for(unsigned int i=0; i<events.size(); i++)
-    {
-        bool transformfailure = false;
-
-        Event* e = events[i];
-         
-        // Apply a preliminary fit.
-        if(prelimfit != 0) prelimfit->fit(e);
-        else e->predictedValue = 0;
-
-        // Transform the true and predicted values.
-        if(transform != 0) transformfailure = transform->transform(e); 
-
-        // The transformation failed for this event.
-        // Remove the problematic event from the training/testing set.
-        if(transformfailure)
-        {
-            failed++;
-            std::cout << "Event " << i << " has been removed from the collection." << std::endl;
-            events.erase(events.begin()+i);
-            delete e;
-            i--;
-        }
-        else e->data[0] = lf->target(e);
+        e->outputEvent();
     }
 }
 
@@ -81,9 +47,11 @@ void preprocess(std::vector<Event*>& events, LossFunction* lf, PreliminaryFit* p
 
         Event* e = events[i];
 
+        // Apply preliminary fit.
         if(prelimfit != 0) prelimfit->fit(e);
         else e->predictedValue = 0;
 
+        // Apply transform to true and predicted values.
         if(transform != 0) transformfailure = transform->transform(e); 
 
         // The transformation failed for this event.
@@ -99,15 +67,16 @@ void preprocess(std::vector<Event*>& events, LossFunction* lf, PreliminaryFit* p
         else e->data[0] = lf->target(e);
     }
 
-    std::cout << "==== NUM FAILED TRANSFORMATIONS: " << failed << std::endl;
+    if(failed > 0)
+        std::cout << "==== NUM FAILED TRANSFORMATIONS: " << failed << std::endl;
 }
 
 // ========================================================
 // ================ Postprocess  ==========================
 //=========================================================
-void postprocess(std::vector<Event*>& events, TransformFunction* transform)
+void invertTransform(std::vector<Event*>& events, TransformFunction* transform)
 {
-    std::cout << "Postprocessing events ... " << std::endl;
+    std::cout << "Untransforming events ... " << std::endl;
     if(transform == 0) return;
 
     for(unsigned int i=0; i<events.size(); i++)

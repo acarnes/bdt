@@ -4,7 +4,7 @@
 CC = g++
 
 LIBFLAGS = `root-config --libs` -lXMLIO -lMLP -lMinuit
-LIBDIR = /home/andrew/projects/bdt/lib/
+LIBDIR = ../../../../lib/
 CFLAGS = -I${LIBDIR} -c `root-config --cflags`
 DEPS = LoadSaveEvents.h Functions.h
 

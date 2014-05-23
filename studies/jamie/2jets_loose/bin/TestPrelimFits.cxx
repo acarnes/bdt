@@ -51,7 +51,7 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
     // Read In events.
     std::vector<Event*> trainingEvents;
     std::vector<Event*> testingEvents;
-    readInTestingAndTrainingEvents("/home/andrew/projects/bdt/studies/jamie/2jets_loose/2jets_loose.dat", trainingEvents, testingEvents);
+    readInTestingAndTrainingEvents("../2jets_loose.dat", trainingEvents, testingEvents);
 
     // Preprocess datasets.
     preprocess(trainingEvents, lf, prelimfit, transform); 
@@ -77,7 +77,7 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
     std::cout << "=======================================" << std::endl;
 
     // Where to save our trees. 
-    TString treesDirectory("/home/andrew/projects/bdt/studies/jamie/2jets_loose/ntuples/trees");
+    TString treesDirectory("../trees");
 
     // Do the regression and save the trees.
     forest->doRegression(nodes, trees, lr, lf, treesDirectory, saveTrees, trackError, isTwoJets);
@@ -102,14 +102,18 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
     }
 
     // The directory to store the test results.
-    std::stringstream testDir("/home/andrew/projects/bdt/studies/jamie/2jets_loose/ntuples/testresults/");
+    std::stringstream testDir("../ntuples/testresults/");
+
+    // Undo the transformation, so that we may properly reset the events for prediction.
+    // During preprocessing the preliminary fit assumes untransformed values.
+    invertTransform(testingEvents, transform);
 
     // Predict the test set using a certain number of trees from the forest and save the results each time.
     for(Double_t useNtrees=1; (unsigned int) useNtrees<=forest->size(); useNtrees+=(forest->size()-1)/10.0)
     {
 
         std::stringstream saveTestName;
-        saveTestName << nodes << "_" << trees << "_" << lr; 
+        saveTestName << nodes << "_" << (int) useNtrees << "_" << lr; 
     
         std::stringstream savetestto;
         savetestto << testDir.str().c_str();
@@ -119,17 +123,20 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
     
         savetestto << saveTestName.str().c_str() << ".root";
 
-        // Save the regression's predictions of the test set.
-        resetEvents(testingEvents, lf, prelimfit, transform);
+        // Predict then save the test set.
+        // First process the events so that they may be predicted correctly.
+        preprocess(testingEvents, lf, prelimfit, transform);
+        // Predict the events.
         forest->predictTestEvents((unsigned int) useNtrees);
-        postprocess(testingEvents, transform);
+        // Save the trueValue and predictedValue not the transformed versions. 
+        invertTransform(testingEvents, transform);
         saveTestEvents(savetestto.str().c_str(), testingEvents);
         std::cout << "-----" << std::endl;
     }
 
     // Save.
     std::stringstream ntupleDir;
-    ntupleDir << "/home/andrew/projects/bdt/studies/jamie/2jets_loose/ntuples/evaluation/";
+    ntupleDir << "../ntuples/evaluation/";
 
     std::stringstream saveNtuplename;
     saveNtuplename << "parameter_evaluation_" << nodes << "_" << trees << "_" << lr; 
@@ -163,8 +170,8 @@ int main(int argc, char* argv[])
 // Test out the effectiveness of some Preliminary Fits.
 
     // Nodes, trees, lr, loss function are the same for each test.
-    Int_t nodes = 2;
-    Int_t trees = 10;
+    Int_t nodes = 100;
+    Int_t trees = 2000;
     Double_t lr = 0.1; 
     LeastSquares* lf = new LeastSquares();
 
