@@ -36,37 +36,23 @@ class Forest
         // Perform the regression
         void updateRegTargets(Tree *tree, Double_t learningRate, LossFunction* l);
         void doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRate, LossFunction* l, 
-                          const char* savetreesdirectory, bool saveTrees, bool trackError, bool isTwoJets);
+                          const char* savetreesdirectory, bool saveTrees);
 
         // Stochastic Gradient Boosting
         void prepareRandomSubsample(Double_t fraction);
         void doStochasticRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRate, 
                                     Double_t fraction, LossFunction* l);
 
-
-        // Predict testEvents
-        void updateTestEvents(Tree* tree);
-        void predictTestEvents(Int_t trees);
-
-        // Calculate different types of error for a set of events(e.g. testEvents, unknownEvents, trainingEvents).
-        Double_t returnRMS(std::vector<Event*>& v);
-        Double_t returnResolution(std::vector<Event*>& v);
-        Double_t returnDiscretizedAbsResolution(std::vector<Event*>& v, std::vector<Double_t> bins);
-
-        // Keep track of different types of error as the tree is built.
-        std::vector<Double_t> trainResolution;
-        std::vector<Double_t> testResolution;
-        std::vector<Double_t> trainRMS;
-        std::vector<Double_t> testRMS;
+        // Predict some events
+        void updateEvents(Tree* tree);
+        void appendCorrection(std::vector<Event*> eventsp, Int_t treenum);
+        void predictEvents(std::vector<Event*> eventsp, Int_t trees);
 
     private:
 
         std::vector< std::vector<Event*> > events;
         std::vector< std::vector<Event*> > subSample;
-
         std::vector<Event*> testEvents;
-        std::vector<Event*> unknownEvents;
-        
         std::vector<Tree*> trees;
 };
 

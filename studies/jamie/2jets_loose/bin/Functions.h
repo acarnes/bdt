@@ -20,8 +20,57 @@
 //////////////////////////////////////////////////////////////////////////
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
+class RMS : public MetricOfSuccess
+{
+    public:
+        RMS(){}
+        ~RMS(){}
+        
+        Double_t calculate(std::vector<Event*> v)
+        {
+            Double_t squared_err;
+            for(unsigned int i=0; i<v.size(); i++)
+            {
+                Event* e = v[i];
+                Double_t tval = e->trueValue;
+                Double_t pval = e->predictedValue;
+                Double_t err = pval - tval;
+                squared_err += err*err;
+            }
+            return sqrt(squared_err/v.size());
+        }
+};
 
-class Resolution : public MetricOfSuccess
+//////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////
+
+class AbsError : public MetricOfSuccess
+{
+    public:
+        AbsError(){}
+        ~AbsError(){}
+        
+        Double_t calculate(std::vector<Event*> v)
+        {
+            Double_t abs_err;
+            for(unsigned int i=0; i<v.size(); i++)
+            {
+                Event* e = v[i];
+                Double_t tval = e->trueValue;
+                Double_t pval = e->predictedValue;
+                Double_t err = pval - tval;
+                abs_err += TMath::Abs(err);
+            }
+            return abs_err/v.size();
+        }
+};
+
+//////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////
+
+class AbsResolution : public MetricOfSuccess
 {
 // We define this metric of success to be 1/N SUM |true-predicted|/<true> = < |true-predicted|/<true> >
 // Which becoems SUM_over_intervals{ N_in_interval/N_total * 1/N_in_interval*SUM[ |true-predicted|/<true> ] }
@@ -29,9 +78,9 @@ class Resolution : public MetricOfSuccess
 // This is a measure of the average percent error.
 
     public:
-        Resolution(){}
-        Resolution(std::vector<Double_t> bins){ this->bins = bins; }
-        ~Resolution(){}
+        AbsResolution(){}
+        AbsResolution(std::vector<Double_t> bins){ this->bins = bins; }
+        ~AbsResolution(){}
  
         Double_t calculate(std::vector<Event*> v)
         {
@@ -84,10 +133,82 @@ class Resolution : public MetricOfSuccess
             return metric_of_success;
 
         }
+
         private:
             std::vector<Double_t> bins;
 };
 
+//////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////
+
+class RMSResolution : public MetricOfSuccess
+{
+// We define this metric of success to be 1/N SUM |true-predicted|/<true> = < |true-predicted|/<true> >
+// Which becoems SUM_over_intervals{ N_in_interval/N_total * 1/N_in_interval*SUM[ |true-predicted|/<true> ] }
+// Which reduces to SUM_over_intervals{ 1/N_total * 1/<true>*SUM_events_in_interval[ |true-predicted| ]}
+// This is a measure of the average percent error.
+
+    public:
+        RMSResolution(){}
+        RMSResolution(std::vector<Double_t> bins){ this->bins = bins; }
+        ~RMSResolution(){}
+ 
+        Double_t calculate(std::vector<Event*> v)
+        {
+            // The vector bins defines the intervals for the calculation.
+            // There are bins.size()-1 total intervals.
+            unsigned int nbins = bins.size()-1;
+        
+            // Keep track of the number, sum of true values, and sum of errors for each interval.
+            std::vector<Double_t> N(nbins,0);
+            std::vector<Double_t> sum_true(nbins,0);
+            std::vector<Double_t> sum_errors(nbins,0);
+        
+            for(unsigned int i=0; i<v.size(); i++)
+            {   
+                // Grab an entry.
+                Event* e = v[i];
+                Double_t tval = e->trueValue;
+                Double_t pval = e->predictedValue;
+
+                // Loop through the intervals to see which one the event belongs to.
+                for(unsigned int t=0; t<nbins; t++)
+                {   
+                    Double_t mint = bins[t];
+                    Double_t maxt = bins[t+1];
+        
+                    // The event belongs to the current interval.
+                    // Increment the number of events, the sum of true values,
+                    // and the sum of errors in the interval.
+                    if(tval >= mint && tval < maxt)
+                    {
+                        N[t]++;
+                        sum_true[t]+=tval;
+                        sum_errors[t]+=(pval-tval)*(pval-tval);
+                        break;
+                    }
+                }
+            }
+        
+            Double_t metric_of_success = 0;
+        
+            // Loop through the intervals.
+            for(unsigned int t=0; t<nbins; t++)
+            {
+                // Watch out for zero values.
+                Double_t interval_avg = (N[t]!=0)?sum_true[t]/N[t]:0;
+                if(N[t]!=0) metric_of_success += sum_errors[t]/interval_avg;
+            }
+        
+            metric_of_success = sqrt(metric_of_success/v.size());
+            return metric_of_success;
+
+        }
+
+        private:
+            std::vector<Double_t> bins;
+};
 //////////////////////////////////////////////////////////////////////////
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
@@ -119,6 +240,7 @@ class Log : public TransformFunction
             return false;
         }
         const char* name(){ return "LOG"; }
+        int id(){ return 1; }
 };
 
 class Inverse : public TransformFunction
@@ -156,6 +278,7 @@ class Inverse : public TransformFunction
             return flag;
         }
         const char* name(){ return "INVERSE"; }
+        int id(){ return 2; }
 };
 
 //////////////////////////////////////////////////////////////////////////

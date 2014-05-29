@@ -37,18 +37,16 @@
 // ______________________Run Program____________________________________//
 /////////////////////////////////////////////////////////////////////////
 
-void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction* lf, PreliminaryFit* prelimfit, TransformFunction* transform, TNtuple* rms, TNtuple* abs) 
+void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction* lf, PreliminaryFit* prelimfit, TransformFunction* transform) 
 {
 // Build a forest with certain parameters then evaluate its success.
 
-    bool trackError = true;
-    bool isTwoJets = true;
     bool saveTrees = false;
 
     // Read In events.
     std::vector<Event*> trainingEvents;
     std::vector<Event*> testingEvents;
-    readInTestingAndTrainingEvents("/home/andrew/projects/bdt/studies/jamie/2jets_loose/2jets_loose.dat", trainingEvents, testingEvents);
+    readInTestingAndTrainingEvents("../2jets_loose.dat", trainingEvents, testingEvents);
 
     // Preprocess datasets.
     preprocess(trainingEvents, lf, prelimfit, transform); 
@@ -56,7 +54,6 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
 
     std::cout << std::endl << "Number of training events: " << trainingEvents.size() << std::endl;
     std::cout << "Number of test events: " << testingEvents.size() << std::endl << std::endl;
-
 
     // Build the forest.
     Forest* forest = new Forest(trainingEvents, testingEvents);
@@ -75,63 +72,111 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
 
 
     // Where to save our trees. 
-    TString treesDirectory("/home/andrew/projects/bdt/studies/jamie/2jets_loose/ntuples/trees");
+    TString treesDirectory("../trees");
 
     // Do the regression and save the trees.
-    forest->doRegression(nodes, trees, lr, lf, treesDirectory, saveTrees, trackError, isTwoJets);
+    forest->doRegression(nodes, trees, lr, lf, treesDirectory, saveTrees);
     // Rank the variable importance and output it.
     forest->rankVariables();
 
-
-    // When trackError is true in doRegression we have vectors that track the net error
-    // for a given number of trees.
-    std::vector<Double_t>& testResolution = forest->testResolution;
-    std::vector<Double_t>& testRMS = forest->testRMS;
-
-
-    // Store the error for a given number of trees, nodes, and lr. 
-    for(unsigned int tree=0; tree<forest->size(); tree+=5)
-    {
-        Double_t abs_error = testResolution[tree];
-        Double_t rms_error = testRMS[tree];
-
-        abs->Fill(abs_error, nodes, tree+1, lr);
-        rms->Fill(rms_error, nodes, tree+1, lr);
-    }
-
     // The directory to store the test results.
-    std::stringstream testDir("/home/andrew/projects/bdt/studies/jamie/2jets_loose/ntuples/testresults/");
+    std::stringstream testDir("../ntuples/testresults/test/");
+    std::stringstream trainDir("../ntuples/trainresults/");
 
-    // Undo the transformation, so that we may properly reset the events for prediction.
+    // Use these to evaluate the success of the regression.
+    RMS* rms = new RMS();
+    AbsResolution* absres = new AbsResolution();
+
+    // The ntuples in which we will save the error vs learning parameters info.
+    TNtuple* errortuple = new TNtuple("error", "error", "rms:resolution:training_rms:training_resolution:nodes:trees:lr:transformation"); 
+
+    // Undo the transformation, so that we may properly process the events for prediction.
     // During preprocessing the preliminary fit assumes untransformed values.
-    invertTransform(testingEvents, transform);
+
+    //invertTransform(testingEvents, transform); // We did not predict the testingEvents. We don't need to process them again.
+    invertTransform(trainingEvents, transform);
+
+    // Process the events so that they may be predicted correctly.
+    //preprocess(testingEvents, lf, prelimfit, transform); // No need to do this.
+    preprocess(trainingEvents, lf, prelimfit, transform);
 
     // Predict the test set using a certain number of trees from the forest and save the results each time.
-    for(Double_t useNtrees=1; (unsigned int) useNtrees<=forest->size(); useNtrees+=(forest->size()-1)/10.0)
+    for(unsigned int t=0; t<forest->size(); t++)
     {
+        // Keep track of the training/testing error.
+        Double_t rms_error = -999;
+        Double_t absres_error = -999;
+        Double_t rms_error_train = -999;
+        Double_t absres_error_train = -999;
+
+        // Get the test/train events save location in order.
         std::stringstream saveTestName;
-        saveTestName << nodes << "_" << (int) useNtrees << "_" << lr;
+        std::stringstream saveTrainName;
+        saveTestName << nodes << "_" << t+1 << "_" << lr;
+        saveTrainName << nodes << "_" << t+1 << "_" << lr;
 
         std::stringstream savetestto;
+        std::stringstream savetrainto;
         savetestto << testDir.str().c_str();
+        savetrainto << trainDir.str().c_str();
 
         if(prelimfit!=0) savetestto << prelimfit->name() << "_";
         if(transform!=0) savetestto << transform->name() << "_";
+        if(prelimfit!=0) savetrainto << prelimfit->name() << "_";
+        if(transform!=0) savetrainto << transform->name() << "_";
 
         savetestto << saveTestName.str().c_str() << ".root";
+        savetrainto << saveTrainName.str().c_str() << ".root";
 
-        // Predict then save the test set.
-        // First process the events so that they may be predicted correctly.
-        preprocess(testingEvents, lf, prelimfit, transform);
         // Predict the events.
-        forest->predictTestEvents((unsigned int) useNtrees);
-        // Save the trueValue and predictedValue not the transformed versions. 
+        std::cout << "Predicting events ... " << std::endl;
+        forest->appendCorrection(testingEvents, t);
+        forest->appendCorrection(trainingEvents, t);
+
+        rms_error = rms->calculate(testingEvents);
+        rms_error_train = rms->calculate(trainingEvents);
+        std::cout << t << ": RMS Error of Transformed Values : " << rms_error_train << ", " << rms_error << std::endl;
+
+        // We want to save the trueValue and predictedValue not the transformed versions. 
         invertTransform(testingEvents, transform);
-        saveTestEvents(savetestto.str().c_str(), testingEvents);
+        invertTransform(trainingEvents, transform);
+
+        // Calculate the error on the test events.
+
+        rms_error = rms->calculate(testingEvents);
+        //std::cout << "Calculating Resolution Error ... " << std::endl;
+        //absres_error = absres->calculate(testingEvents);
+
+        // Calculate the error on the training events.
+        rms_error_train = rms->calculate(trainingEvents);
+        //absres_error_train = absres->calculate(trainingEvents);
+
+        std::cout << t << ": RMS Error of Untransformed Values : " << rms_error_train << ", " << rms_error << std::endl;
+        // Save the training/test events.
+        if(t+1 == forest->size() || t+1 == forest->size()/2) saveEvents(savetestto.str().c_str(), testingEvents);
+        //saveEvents(savetrainto.str().c_str(), trainingEvents);
+
+        // Transform back for next prediction update. 
+        transformEvents(testingEvents, transform);
+        transformEvents(trainingEvents, transform);
         std::cout << "-----" << std::endl;
- 
+
+        // Add to the error tuple.
+        errortuple->Fill(rms_error, absres_error, rms_error_train, absres_error_train, nodes, t, lr, (transform!=0)?transform->id():0);
     }
 
+    // Save.
+    std::stringstream savetupleto;
+    savetupleto << "../ntuples/evaluation/test/evaluation_"; 
+    if(transform!=0) savetupleto << transform->name() << "_";
+    if(prelimfit!=0) savetupleto << prelimfit->name() << "_";
+    savetupleto << nodes << "_" << trees << "_" << lr; 
+    savetupleto << ".root";
+
+    TFile* tuplefile = new TFile(savetupleto.str().c_str(), "RECREATE");
+    tuplefile->cd();
+    errortuple->Write();
+    delete tuplefile;
     delete forest;
 }
 
@@ -143,10 +188,11 @@ int main(int argc, char* argv[])
 {
 // Save the error vs parameters for a forest with parameters given by the command line input.
 
-    // Assuming "./FindBestParameters nodes trees lr" as input from the terminal.
+    // Assuming "./FindBestParameters nodes trees lr whichTransform" as input from the terminal.
     Int_t nodes;
     Int_t trees;
     Double_t lr; 
+    Int_t whichTransform;
 
     for(int i=1; i<argc; i++)
     {
@@ -155,35 +201,18 @@ int main(int argc, char* argv[])
         if(i==1) ss >> nodes; 
         if(i==2) ss >> trees; 
         if(i==3) ss >> lr; 
+        if(i==4) ss >> whichTransform; 
     }
+
     //Loss Function
     LeastSquares* lf = new LeastSquares();
 
     // Preprocessing
     PreliminaryFit* prelimfit = 0;
-    // TransformFunction* transform = 0;
-    Log* transform = new Log();
+    TransformFunction* transform = 0;
+    if (whichTransform == 1) transform = new Log();
 
-    // The ntuples in which we will save the error vs learning parameters info.
-    TNtuple* abs = new TNtuple("abs_percent_error", "abs_percent_error", "error:nodes:trees:lr"); 
-    TNtuple* rms = new TNtuple("rms_error", "rms_error", "error:nodes:trees:lr"); 
+    buildAndEvaluateForest(nodes, trees, lr, lf, prelimfit, transform);
 
-    buildAndEvaluateForest(nodes, trees, lr, lf, prelimfit, transform, abs, rms);
-
-    // Save.
-    std::stringstream savetuplesto;
-    savetuplesto << "/home/andrew/projects/bdt/studies/jamie/2jets_loose/ntuples/evaluation/parameter_evaluation_" << nodes << "_" << trees << "_" << lr; 
-    if(transform!=0) savetuplesto << transform->name() << "_";
-    if(prelimfit!=0) savetuplesto << prelimfit->name();
-    savetuplesto << ".root";
-
-    TFile* tuplefile = new TFile(savetuplesto.str().c_str(), "RECREATE");
-    tuplefile->cd();
-    abs->Write();
-    rms->Write();
-
-    delete abs;
-    delete rms;
-    delete tuplefile;
     return 0;
 }

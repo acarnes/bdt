@@ -7,16 +7,13 @@ LIBFLAGS = `root-config --libs` -lXMLIO -lMLP -lMinuit
 LIBDIR = ../../../../lib/
 CFLAGS = -I${LIBDIR} -c `root-config --cflags`
 DEPS = LoadSaveEvents.h Functions.h
+MAINPROGRAM = FindBestParameters
 
-CompileStuff: Utilities.o Node.o Tree.o Forest.o FindBestParameters.o TestPrelimFits.o
-	$(CC) $(LIBFLAGS) ${LIBDIR}Utilities.o ${LIBDIR}Node.o ${LIBDIR}Tree.o ${LIBDIR}Forest.o FindBestParameters.o -o FindBestParameters
-	$(CC) $(LIBFLAGS) ${LIBDIR}Utilities.o ${LIBDIR}Node.o ${LIBDIR}Tree.o ${LIBDIR}Forest.o TestPrelimFits.o -o TestPrelimFits
+CompileStuff: Utilities.o Node.o Tree.o Forest.o ${MAINPROGRAM}.o
+	$(CC) $(LIBFLAGS) ${LIBDIR}Utilities.o ${LIBDIR}Node.o ${LIBDIR}Tree.o ${LIBDIR}Forest.o ${MAINPROGRAM}.o -o ${MAINPROGRAM}
 
-FindBestParameters.o: FindBestParameters.cxx ${DEPS}
-	$(CC) $(CFLAGS) FindBestParameters.cxx  
-
-TestPrelimFits.o: TestPrelimFits.cxx ${DEPS} 
-	$(CC) $(CFLAGS) TestPrelimFits.cxx  
+${MAINPROGRAM}.o: ${MAINPROGRAM}.cxx ${DEPS}
+	$(CC) $(CFLAGS) ${MAINPROGRAM}.cxx  
 
 Utilities.o: ${LIBDIR}Utilities.cxx
 	$(CC) $(CFLAGS) ${LIBDIR}Utilities.cxx -o ${LIBDIR}Utilities.o

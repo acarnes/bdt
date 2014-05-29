@@ -203,105 +203,6 @@ void Forest::sortEventVectors(std::vector< std::vector<Event*> >& e)
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-Double_t Forest::returnDiscretizedAbsResolution(std::vector<Event*>& v, std::vector<Double_t> bins)
-{
-// We define our metric of success to be 1/N SUM |true-predicted|/<true> = < |true-predicted|/<true> >
-// Which becoems SUM_over_intervals{ N_in_interval/N_total * 1/N_in_interval*SUM[ |true-predicted|/<true> ] }
-// Which reduces to SUM_over_intervals{ 1/N_total * 1/<true>*SUM_events_in_interval[ |true-predicted| ]}
-
-    unsigned int nbins = bins.size()-1;
-
-    // There are fifteen trueValue intervals I am interested in.
-    // The bounds of these intervals are given by 2jets_scale. 
-    // Calculate the error in each interval.
-    std::vector<Double_t> N(nbins,0);
-    std::vector<Double_t> sum_true(nbins,0);
-    std::vector<Double_t> sum_errors(nbins,0);
-
-    for(unsigned int i=0; i<v.size(); i++)
-    {
-        // Grab an entry.
-        Event* e = v[i];
-        Double_t tval = e->trueValue;
-        Double_t pval = e->predictedValue;
-
-        // Loop through the intervals to see which one the event belongs to.
-        for(unsigned int t=0; t<nbins; t++)
-        {
-            Double_t mint = bins[t];
-            Double_t maxt = bins[t+1];
-
-            // The event belongs to the current interval.
-            // Increment the number of events, the sum of true values,
-            // and the sum of errors in the interval.
-            if(tval >= mint && tval < maxt)
-            {
-                N[t]++;
-                sum_true[t]+=tval;
-                sum_errors[t]+=TMath::Abs(pval-tval);
-                break;
-            }
-        }
-    }
-
-    Double_t metric_of_success = 0;
-
-    // Loop through the intervals.
-    for(unsigned int t=0; t<15; t++)
-    {
-        // Watch out for zero values.
-        Double_t interval_avg = (N[t]!=0)?sum_true[t]/N[t]:0;
-        if(N[t]!=0) metric_of_success += sum_errors[t]/interval_avg;
-    }
-    
-    metric_of_success = metric_of_success/v.size();
-    return metric_of_success;
-}
-
-//////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------
-//////////////////////////////////////////////////////////////////////////
-
-Double_t Forest::returnResolution(std::vector<Event*>& v)
-{
-// RMS percent error.
-
-    Double_t errorSum = 0;
-    for(unsigned int i=0; i<v.size(); i++)
-    { 
-        Event* e = v[i];
-        // Watch out for zero values.
-        if(e->trueValue == 0) continue;
-        Double_t err = e->trueValue - e->predictedValue;
-        errorSum += err*err/(e->trueValue*e->trueValue);
-    }
-    return sqrt(errorSum/v.size());
-}
-
-//////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------
-//////////////////////////////////////////////////////////////////////////
-
-Double_t Forest::returnRMS(std::vector<Event*>& v)
-{
-// RMS error
-
-    Double_t avgValue = 0;
-    Double_t errorSum = 0;
-    for(unsigned int i=0; i<v.size(); i++)
-    { 
-        Event* e = v[i];
-        avgValue += e->trueValue;
-        Double_t err = e->trueValue - e->predictedValue;
-        errorSum += err*err;
-    }
-    return sqrt(errorSum/v.size());
-}
-
-//////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------
-//////////////////////////////////////////////////////////////////////////
-
 void Forest::rankVariables()
 {
 // This function ranks the determining variables according to their importance
@@ -399,7 +300,7 @@ void Forest::updateRegTargets(Tree* tree, Double_t learningRate, LossFunction* l
 // ----------------------------------------------------------------------
 /////////////////////////////////////////////////////////////////////////
 
-void Forest::updateTestEvents(Tree* tree)
+void Forest::updateEvents(Tree* tree)
 {
 // Prepare the test events for the next tree.
 
@@ -429,7 +330,7 @@ void Forest::updateTestEvents(Tree* tree)
 // ____________________Do/Test_the Regression___________________________//
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRate, LossFunction* l, const char* savetreesdirectory, bool saveTrees, bool trackError, bool isTwoJets)
+void Forest::doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRate, LossFunction* l, const char* savetreesdirectory, bool saveTrees)
 {
 // Build the forest using the training sample.
 
@@ -465,22 +366,6 @@ void Forest::doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRat
         const char* c = s.c_str();
 
         if(saveTrees) tree->saveToXML(c);
-        if(trackError)
-        {
-            // trainingEvents are naturally predicted during regression. Calculate training error and store it.
-            trainRMS.push_back(returnRMS(events[0]));
-            trainResolution.push_back(returnDiscretizedAbsResolution(events[0], (isTwoJets==true)?twoJetsScale:ptScale));
-
-            // Predict testEvents, calculate training error and store it.
-            trees[i]->filterEvents(testEvents);
-            updateTestEvents(tree);
-
-            testRMS.push_back(returnRMS(testEvents));
-            testResolution.push_back(returnDiscretizedAbsResolution(testEvents, (isTwoJets==true)?twoJetsScale:ptScale));
-
-            std::cout << "    RMS Error: " << trainRMS[i] << ", " << testRMS[i] << std::endl;
-            std::cout << "    Discrete : " << trainResolution[i] << ", " << testResolution[i] << std::endl;
-        }
     }
     std::cout << std::endl;
     std::cout << std::endl << "Done." << std::endl << std::endl;
@@ -492,26 +377,35 @@ void Forest::doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRat
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::predictTestEvents(Int_t numtrees)
+void Forest::predictEvents(std::vector<Event*> eventsp, Int_t numtrees)
 {
-// Predict values for the testEvents by running them through the forest.
+// Predict values for eventsp by running them through the forest up to numtrees.
 
-    std::cout << "Using " << numtrees << " trees from the forest to predict testEvents ... " << std::endl;
+    std::cout << "Using " << numtrees << " trees from the forest to predict events ... " << std::endl;
     if(numtrees > trees.size())
     {
         std::cout << std::endl << "!! Input greater than the forest size. Using forest.size() = " << trees.size() << " to predict instead." << std::endl;
         numtrees = trees.size();
     }
 
-    // i iterates through the trees in the forest. Each tree adds more complexity to the fit.
+    // i iterates through the trees in the forest. Each tree corrects the last prediction.
     for(unsigned int i=0; i < numtrees; i++) 
-    {   
-        Tree* tree = trees[i];
-        tree->filterEvents(testEvents); 
+        appendCorrection(eventsp, i);
+}
 
-        // Update the test events with their new prediction.
-        updateTestEvents(tree);
-    }   
+//////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////
+
+void Forest::appendCorrection(std::vector<Event*> eventsp, Int_t treenum)
+{
+// Update the prediction by appending the next correction.
+
+    Tree* tree = trees[treenum];
+    tree->filterEvents(eventsp); 
+
+    // Update the events with their new prediction.
+    updateEvents(tree);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////

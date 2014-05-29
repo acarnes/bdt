@@ -41,6 +41,7 @@ class TransformFunction
         virtual bool transform(Event* e) = 0;
         virtual bool invertTransformation(Event* e) = 0;
         virtual const char* name() = 0;
+        virtual int id() = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////

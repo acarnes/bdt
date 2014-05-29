@@ -36,6 +36,31 @@ void listEvents(std::vector<Event*>& events, unsigned int numtolist)
 // ========================================================
 // ================ Preprocess  ===========================
 //=========================================================
+void transformEvents(std::vector<Event*>& events, TransformFunction* transform)
+{
+    if(transform == 0) return;
+    std::cout << "Transforming events ... " << std::endl;
+    Int_t failed = 0;
+
+    for(unsigned int i=0; i<events.size(); i++)
+    {
+        Event* e = events[i];
+        bool failure = false;
+        failure = transform->transform(e); 
+        if(failure)
+        {
+            failed++;
+            std::cout << "Failed to transform event " << i << "." << std::endl;
+        }
+    }
+    if(failed > 0)
+        std::cout << "==== NUM FAILED TRANSFORMATIONS: " << failed << std::endl;
+}
+
+////////////////////////////////////////////////////////////
+//----------------------------------------------------------
+////////////////////////////////////////////////////////////
+
 void preprocess(std::vector<Event*>& events, LossFunction* lf, PreliminaryFit* prelimfit, TransformFunction* transform)
 {
     std::cout << "Preprocessing events ... " << std::endl;
@@ -76,8 +101,8 @@ void preprocess(std::vector<Event*>& events, LossFunction* lf, PreliminaryFit* p
 //=========================================================
 void invertTransform(std::vector<Event*>& events, TransformFunction* transform)
 {
-    std::cout << "Untransforming events ... " << std::endl;
     if(transform == 0) return;
+    std::cout << "Untransforming events ... " << std::endl;
 
     for(unsigned int i=0; i<events.size(); i++)
     {
@@ -174,11 +199,11 @@ void readInTestingAndTrainingEvents(const char* inputfilename, std::vector<Event
 // ______________________Save Test Results______________________________//
 //////////////////////////////////////////////////////////////////////////
 
-void saveTestEvents(const char* savefilename, std::vector<Event*>& testEvents)
+void saveEvents(const char* savefilename, std::vector<Event*>& events)
 {
-// After using the forest to predict values for the test events, save them along with their predicted values into an ntuple.
+// After using the forest to predict values for a collection of events, save them along with their predicted values into an ntuple.
 
-    std::cout << "Saving testEvents into " << savefilename << "..." << std::endl;
+    std::cout << "Saving events into " << savefilename << "..." << std::endl;
 
     // Make a new root file.
     TFile* f = new TFile(savefilename, "RECREATE");
@@ -188,9 +213,9 @@ void saveTestEvents(const char* savefilename, std::vector<Event*>& testEvents)
 
     // Add events to the ntuple.
     // Process the BDT Predictions.
-    for(unsigned int i=0; i<testEvents.size(); i++) 
+    for(unsigned int i=0; i<events.size(); i++) 
     {    
-        Event* ev = testEvents[i];
+        Event* ev = events[i];
         Float_t predictedValue = ev->predictedValue;
         Float_t trueValue = ev->trueValue;
 
@@ -211,3 +236,4 @@ void saveTestEvents(const char* savefilename, std::vector<Event*>& testEvents)
     delete f;
 }
 #endif
+
