@@ -41,6 +41,22 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
 {
 // Build a forest with certain parameters then evaluate its success.
 
+    // Define the scale for this study.
+    std::vector<Double_t> scale3b;
+    scale3b.push_back(0);
+    scale3b.push_back(0.5);
+    scale3b.push_back(1);
+    scale3b.push_back(2);
+    scale3b.push_back(3);
+    scale3b.push_back(4);
+    scale3b.push_back(5);
+    scale3b.push_back(10);
+    scale3b.push_back(20);
+    scale3b.push_back(50);
+    scale3b.push_back(100);
+    scale3b.push_back(200);
+    scale3b.push_back(500);
+
     bool saveTrees = false;
 
     // Read In events.
@@ -49,8 +65,8 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
     readInTestingAndTrainingEvents("../3b-SR6-T.dat", trainingEvents, testingEvents);
 
     // Preprocess datasets.
-    preprocess(trainingEvents, lf, prelimfit, transform); 
-    preprocess(testingEvents, lf, prelimfit, transform); 
+    preprocessTrain(trainingEvents, lf, prelimfit, transform); 
+    preprocessTest(testingEvents, lf, prelimfit, transform); 
 
     std::cout << std::endl << "Number of training events: " << trainingEvents.size() << std::endl;
     std::cout << "Number of test events: " << testingEvents.size() << std::endl << std::endl;
@@ -85,7 +101,7 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
 
     // Use these to evaluate the success of the regression.
     RMS* rms = new RMS();
-    AbsResolution* absres = new AbsResolution();
+    AbsResolution* absres = new AbsResolution(scale3b);
 
     // The ntuples in which we will save the error vs learning parameters info.
     TNtuple* errortuple = new TNtuple("error", "error", "rms:resolution:training_rms:training_resolution:nodes:trees:lr:transformation"); 
@@ -98,7 +114,7 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
 
     // Process the events so that they may be predicted correctly.
     //preprocess(testingEvents, lf, prelimfit, transform); // No need to do this.
-    preprocess(trainingEvents, lf, prelimfit, transform);
+    preprocessTrain(trainingEvents, lf, prelimfit, transform);
 
     // Predict the test set using a certain number of trees from the forest and save the results each time.
     for(unsigned int t=0; t<forest->size(); t++)
@@ -109,11 +125,13 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
         Double_t rms_error_train = -999;
         Double_t absres_error_train = -999;
 
+        ///////////////////////////////////////////////////////
+        // --------------------------------------------------
         // Get the test/train events save location in order.
         std::stringstream saveTestName;
         std::stringstream saveTrainName;
-        saveTestName << nodes << "_" << t << "_" << lr;
-        saveTrainName << nodes << "_" << t << "_" << lr;
+        saveTestName << nodes << "_" << t+1 << "_" << lr;
+        saveTrainName << nodes << "_" << t+1 << "_" << lr;
 
         std::stringstream savetestto;
         std::stringstream savetrainto;
@@ -127,45 +145,87 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
 
         savetestto << saveTestName.str().c_str() << ".root";
         savetrainto << saveTrainName.str().c_str() << ".root";
+        // ----------------------------------------------------
+        ///////////////////////////////////////////////////////
 
+        
+        ///////////////////////////////////////////////////////
+        // ----------------------------------------------------
         // Predict the events.
-        std::cout << "Predicting events ... " << std::endl;
+        std::cout << t << ": Predicting events ... " << std::endl;
         forest->appendCorrection(testingEvents, t);
         forest->appendCorrection(trainingEvents, t);
-
+        // ----------------------------------------------------
+        ///////////////////////////////////////////////////////
+       
+        ///////////////////////////////////////////////////////
+        // ----------------------------------------------------
+        // Calculate error of transformed values.
+        //std::cout << "Calculating RMS error ... " << std::endl;
         rms_error = rms->calculate(testingEvents);
         rms_error_train = rms->calculate(trainingEvents);
-        std::cout << t << ": RMS Error of Transformed Values : " << rms_error_train << ", " << rms_error << std::endl;
 
+        //std::cout << "Calculating Resolution Error ... " << std::endl;
+        //absres_error = absres->calculate(testingEvents);
+        //absres_error_train = absres->calculate(trainingEvents);
+
+        std::cout << t << ": RMS Error of Transformed Values : " << rms_error_train << ", " << rms_error << std::endl;
+        //std::cout << t << ": Resolution of Transformed Values : " << absres_error_train << ", " << absres_error << std::endl;
+        // ----------------------------------------------------
+        ///////////////////////////////////////////////////////
+
+        ///////////////////////////////////////////////////////
+        // ----------------------------------------------------
         // We want to save the trueValue and predictedValue not the transformed versions. 
         invertTransform(testingEvents, transform);
         invertTransform(trainingEvents, transform);
+        // ----------------------------------------------------
+        ///////////////////////////////////////////////////////
 
-        // Calculate the error on the test events.
-
+        ///////////////////////////////////////////////////////
+        // ----------------------------------------------------
+        // Calculate error of untransformed values.
+        //std::cout << "Calculating RMS error ... " << std::endl;
         rms_error = rms->calculate(testingEvents);
-        //std::cout << "Calculating Resolution Error ... " << std::endl;
-        //absres_error = absres->calculate(testingEvents);
-
-        // Calculate the error on the training events.
         rms_error_train = rms->calculate(trainingEvents);
-        //absres_error_train = absres->calculate(trainingEvents);
+
+        //std::cout << "Calculating Resolution Error ... " << std::endl;
+        absres_error = absres->calculate(testingEvents);
+        absres_error_train = absres->calculate(trainingEvents);
 
         std::cout << t << ": RMS Error of Untransformed Values : " << rms_error_train << ", " << rms_error << std::endl;
-        // Save the training/test events.
-        saveEvents(savetestto.str().c_str(), testingEvents);
-        //saveEvents(savetrainto.str().c_str(), trainingEvents);
+        std::cout << t << ": Resolution of Untransformed Values : " << absres_error_train << ", " << absres_error << std::endl;
+        // ----------------------------------------------------
+        ///////////////////////////////////////////////////////
 
+        ///////////////////////////////////////////////////////
+        // ----------------------------------------------------
+        // Save the training/test events.
+        if(t+1 == forest->size()/2 || t+1 == forest->size()) saveEvents(savetestto.str().c_str(), testingEvents);
+        // if(t+1 == forest->size()/2 || t+1 == forest->size()) saveEvents(savetrainto.str().c_str(), trainingEvents);
+        // ----------------------------------------------------
+        ///////////////////////////////////////////////////////
+
+        ///////////////////////////////////////////////////////
+        // ----------------------------------------------------
         // Transform back for next prediction update. 
         transformEvents(testingEvents, transform);
         transformEvents(trainingEvents, transform);
         std::cout << "-----" << std::endl;
+        // ----------------------------------------------------
+        ///////////////////////////////////////////////////////
 
+        ///////////////////////////////////////////////////////
+        // ----------------------------------------------------
         // Add to the error tuple.
         errortuple->Fill(rms_error, absres_error, rms_error_train, absres_error_train, nodes, t, lr, (transform!=0)?transform->id():0);
+        // ----------------------------------------------------
+        ///////////////////////////////////////////////////////
     }
 
-    // Save.
+    ///////////////////////////////////////////////////////
+    // ----------------------------------------------------
+    // Save and clean up.
     std::stringstream savetupleto;
     savetupleto << "../ntuples/evaluation/evaluation_"; 
     if(transform!=0) savetupleto << transform->name() << "_";
@@ -178,6 +238,8 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
     errortuple->Write();
     delete tuplefile;
     delete forest;
+    // ----------------------------------------------------
+    ///////////////////////////////////////////////////////
 }
 
 //////////////////////////////////////////////////////////////////////////

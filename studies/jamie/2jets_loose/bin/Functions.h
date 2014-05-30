@@ -32,6 +32,7 @@ class RMS : public MetricOfSuccess
             for(unsigned int i=0; i<v.size(); i++)
             {
                 Event* e = v[i];
+                if(e->trueValue == -1.0/0.0 || e->trueValue == 1.0/0.0) continue;
                 Double_t tval = e->trueValue;
                 Double_t pval = e->predictedValue;
                 Double_t err = pval - tval;
@@ -57,6 +58,7 @@ class AbsError : public MetricOfSuccess
             for(unsigned int i=0; i<v.size(); i++)
             {
                 Event* e = v[i];
+                if(e->trueValue == -1.0/0.0 || e->trueValue == 1.0/0.0) continue;
                 Double_t tval = e->trueValue;
                 Double_t pval = e->predictedValue;
                 Double_t err = pval - tval;
@@ -97,6 +99,7 @@ class AbsResolution : public MetricOfSuccess
             {   
                 // Grab an entry.
                 Event* e = v[i];
+                if(e->trueValue == -1.0/0.0 || e->trueValue == 1.0/0.0) continue;
                 Double_t tval = e->trueValue;
                 Double_t pval = e->predictedValue;
 
@@ -122,7 +125,7 @@ class AbsResolution : public MetricOfSuccess
             Double_t metric_of_success = 0;
         
             // Loop through the intervals.
-            for(unsigned int t=0; t<15; t++)
+            for(unsigned int t=0; t<nbins; t++)
             {
                 // Watch out for zero values.
                 Double_t interval_avg = (N[t]!=0)?sum_true[t]/N[t]:0;
@@ -169,6 +172,7 @@ class RMSResolution : public MetricOfSuccess
             {   
                 // Grab an entry.
                 Event* e = v[i];
+                if(e->trueValue == -1.0/0.0 || e->trueValue == 1.0/0.0) continue;
                 Double_t tval = e->trueValue;
                 Double_t pval = e->predictedValue;
 
@@ -223,15 +227,30 @@ class Log : public TransformFunction
 
         bool transform(Event* e)
         {
-            bool flag = false;
-            if(e->trueValue > 0) flag = false;
-            else return flag = true;
+            // return true if the transformation fails.
+            bool failure = false;
+            
+            // The transformation works fine.
+            if(e->trueValue > 0) failure = false;
 
-            if(e->trueValue > 0) e->trueValue = log(e->trueValue);
-            else std::cout << "ERROR: LOG(" << e->trueValue << ") " << "is UNDEFINED" << std::endl;
+            // Return to the user that the transformation failed. Let them fix this as they please.
+            else
+            {
+                // If the transform fails, inform the user that the transform on the trueValue is wonky.
+                failure = true;
+                //std::cout << "Event: " << e->id() << "trueValue := LOG(" << e->trueValue << ") " << "is UNDEFINED" << std::endl;
+            }
+
+            // Transform the trueValue regardless of whether it fails or not.
+            // The user should deal with the problem as they so choose.
+            e->trueValue = log(e->trueValue);
+
+            // Transform the predictedValue if there are no issues.
             if(e->predictedValue > 0) e->predictedValue = log(e->predictedValue); 
+            // If there are issues then just leave the predictedValue zero.
+            else e->predictedValue = 0;
 
-            return flag;
+            return failure;
         }
         bool invertTransformation(Event* e)
         { 
@@ -254,28 +273,28 @@ class Inverse : public TransformFunction
 
         bool transform(Event* e)
         {
-            bool flag = false;
-            if(e->trueValue != 0) flag = false;
-            else return flag = true;
+            bool failure = false;
+            if(e->trueValue == 0) failure = true;
+            else failure = false;
 
             if(e->trueValue != 0) e->trueValue = 1/e->trueValue;
             else std::cout << "ERROR: 1/" << e->trueValue <<  " = inf" << std::endl;
             if(e->predictedValue != 0) e->predictedValue = 1/e->predictedValue; 
           
-            return flag;
+            return failure;
         }
         bool invertTransformation(Event* e)
         { 
-            bool flag = false;
-            if(e->trueValue == 0 || e->predictedValue == 0) flag = true;
-            else flag = false;
+            bool failure = false;
+            if(e->trueValue == 0 || e->predictedValue == 0) failure = true;
+            else failure = false;
 
             if(e->trueValue != 0) e->trueValue = 1/e->trueValue;
             else std::cout << "ERROR: 1/" << e->trueValue <<  " = inf" << std::endl;
             if(e->predictedValue != 0) e->predictedValue = 1/e->predictedValue; 
             else std::cout << "ERROR: 1/" << e->predictedValue <<  " = inf" << std::endl;
 
-            return flag;
+            return failure;
         }
         const char* name(){ return "INVERSE"; }
         int id(){ return 2; }

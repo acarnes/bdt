@@ -3,7 +3,7 @@
 // ////////////////////////////////////////////////////////////
 //                                                           //
 //  Here we provide loading and saving functionality         //
-//    for the events for the 2jets_loose study.              //
+//    for the events for the 3b-SR6-T study.                 //
 //                                                           //
 ///////////////////////////////////////////////////////////////
 
@@ -36,10 +36,10 @@ void listEvents(std::vector<Event*>& events, unsigned int numtolist)
 // ========================================================
 // ================ Preprocess  ===========================
 //=========================================================
-void transformEvents(std::vector<Event*>& events, TransformFunction* transform)
+Int_t transformEvents(std::vector<Event*>& events, TransformFunction* transform)
 {
-    if(transform == 0) return;
-    std::cout << "Transforming events ... " << std::endl;
+    if(transform == 0) return 0;
+    //std::cout << "Transforming events ... " << std::endl;
     Int_t failed = 0;
 
     for(unsigned int i=0; i<events.size(); i++)
@@ -50,20 +50,60 @@ void transformEvents(std::vector<Event*>& events, TransformFunction* transform)
         if(failure)
         {
             failed++;
-            std::cout << "Failed to transform event " << i << "." << std::endl;
+            //std::cout << "Transforming " << i << " has resulted in an undefined value." << std::endl;
         }
     }
-    if(failed > 0)
-        std::cout << "==== NUM FAILED TRANSFORMATIONS: " << failed << std::endl;
+    return failed;
 }
 
 ////////////////////////////////////////////////////////////
 //----------------------------------------------------------
 ////////////////////////////////////////////////////////////
 
-void preprocess(std::vector<Event*>& events, LossFunction* lf, PreliminaryFit* prelimfit, TransformFunction* transform)
+void preprocessTrain(std::vector<Event*>& events, LossFunction* lf, PreliminaryFit* prelimfit, TransformFunction* transform)
 {
-    std::cout << "Preprocessing events ... " << std::endl;
+    std::cout << "Preprocessing training events ... " << std::endl;
+    Int_t failed = 0;
+
+    for(unsigned int i=0; i<events.size(); i++)
+    {
+        bool failure = false;
+
+        Event* e = events[i];
+
+        // Apply preliminary fit.
+        if(prelimfit != 0) prelimfit->fit(e);
+        else e->predictedValue = 0;
+
+        // Apply transform to true and predicted values.
+        if(transform != 0) failure = transform->transform(e); 
+
+        // Transforming the truevalue for the event failed.
+        // Having infinite or undefined values for thet truevalue will ruin training,
+        // so we remove these events from the training sample.
+        if(failure)
+        {
+            failed++;
+            std::cout << "Event " << e->id << ": trueValue := LOG(" << e->trueValue << ") " << "is UNDEFINED" << std::endl;
+            std::cout << "Event " << e->id << " has been removed from the collection." << std::endl;
+            events.erase(events.begin()+i);
+            delete e;
+            i--;
+        }
+        else e->data[0] = lf->target(e);
+    }
+
+    if(failed > 0)
+        std::cout << "==== NUM REMOVED EVENTS: " << failed << std::endl;
+}
+
+////////////////////////////////////////////////////////////
+//----------------------------------------------------------
+////////////////////////////////////////////////////////////
+
+void preprocessTest(std::vector<Event*>& events, LossFunction* lf, PreliminaryFit* prelimfit, TransformFunction* transform)
+{
+    std::cout << std::endl << "Preprocessing test events ... " << std::endl;
     Int_t failed = 0;
 
     for(unsigned int i=0; i<events.size(); i++)
@@ -79,21 +119,18 @@ void preprocess(std::vector<Event*>& events, LossFunction* lf, PreliminaryFit* p
         // Apply transform to true and predicted values.
         if(transform != 0) transformfailure = transform->transform(e); 
 
-        // The transformation failed for this event.
-        // Don't include the problematic events in training/testing.
+        // Transforming the truevalue for this event failed.
+        // This is okay for the testing set and we leave these in.
         if(transformfailure)
         {
             failed++;
-            std::cout << "Event " << i << " has been removed from the collection." << std::endl;
-            events.erase(events.begin()+i);
-            delete e;
-            i--;
+            //std::cout << "Transforming " << e->id << " has resulted in an undefined value." << std::endl;
         }
         else e->data[0] = lf->target(e);
     }
 
     if(failed > 0)
-        std::cout << "==== NUM FAILED TRANSFORMATIONS: " << failed << std::endl;
+        std::cout << "==== NUM UNDEFINED TRANSFORMATIONS: " << failed << std::endl;
 }
 
 // ========================================================
@@ -102,7 +139,7 @@ void preprocess(std::vector<Event*>& events, LossFunction* lf, PreliminaryFit* p
 void invertTransform(std::vector<Event*>& events, TransformFunction* transform)
 {
     if(transform == 0) return;
-    std::cout << "Untransforming events ... " << std::endl;
+    //std::cout << "Untransforming events ... " << std::endl;
 
     for(unsigned int i=0; i<events.size(); i++)
     {
