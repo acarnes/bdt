@@ -41,6 +41,8 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
 {
 // Build a forest with certain parameters then evaluate its success.
 
+    ///////////////////////////////////////////////////////
+    // --------------------------------------------------
     // Define the scale for this study.
     std::vector<Double_t> scale3b;
     scale3b.push_back(0);
@@ -59,11 +61,15 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
 
     bool saveTrees = false;
 
+    ///////////////////////////////////////////////////////
+    // --------------------------------------------------
     // Read In events.
     std::vector<Event*> trainingEvents;
     std::vector<Event*> testingEvents;
     readInTestingAndTrainingEvents("../3b-SR6-T.dat", trainingEvents, testingEvents);
 
+    ///////////////////////////////////////////////////////
+    // --------------------------------------------------
     // Preprocess datasets.
     preprocessTrain(trainingEvents, lf, prelimfit, transform); 
     preprocessTest(testingEvents, lf, prelimfit, transform); 
@@ -71,9 +77,13 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
     std::cout << std::endl << "Number of training events: " << trainingEvents.size() << std::endl;
     std::cout << "Number of test events: " << testingEvents.size() << std::endl << std::endl;
 
+    ///////////////////////////////////////////////////////
+    // --------------------------------------------------
     // Build the forest.
     Forest* forest = new Forest(trainingEvents, testingEvents);
    
+    ///////////////////////////////////////////////////////
+    // --------------------------------------------------
     // Output the parameters of the current run. 
     std::cout << "=======================================" << std::endl;
     std::cout << "Nodes: " << nodes << std::endl;
@@ -90,12 +100,19 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
     // Where to save our trees. 
     TString treesDirectory("../trees");
 
+    ///////////////////////////////////////////////////////
+    // --------------------------------------------------
     // Do the regression and save the trees.
     forest->doRegression(nodes, trees, lr, lf, treesDirectory, saveTrees);
+
+    ///////////////////////////////////////////////////////
+    // --------------------------------------------------
     // Rank the variable importance and output it.
     forest->rankVariables();
 
-    // The directory to store the test results.
+    ///////////////////////////////////////////////////////
+    // --------------------------------------------------
+    // The directories for saving the test/training prediction results.
     std::stringstream testDir("../ntuples/testresults/");
     std::stringstream trainDir("../ntuples/trainresults/");
 
@@ -106,6 +123,8 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
     // The ntuples in which we will save the error vs learning parameters info.
     TNtuple* errortuple = new TNtuple("error", "error", "rms:resolution:training_rms:training_resolution:nodes:trees:lr:transformation"); 
 
+    ///////////////////////////////////////////////////////
+    // --------------------------------------------------
     // Undo the transformation, so that we may properly process the events for prediction.
     // During preprocessing the preliminary fit assumes untransformed values.
 
@@ -116,6 +135,8 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
     //preprocess(testingEvents, lf, prelimfit, transform); // No need to do this.
     preprocessTrain(trainingEvents, lf, prelimfit, transform);
 
+    ///////////////////////////////////////////////////////
+    // --------------------------------------------------
     // Predict the test set using a certain number of trees from the forest and save the results each time.
     for(unsigned int t=0; t<forest->size(); t++)
     {
@@ -201,8 +222,10 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
         ///////////////////////////////////////////////////////
         // ----------------------------------------------------
         // Save the training/test events.
-        if(t+1 == forest->size()/2 || t+1 == forest->size()) saveEvents(savetestto.str().c_str(), testingEvents);
-        // if(t+1 == forest->size()/2 || t+1 == forest->size()) saveEvents(savetrainto.str().c_str(), trainingEvents);
+        if(t+1 == 3*forest->size()/4 || t+1 == forest->size()) saveEvents(savetestto.str().c_str(), testingEvents);
+        if(t+1 == forest->size()/4 || t+1 == forest->size()/2) saveEvents(savetestto.str().c_str(), testingEvents);
+        if(t+1 == forest->size()/20 || t+1 == forest->size()/10) saveEvents(savetestto.str().c_str(), testingEvents);
+        if(t+1 == forest->size()/1000 || t+1 == forest->size()/40) saveEvents(savetestto.str().c_str(), testingEvents);
         // ----------------------------------------------------
         ///////////////////////////////////////////////////////
 
