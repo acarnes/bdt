@@ -90,12 +90,14 @@ void Forest::setTrainingEvents(std::vector<Event*>& trainingEvents)
 // tell the forest which events to use for training
 
     Event* e = trainingEvents[0];
-    
-    events = std::vector< std::vector<Event*> >(20, std::vector<Event*>(10));
+    unsigned int numrows = e->data.size();
+   
+    // Reset the events matrix. 
+    events = std::vector< std::vector<Event*> >();
 
     for(unsigned int i=0; i<e->data.size(); i++) 
     {    
-        events[i] = std::vector<Event*>(trainingEvents);
+        events.push_back(trainingEvents);
     }    
 }
 
@@ -203,7 +205,7 @@ void Forest::sortEventVectors(std::vector< std::vector<Event*> >& e)
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::rankVariables()
+std::vector<Double_t> Forest::rankVariables()
 {
 // This function ranks the determining variables according to their importance
 // in determining the fit. Use a low learning rate for better results.
@@ -251,6 +253,7 @@ void Forest::rankVariables()
     }
     
     std::cout << std::endl << "Done." << std::endl << std::endl;
+    return v;
 
 }
 
@@ -342,6 +345,7 @@ void Forest::doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRat
     // feature variable every time we want to calculate the best split point for that feature.
     // By keeping sorted copies we avoid the sorting operation during splint point calculation
     // and save computation time. If we do not sort each of the rows the regression will fail.
+    std::cout << "Sorting event vectors..." << std::endl;
     sortEventVectors(events);
 
     // See how long the regression takes.
@@ -350,11 +354,10 @@ void Forest::doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRat
 
     for(unsigned int i=0; i< (unsigned) treeLimit; i++)
     {
+        std::cout << "++Building Tree " << i << "... " << std::endl;
         Tree* tree = new Tree(events);
         trees.push_back(tree);    
         tree->buildTree(nodeLimit);
-
-        std::cout << "++Building Tree " << i << "... " << std::endl;
 
         // Update the targets for the next tree to fit.
         updateRegTargets(tree, learningRate, l);
@@ -436,27 +439,6 @@ void Forest::loadForestFromXML(const char* directory, int numTrees)
 
 //////////////////////////////////////////////////////////////////////////
 // ___________________Stochastic_Sampling_&_Regression__________________//
-//////////////////////////////////////////////////////////////////////////
-
-template<class bidiiter>
-bidiiter shuffle(bidiiter begin, bidiiter end, size_t num_random)
-{
-// We will end up with the same elements in the collection except that
-// the first num_random elements will be randomized.
-
-    size_t left = std::distance(begin, end);
-    while (num_random--) {
-        bidiiter r = begin;
-        std::advance(r, rand()%left);
-        std::swap(*begin, *r);
-        ++begin;
-        --left;
-    }
-    return begin;
-}
-
-//////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
 void Forest::prepareRandomSubsample(Double_t fraction)

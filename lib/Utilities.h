@@ -6,6 +6,8 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <algorithm>
+#include <utility>
 #include "TMath.h"
 
 //////////////////////////////////////////////////////////////////////////
@@ -19,6 +21,23 @@ extern const std::vector<Double_t> twoJetsScale;
 // Array of GeV values for error calculation.
 extern const Double_t ptscale[31];
 extern const std::vector<Double_t> ptScale;
+
+template<class bidiiter>
+bidiiter shuffle(bidiiter begin, bidiiter end, size_t num_random)
+{
+// We will end up with the same elements in the collection except that
+// the first num_random elements will be randomized.
+
+    size_t left = std::distance(begin, end);
+    while (num_random--) {
+        bidiiter r = begin;
+        std::advance(r, rand()%left);
+        std::swap(*begin, *r);
+        ++begin;
+        --left;
+    }
+    return begin;
+}
 
 template <typename T>
 std::string numToStr( T num )

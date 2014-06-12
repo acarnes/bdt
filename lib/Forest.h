@@ -25,7 +25,7 @@ class Forest
         unsigned int size();
 
         // Get info on variable importance.
-        void rankVariables();
+        std::vector<Double_t> rankVariables();
 
         // Helpful operations
         void listEvents(std::vector< std::vector<Event*> >& e);

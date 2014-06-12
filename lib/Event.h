@@ -19,6 +19,7 @@ struct Event
     Double_t trueValue;
     Double_t predictedValue;
     Double_t DTPt;
+    Double_t CSCPt;
     Double_t tmvaPt;
     Double_t tmvaPt1;
     Int_t Mode;
