@@ -116,7 +116,7 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
 
     // Use these to evaluate the success of the regression.
     RMS* rms = new RMS();
-    AbsResolution* absres = new AbsResolution(ptScale);
+    RMSResolution* absres = new RMSResolution(ptScale);
 
     // The ntuples in which we will save the error vs learning parameters info.
     TNtuple* errortuple = new TNtuple("error", "error", "rms:resolution:training_rms:training_resolution:nodes:trees:lr:transformation:useCharge:isExclusive:isFlatPt"); 
@@ -224,10 +224,7 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
         ///////////////////////////////////////////////////////
         // ----------------------------------------------------
         // Save the training/test events.
-        if(t+1 == 3*forest->size()/4 || t+1 == forest->size()) saveEvents(savetestto.str().c_str(), testingEvents);
-        if(t+1 == forest->size()/4 || t+1 == forest->size()/2) saveEvents(savetestto.str().c_str(), testingEvents);
-        if(t+1 == forest->size()/20 || t+1 == forest->size()/10) saveEvents(savetestto.str().c_str(), testingEvents);
-        if(t+1 == forest->size()/1000 || t+1 == forest->size()/40) saveEvents(savetestto.str().c_str(), testingEvents);
+        if((((t+1) & ((t+1) - 1)) == 0) || t+1 == forest->size()) saveEvents(savetestto.str().c_str(), testingEvents);
         //if(t+1 == forest->size()/2 || t+1 == forest->size()) saveEvents(savetrainto.str().c_str(), trainingEvents);
         // ----------------------------------------------------
         ///////////////////////////////////////////////////////

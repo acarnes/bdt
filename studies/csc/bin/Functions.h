@@ -206,7 +206,7 @@ class RMSResolution : public MetricOfSuccess
             {
                 // Watch out for zero values.
                 Double_t interval_avg = (N[t]!=0)?sum_true[t]/N[t]:0;
-                if(N[t]!=0) metric_of_success += sum_errors[t]/interval_avg;
+                if(N[t]!=0) metric_of_success += sum_errors[t]/(interval_avg*interval_avg);
             }
         
             metric_of_success = sqrt(metric_of_success/v.size());
