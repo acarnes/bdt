@@ -26,6 +26,7 @@ class PreliminaryFit
         // return true if the fit fails.
         virtual bool fit(Event* e) = 0;
         virtual const char* name() = 0;
+        virtual int id() = 0;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -52,7 +53,7 @@ class MetricOfSuccess
 {
 // Judge how well the regression worked.
     public:
-        virtual Double_t calculate(std::vector<Event*> v) = 0;
+        virtual Double_t calculate(std::vector<Event*>& v) = 0;
 };
 
 #endif

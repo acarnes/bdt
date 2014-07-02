@@ -44,15 +44,52 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
     bool saveTrees = false;
     bool isExclusive = true;
     bool useFlatPt = false;
+    int whichVars = 0xfff;
+
+    std::stringstream wvars;
+    wvars << std::hex << whichVars;
+
+    // Will detail all of the variables used in the regression. They will be saved into the ntuple.
+    TString ntupleVars;
+
+    // Figure out which variables were used during the regression so that we can save the variable ranking appropriately.
+    // The user inputs whichVars in which each bit represents a boolean value telling us whether or not to use that variable.
+    if((whichVars & (1<<0)) == (1<<0)) ntupleVars+=":dPhiAB"; 
+    if((whichVars & (1<<1)) == (1<<1)) ntupleVars+=":dThetaAB"; 
+    if((whichVars & (1<<2)) == (1<<2)) ntupleVars+=":dEtaAB"; 
+    if((whichVars & (1<<3)) == (1<<3)) ntupleVars+=":TrackEta"; 
+    if((whichVars & (1<<4)) == (1<<4)) ntupleVars+=":TrackPhi"; 
+    if((whichVars & (1<<5)) == (1<<5)) ntupleVars+=":CLCTA"; 
+    if((whichVars & (1<<6)) == (1<<6)) ntupleVars+=":CLCTB"; 
+    if((whichVars & (1<<7)) == (1<<7)) ntupleVars+=":cscidA"; 
+    if((whichVars & (1<<8)) == (1<<8)) ntupleVars+=":cscidB"; 
+    if((whichVars & (1<<9)) == (1<<9)) ntupleVars+=":frA"; 
+    if((whichVars & (1<<10)) == (1<<10)) ntupleVars+=":frB"; 
+    if((whichVars & (1<<11)) == (1<<11)) ntupleVars+=":SFR"; 
+
+    ntupleVars = ntupleVars(1,ntupleVars.Length());
+    std::cout << std::endl;
+    std::cout << "////////////////////////////////////////////////////////////////////////////////////////////////////" << std::endl;
+    std::cout << "Using variables: " << ntupleVars << std::endl;
+    std::cout << "////////////////////////////////////////////////////////////////////////////////////////////////////" << std::endl;
+    ntupleVars+=":Mode:transformation:prelimFit:useCharge:isExclusive:whichVars";
 
     // Read In events.
     std::vector<Event*> trainingEvents;
     std::vector<Event*> testingEvents;
 
     std::cout << std::endl;
-    readInEvents("../train_flat1over.root", trainingEvents, mode, useCharge, isExclusive);
-    if(!useFlatPt) readInEvents("../test_flat1over.root", testingEvents, mode, useCharge, isExclusive);
-    else readInEvents("../100k_csc_singlemu_flatpt.root", testingEvents, mode, useCharge, isExclusive);
+    readInEvents("../train_flat1over.root", trainingEvents, mode, useCharge, isExclusive, whichVars);
+    if(!useFlatPt) readInEvents("../test_flat1over.root", testingEvents, mode, useCharge, isExclusive, whichVars);
+    else readInEvents("../100k_csc_singlemu_flatpt.root", testingEvents, mode, useCharge, isExclusive, whichVars);
+
+    // Use these to evaluate the success of the regression.
+    RMS* rms = new RMS();
+    RMSResolution* absres = new RMSResolution(ptScale);
+
+    // Calculate CSCPt prediction error so that we may compare. We must do this before we transform the values in processing.
+    Double_t cscrms = rms->calculate(testingEvents, true);
+    Double_t csc_absres = absres->calculate(testingEvents, true);
 
     // Preprocess datasets.
     preprocessTrain(trainingEvents, lf, prelimfit, transform); 
@@ -60,6 +97,7 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
 
     std::cout << std::endl << "Number of training events: " << trainingEvents.size() << std::endl;
     std::cout << "Number of test events: " << testingEvents.size() << std::endl << std::endl;
+
 
     // Initialize new forest.
     Forest* forest = new Forest(trainingEvents, testingEvents);
@@ -73,6 +111,7 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
     std::cout << "Mode: " << mode << std::endl;
     std::cout << "Use Charge: " << useCharge << std::endl;
     std::cout << "Is Exclusive: " << isExclusive << std::endl;
+    std::cout << "whichVars: " << wvars.str().c_str() << std::endl;
 
     if(prelimfit != 0) std::cout << "Preliminary Fit: " << prelimfit->name() << std::endl;
     else std::cout << "Preliminary Fit: None" << std::endl;
@@ -88,19 +127,22 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
     forest->doRegression(nodes, trees, lr, lf, treesDirectory, saveTrees);
 
     // Rank the variable importance and store the info into an ntuple.
+    // vr[0] is the target variable and doesn't determine the trueValue.
     std::vector<Double_t> vr = forest->rankVariables();
     std::vector<Float_t> vranking;
     for(unsigned int i=1; i<vr.size(); i++)
     {
-        vranking.push_back(vr[i]);
+        vranking.push_back((float)vr[i]);
     }
 
     // The ntuple in which we will save the variable ranking info.
-    TNtuple* rankingtuple = new TNtuple("ranking", "ranking", "dPhiAB:dThetaAB:dEtaAB:TrackEta:TrackPhi:CLCTA:CLCTB:cscidA:cscidB:frA:frB:SFR:Mode:transformation:useCharge:isExclusive"); 
+    TNtuple* rankingtuple = new TNtuple("ranking", "ranking", ntupleVars); 
     vranking.push_back((float)mode);
-    vranking.push_back((float)transform->id());
+    vranking.push_back((float)(transform!=0?transform->id():0));
+    vranking.push_back((float)(prelimfit!=0?prelimfit->id():0));
     vranking.push_back((float)useCharge);
     vranking.push_back((float)isExclusive);
+    vranking.push_back((float)whichVars);
   
     rankingtuple->Fill(&vranking[0]);
 
@@ -114,12 +156,9 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
     if(isExclusive) trainDir << "ex/";
     else trainDir << "in/";
 
-    // Use these to evaluate the success of the regression.
-    RMS* rms = new RMS();
-    RMSResolution* absres = new RMSResolution(ptScale);
 
-    // The ntuples in which we will save the error vs learning parameters info.
-    TNtuple* errortuple = new TNtuple("error", "error", "rms:resolution:training_rms:training_resolution:nodes:trees:lr:transformation:useCharge:isExclusive:isFlatPt"); 
+    // The ntuple in which we will save the error vs learning parameters info.
+    TNtuple* errortuple = new TNtuple("error", "error", "rms:reg_rms:resolution:training_rms:reg_training_rms:training_resolution:nodes:trees:lr:transformation:prelimFit:useCharge:isExclusive:isFlatPt:whichVars"); 
 
     // Undo the transformation, so that we may properly process the events for prediction.
     // During preprocessing the preliminary fit assumes untransformed values.
@@ -130,6 +169,14 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
     // Process the events so that they may be predicted correctly.
     //preprocess(testingEvents, lf, prelimfit, transform); // No need to do this.
     preprocessTrain(trainingEvents, lf, prelimfit, transform);
+
+    // Output the CSCPrediction error.
+    std::cout << std::endl;
+    std::cout << "/////////////////////////////////////////////////" << std::endl;
+    std::cout << "RMS Error of CSCPt predictions: " << cscrms << std::endl;
+    std::cout << "Resolution of CSCPt predictions: " << csc_absres << std::endl;
+    std::cout << "/////////////////////////////////////////////////" << std::endl;
+    std::cout << std::endl;
 
     // Predict the test set using a certain number of trees from the forest and save the results each time.
     for(unsigned int t=0; t<forest->size(); t++)
@@ -145,8 +192,8 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
         // Get the test/train events save location in order.
         std::stringstream saveTestName;
         std::stringstream saveTrainName;
-        saveTestName << nodes << "_" << t+1 << "_" << lr << "_mode_" << mode << "_chg_" << useCharge;
-        saveTrainName << nodes << "_" << t+1 << "_" << lr << "_mode_" << mode << "_chg_" << useCharge;
+        saveTestName << nodes << "_" << t+1 << "_" << lr << "_mode_" << mode << "_chg_" << useCharge << "_" << wvars.str().c_str();
+        saveTrainName << nodes << "_" << t+1 << "_" << lr << "_mode_" << mode << "_chg_" << useCharge << "_" << wvars.str().c_str();
 
         if(isExclusive) saveTestName << "_ex";
         else saveTestName << "_in";
@@ -185,14 +232,14 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
         // ----------------------------------------------------
         // Calculate error of transformed values.
         //std::cout << "Calculating RMS error ... " << std::endl;
-        rms_error = rms->calculate(testingEvents);
-        rms_error_train = rms->calculate(trainingEvents);
+        Double_t reg_rms_error = rms->calculate(testingEvents);
+        Double_t reg_rms_error_train = rms->calculate(trainingEvents);
 
         //std::cout << "Calculating Resolution Error ... " << std::endl;
         //absres_error = absres->calculate(testingEvents);
         //absres_error_train = absres->calculate(trainingEvents);
 
-        std::cout << t << ": RMS Error of Transformed Values : " << rms_error_train << ", " << rms_error << std::endl;
+        std::cout << t << ": RMS Error of Transformed Values : " << reg_rms_error_train << ", " << reg_rms_error << std::endl;
         //std::cout << t << ": Resolution of Transformed Values : " << absres_error_train << ", " << absres_error << std::endl;
         // ----------------------------------------------------
         ///////////////////////////////////////////////////////
@@ -224,7 +271,7 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
         ///////////////////////////////////////////////////////
         // ----------------------------------------------------
         // Save the training/test events.
-        if((((t+1) & ((t+1) - 1)) == 0) || t+1 == forest->size()) saveEvents(savetestto.str().c_str(), testingEvents);
+        if((((t+1) & ((t+1) - 1)) == 0) || t+1 == forest->size()) saveEvents(savetestto.str().c_str(), testingEvents, whichVars);
         //if(t+1 == forest->size()/2 || t+1 == forest->size()) saveEvents(savetrainto.str().c_str(), trainingEvents);
         // ----------------------------------------------------
         ///////////////////////////////////////////////////////
@@ -241,7 +288,7 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
         ///////////////////////////////////////////////////////
         // ----------------------------------------------------
         // Add to the error tuple.
-        errortuple->Fill(rms_error, absres_error, rms_error_train, absres_error_train, nodes, t, lr, (transform!=0)?transform->id():0, useCharge, isExclusive, useFlatPt);
+        errortuple->Fill(rms_error, reg_rms_error, absres_error, rms_error_train, reg_rms_error_train, absres_error_train, nodes, t, lr, (transform!=0)?transform->id():0, (prelimfit!=0)?prelimfit->id():0, useCharge, isExclusive, useFlatPt, whichVars);
         // ----------------------------------------------------
         ///////////////////////////////////////////////////////
     }
@@ -249,19 +296,27 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
     ///////////////////////////////////////////////////////
     // ----------------------------------------------------
     // Save and clean up.
+
+    // Parameter evaluation.
     std::stringstream savepartupleto;
+    // Variable ranking.
     std::stringstream savevartupleto;
     std::stringstream tuplename;
+
+    // Par evaluation directory.
     savepartupleto << "../ntuples/evaluation/" << mode << "/";
     if(isExclusive) savepartupleto << "/ex/"; 
     else savepartupleto << "/in/"; 
 
+    // Name the files with the appropriate attributes.
     savepartupleto << "evaluation_"; 
 
+    // Make sure the name has the transform, prelimfit, nodes, trees, etc.
     if(transform!=0) tuplename << transform->name() << "_";
     if(prelimfit!=0) tuplename << prelimfit->name() << "_";
-    tuplename << nodes << "_" << trees << "_" << lr << "_mode_" << mode << "_chg_" << useCharge; 
+    tuplename << nodes << "_" << trees << "_" << lr << "_mode_" << mode << "_chg_" << useCharge << "_" << wvars.str().c_str(); 
 
+    // Make sure the name tells us whether it is inclusive, exclusive, uses the flat testing sample or the flat in 1/pt testing sample.
     if(isExclusive) tuplename << "_ex";
     else tuplename << "_in";
     if(useFlatPt) tuplename << "_flatPt";
@@ -270,11 +325,13 @@ void buildAndEvaluateForest(Int_t nodes, Int_t trees, Double_t lr, LossFunction*
     savepartupleto << tuplename.str().c_str() << ".root";
     savevartupleto << "../ntuples/variableranking/" << tuplename.str().c_str() << ".root";
 
+    // Parameter evaluation ntuple.
     TFile* partuplefile = new TFile(savepartupleto.str().c_str(), "RECREATE");
     partuplefile->cd();
     errortuple->Write();
     delete partuplefile;
 
+    // Variable ranking ntuple.
     TFile* vartuplefile = new TFile(savevartupleto.str().c_str(), "RECREATE");
     vartuplefile->cd();
     rankingtuple->Write();

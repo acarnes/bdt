@@ -26,7 +26,7 @@ class RMS : public MetricOfSuccess
         RMS(){}
         ~RMS(){}
         
-        Double_t calculate(std::vector<Event*> v)
+        Double_t calculate(std::vector<Event*>& v, bool CSCPt)
         {
             Double_t squared_err;
             for(unsigned int i=0; i<v.size(); i++)
@@ -36,10 +36,15 @@ class RMS : public MetricOfSuccess
                 if(e->trueValue == -1.0/0.0 || e->trueValue == 1.0/0.0) continue;
                 Double_t tval = TMath::Abs(e->trueValue);
                 Double_t pval = TMath::Abs(e->predictedValue);
+                if(CSCPt) pval = TMath::Abs(e->CSCPt);
                 Double_t err = pval - tval;
                 squared_err += err*err;
             }
             return sqrt(squared_err/v.size());
+        }
+        Double_t calculate(std::vector<Event*>& v)
+        {
+            calculate(v, false);
         }
 };
 
@@ -53,7 +58,7 @@ class AbsError : public MetricOfSuccess
         AbsError(){}
         ~AbsError(){}
         
-        Double_t calculate(std::vector<Event*> v)
+        Double_t calculate(std::vector<Event*>& v)
         {
             Double_t abs_err;
             for(unsigned int i=0; i<v.size(); i++)
@@ -86,7 +91,7 @@ class AbsResolution : public MetricOfSuccess
         AbsResolution(std::vector<Double_t> bins){ this->bins = bins; }
         ~AbsResolution(){}
  
-        Double_t calculate(std::vector<Event*> v)
+        Double_t calculate(std::vector<Event*>& v)
         {
             // The vector bins defines the intervals for the calculation.
             // There are bins.size()-1 total intervals.
@@ -139,7 +144,6 @@ class AbsResolution : public MetricOfSuccess
             return metric_of_success;
 
         }
-
         private:
             std::vector<Double_t> bins;
 };
@@ -160,7 +164,7 @@ class RMSResolution : public MetricOfSuccess
         RMSResolution(std::vector<Double_t> bins){ this->bins = bins; }
         ~RMSResolution(){}
  
-        Double_t calculate(std::vector<Event*> v)
+        Double_t calculate(std::vector<Event*>& v, bool CSCPt)
         {
             // The vector bins defines the intervals for the calculation.
             // There are bins.size()-1 total intervals.
@@ -179,6 +183,7 @@ class RMSResolution : public MetricOfSuccess
                 if(e->trueValue == -1.0/0.0 || e->trueValue == 1.0/0.0) continue;
                 Double_t tval = TMath::Abs(e->trueValue);
                 Double_t pval = TMath::Abs(e->predictedValue);
+                if(CSCPt) pval = TMath::Abs(e->CSCPt);
 
                 // Loop through the intervals to see which one the event belongs to.
                 for(unsigned int t=0; t<nbins; t++)
@@ -212,6 +217,11 @@ class RMSResolution : public MetricOfSuccess
             metric_of_success = sqrt(metric_of_success/v.size());
             return metric_of_success;
 
+        }
+
+        Double_t calculate(std::vector<Event*>& v)
+        {
+            calculate(v, false);
         }
 
         private:
@@ -308,47 +318,23 @@ class Inverse : public TransformFunction
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-class twoJetsLogFit : public PreliminaryFit
+class CSCFit : public PreliminaryFit
 {
 // Predict the trueValue before building the regression.
 // Then use the regression as a correction to this fit.
     public:
-        twoJetsLogFit(){}
-        ~twoJetsLogFit(){}
+        CSCFit(){}
+        ~CSCFit(){}
 
         bool fit(Event* e)
         { 
-            Double_t x3 = e->data[3];
-            Double_t log_predicted = 68.87 - 15.5*log(x3)+0.909*(log(x3))*(log(x3));
-            if(x3 <= 0) std::cout << "ERROR: log(" << x3 <<  ") = is UNDEFINED" << std::endl;
-            e->predictedValue = exp(log_predicted);
-            if(x3 >= 0) return false;
-            else return true; 
+            Double_t CSCPt = e->CSCPt;
+            e->predictedValue = CSCPt;
+            return true; 
             
         }
-        const char* name(){ return "Log_Fit"; }
-};
-
-class twoJetsPolyFit : public PreliminaryFit
-{
-// Predict the trueValue before building the regression.
-// Then use the regression as a correction to this fit.
-
-    public:
-        twoJetsPolyFit(){}
-        ~twoJetsPolyFit(){}
-
-        bool fit(Event* e)
-        { 
-            Double_t x3 = e->data[3];
-            Double_t inv_predicted = 0.00566 - 2.97e-05*x3 + 4.24e-08*x3*x3 - 1.34e-11*x3*x3*x3 +1.39e15*x3*x3*x3*x3;
-            if(inv_predicted == 0) std::cout << "ERROR: 1/" << e->predictedValue <<  " = inf" << std::endl;
-            e->predictedValue = 1/inv_predicted;
-            if(inv_predicted != 0) return false;
-            else return true;
-        
-        }
-        const char* name(){ return "Poly_Fit"; }
+        const char* name(){ return "CSC_Fit"; }
+        int id(){ return 1; }
 };
 
 #endif

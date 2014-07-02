@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////
-//                            PCA.cxx                                   //
+//                            PCA4Station.cxx                           //
 // =====================================================================//
 //                                                                      //
 //   Use PCA to find the principal axes and hopefully improve           //
@@ -46,14 +46,13 @@ Double_t lr = 0.3;
 LossFunction* lf = new LeastSquares();
 PreliminaryFit* prelimfit = 0;
 TransformFunction* transform = 0;
-Int_t mode = 3;
-bool usePCA = true;
+Int_t mode = 15;
+bool usePCA = false;
 bool saveTrees = false;
-bool isExclusive = true;
-bool useFlatPt = false;
+bool useFlatPt = true;
 bool useCharge = false;
-int whichVars = 0x1ff;
-unsigned int nvars = 9;
+unsigned long long whichVars = 0xfffffffff;
+unsigned int nvars = 34;
 
 //////////////////////////////////////////////////////////////////////////
 // ______________________PCA_Functions__________________________________//
@@ -140,10 +139,9 @@ TMatrixD loadEventsIntoMatrix()
     std::vector<Event*> events;
 
     std::cout << std::endl;
-    readInEvents("../train_flat1over.root", events, mode, useCharge, isExclusive, whichVars);
+    load4station("../train_flat1over.root", events, useCharge, whichVars);
 
     std::cout << std::endl << "Mode: " << mode << std::endl;
-    std::cout << std::endl << "Exclusive: " << isExclusive << std::endl;
     std::cout << "Number events: " << events.size() << std::endl;
 
     int rows = events.size();
@@ -215,7 +213,7 @@ void loadAndConvertEvents(const char* infilename, std::vector<Event*>& events, u
     std::cout << "Using whichVars: " << wvars.str().c_str() << std::endl;
 
     TMatrixD axes = getPrincipalAxes();
-    readInEvents(infilename, events, mode, useCharge, isExclusive, whichVars);
+    load4station(infilename, events, useCharge, whichVars);
 
     std::cout << "events[0] before conversion: " << std::endl;
     events[0]->outputEvent();
@@ -365,9 +363,7 @@ const char* settingsString(Int_t t)
     if(prelimfit!=0) settings << prelimfit->name() << "_";
     settings << nodes << "_" << t << "_" << lr << "_mode_" << mode << "_chg_" << useCharge << "_" << wvars.str().c_str() << "_PCA_" << usePCA << "_nPCAvars_" << nvars;
 
-    // Make sure the name tells us whether it is inclusive, exclusive, uses the flat testing sample or the flat in 1/pt testing sample.
-    if(isExclusive) settings << "_ex";
-    else settings << "_in";
+    // Make sure the name tells us whether it uses the flat testing sample or the flat in 1/pt testing sample.
     if(useFlatPt) settings << "_flatPt";
     else settings << "_flat1over";
 
@@ -385,21 +381,49 @@ TString decodeWord()
 
     // Will detail all of the variables used in the regression.
     TString ntupleVars;
+    std::vector<TString> x;
 
     // Figure out which variables were used during the regression so that we can save the variable ranking appropriately.
     // The user inputs whichVars in which each bit represents a boolean value telling us whether or not to use that variable.
-    if((whichVars & (1<<0)) == (1<<0)) ntupleVars+=":dPhiAB";
-    if((whichVars & (1<<1)) == (1<<1)) ntupleVars+=":dThetaAB";
-    if((whichVars & (1<<2)) == (1<<2)) ntupleVars+=":dEtaAB";
-    if((whichVars & (1<<3)) == (1<<3)) ntupleVars+=":TrackEta";
-    if((whichVars & (1<<4)) == (1<<4)) ntupleVars+=":TrackPhi";
-    if((whichVars & (1<<5)) == (1<<5)) ntupleVars+=":CLCTA";
-    if((whichVars & (1<<6)) == (1<<6)) ntupleVars+=":CLCTB";
-    if((whichVars & (1<<7)) == (1<<7)) ntupleVars+=":cscidA";
-    if((whichVars & (1<<8)) == (1<<8)) ntupleVars+=":cscidB";
-    if((whichVars & (1<<9)) == (1<<9)) ntupleVars+=":frA";
-    if((whichVars & (1<<10)) == (1<<10)) ntupleVars+=":frB";
-    if((whichVars & (1<<11)) == (1<<11)) ntupleVars+=":SFR";
+    if((whichVars & (1<<0)) == (1<<0)) x.push_back("TrackPt");
+    if((whichVars & (1<<1)) == (1<<1)) x.push_back("TrackEta");
+    if((whichVars & (1<<2)) == (1<<2)) x.push_back("TrackPhi");
+    if((whichVars & (1<<3)) == (1<<3)) x.push_back("dPhi12");
+    if((whichVars & (1<<4)) == (1<<4)) x.push_back("dPhi13");
+    if((whichVars & (1<<5)) == (1<<5)) x.push_back("dPhi14");
+    if((whichVars & (1<<6)) == (1<<6)) x.push_back("dPhi23");
+    if((whichVars & (1<<7)) == (1<<7)) x.push_back("dPhi24");
+    if((whichVars & (1<<8)) == (1<<8)) x.push_back("dPhi34");
+    if((whichVars & (1<<9)) == (1<<9)) x.push_back("dTheta12");
+    if((whichVars & (1<<10)) == (1<<10)) x.push_back("dTheta13");
+    if((whichVars & (1<<11)) == (1<<11)) x.push_back("dTheta14");
+    if((whichVars & (1<<12)) == (1<<12)) x.push_back("dTheta23");
+    if((whichVars & (1<<13)) == (1<<13)) x.push_back("dTheta24");
+    if((whichVars & (1<<14)) == (1<<14)) x.push_back("dTheta34");
+    if((whichVars & (1<<15)) == (1<<15)) x.push_back("dEta12");
+    if((whichVars & (1<<16)) == (1<<16)) x.push_back("dEta13");
+    if((whichVars & (1<<17)) == (1<<17)) x.push_back("dEta14");
+    if((whichVars & (1<<18)) == (1<<18)) x.push_back("dEta23");
+    if((whichVars & (1<<19)) == (1<<19)) x.push_back("dEta24");
+    if((whichVars & (1<<20)) == (1<<20)) x.push_back("dEta34");
+    if((whichVars & (1<<21)) == (1<<21)) x.push_back("CLCT1");
+    if((whichVars & (1<<22)) == (1<<22)) x.push_back("CLCT2");
+    if((whichVars & (1<<23)) == (1<<23)) x.push_back("CLCT3");
+    if((whichVars & (1<<24)) == (1<<24)) x.push_back("CLCT4");
+    if((whichVars & (1<<25)) == (1<<25)) x.push_back("cscid1");
+    if((whichVars & (1<<26)) == (1<<26)) x.push_back("cscid2");
+    if((whichVars & (1<<27)) == (1<<27)) x.push_back("cscid3");
+    if((whichVars & (1<<28)) == (1<<28)) x.push_back("cscid4");
+    if((whichVars & (1<<29)) == (1<<29)) x.push_back("fr1");
+    if((whichVars & (1<<30)) == (1<<30)) x.push_back("fr2");
+    if((whichVars & ((unsigned long long)1<<31)) == ((unsigned long long)1<<31)) x.push_back("fr3");
+    if((whichVars & ((unsigned long long)1<<32)) == ((unsigned long long)1<<32)) x.push_back("fr4");
+    if((whichVars & ((unsigned long long)1<<33)) == ((unsigned long long)1<<33)) x.push_back("SFR");
+
+
+    for(unsigned int i=0; i<x.size(); i++)
+        ntupleVars+=":"+x[i];
+
 
     ntupleVars = ntupleVars(1,ntupleVars.Length());
     return ntupleVars;
@@ -414,7 +438,7 @@ void saveVarImportance(std::vector<Double_t>& vr)
     // The variables we will save in the variable ranking ntuple.
     TString ntupleVars = decodeWord();
 
-    ntupleVars+=":Mode:transformation:prelimFit:useCharge:isExclusive:whichVars";
+    ntupleVars+=":Mode:transformation:prelimFit:useCharge:whichVars";
     std::vector<Float_t> vranking;
     // vr[0] is the target variable and doesn't determine the trueValue.
     for(unsigned int i=1; i<vr.size(); i++)
@@ -428,7 +452,6 @@ void saveVarImportance(std::vector<Double_t>& vr)
     vranking.push_back((float)(transform!=0?transform->id():0));
     vranking.push_back((float)(prelimfit!=0?prelimfit->id():0));
     vranking.push_back((float)useCharge);
-    vranking.push_back((float)isExclusive);
     vranking.push_back((float)whichVars);
 
     // Fill the ntuple.
@@ -481,9 +504,9 @@ void buildAndEvaluateForest()
     }
     else
     {
-        readInEvents("../train_flat1over.root", trainingEvents, mode, useCharge, isExclusive, whichVars);
-        if(!useFlatPt) readInEvents("../test_flat1over.root", testingEvents, mode, useCharge, isExclusive, whichVars);
-        else readInEvents("../100k_csc_singlemu_flatpt.root", testingEvents, mode, useCharge, isExclusive, whichVars);
+        load4station("../train_flat1over.root", trainingEvents, useCharge, whichVars);
+        if(!useFlatPt) load4station("../test_flat1over.root", testingEvents, useCharge, whichVars);
+        else load4station("../100k_csc_singlemu_flatpt.root", testingEvents, useCharge, whichVars);
     }
 
     // Use these to evaluate the success of the regression.
@@ -512,7 +535,6 @@ void buildAndEvaluateForest()
     std::cout << "Loss Function: " << lf->name().c_str() << std::endl;
     std::cout << "Mode: " << mode << std::endl;
     std::cout << "Use Charge: " << useCharge << std::endl;
-    std::cout << "Is Exclusive: " << isExclusive << std::endl;
     std::cout << "Use PCA: " << usePCA << std::endl;
     std::cout << "whichVars: " << wvars.str().c_str() << std::endl;
 
@@ -536,16 +558,11 @@ void buildAndEvaluateForest()
     // The directory to store the event ntuples.
     std::stringstream testDir;
     testDir << "../ntuples/testresults/" << mode << "/";
-    if(isExclusive) testDir << "ex/";
-    else testDir << "in/";
     std::stringstream trainDir;
     trainDir << "../ntuples/trainresults/" << mode << "/";
-    if(isExclusive) trainDir << "ex/";
-    else trainDir << "in/";
-
 
     // The ntuple in which we will save the error vs learning parameters info.
-    TNtuple* errortuple = new TNtuple("error", "error", "rms:reg_rms:resolution:training_rms:reg_training_rms:training_resolution:nodes:trees:lr:transformation:prelimFit:useCharge:isExclusive:isFlatPt:whichVars:usePCA:nvars");
+    TNtuple* errortuple = new TNtuple("error", "error", "rms:reg_rms:resolution:training_rms:reg_training_rms:training_resolution:nodes:trees:lr:transformation:prelimFit:useCharge:isFlatPt:whichVars:usePCA:nvars");
 
     // Undo the transformation, so that we may properly process the events for prediction.
     // During preprocessing the preliminary fit assumes untransformed values.
@@ -614,9 +631,8 @@ void buildAndEvaluateForest()
         }
         else
         {
-            if((((t+1) & ((t+1) - 1)) == 0) || t+1 == forest->size()) saveEvents(savetestto.str().c_str(), testingEvents, whichVars);
+            if((((t+1) & ((t+1) - 1)) == 0) || t+1 == forest->size()) save4station(savetestto.str().c_str(), testingEvents, whichVars);
         }
-        //if(t+1 == forest->size()/2 || t+1 == forest->size()) saveEvents(savetrainto.str().c_str(), trainingEvents);
 
         // Transform back for next prediction update. 
         transformEvents(testingEvents, transform);
@@ -625,7 +641,7 @@ void buildAndEvaluateForest()
 
         // Add to the error tuple.
         Float_t x[17] = {rms_error, reg_rms_error, absres_error, rms_error_train, reg_rms_error_train, absres_error_train, nodes, t, lr, 
-        (transform!=0)?transform->id():0, (prelimfit!=0)?prelimfit->id():0, useCharge, isExclusive, useFlatPt, whichVars, usePCA, nvars};
+        (transform!=0)?transform->id():0, (prelimfit!=0)?prelimfit->id():0, useCharge, useFlatPt, whichVars, usePCA, nvars};
         errortuple->Fill(&x[0]);
     }
     ///////////////////////////////////////////////////////
@@ -637,8 +653,6 @@ void buildAndEvaluateForest()
 
     // Par evaluation directory.
     savepartupleto << "../ntuples/evaluation/" << mode << "/";
-    if(isExclusive) savepartupleto << "/ex/";
-    else savepartupleto << "/in/";
 
     // Name the file using the appropriate attributes.
     savepartupleto << "evaluation_";
@@ -666,16 +680,17 @@ int main(int argc, char* argv[])
 
     // Settings.
     saveTrees = false;
-    isExclusive = true;
-    useFlatPt = false;
+    useFlatPt = true;
     useCharge = false;
-    whichVars = 0x1ff;
-    nvars = 9;
+    whichVars = 0x3ffffffff;
+    nvars = 34;
+    mode = 15;
     int whichTransform = 0;
+    int whichPrelim = 0;
     int intUsePCA = 0;
 
     // Settings gathered from command line.
-    // Assuming "./FindBestParameters nodes trees lr whichTransform mode usePCA" as input from the terminal.
+    // Assuming "./FindBestParameters nodes trees lr whichTransform whichPrelim usePCA" as input from the terminal.
     for(int i=1; i<argc; i++)
     {
         std::stringstream ss;
@@ -684,18 +699,20 @@ int main(int argc, char* argv[])
         if(i==2) ss >> trees;
         if(i==3) ss >> lr;
         if(i==4) ss >> whichTransform;
-        if(i==5) ss >> mode;
+        if(i==5) ss >> whichPrelim;
         if(i==6) ss >> intUsePCA;
     }
 
     //Loss Function
-    LeastSquares* lf = new LeastSquares();
+    lf = new LeastSquares();
 
     // Preprocessing
     prelimfit = 0;
     transform = 0;
     if(whichTransform == 1) transform = new Inverse();
+    if(whichPrelim == 1) prelimfit = new CSCFit();
     if(intUsePCA == 1) usePCA = true;
+    else usePCA = false;
 
     buildAndEvaluateForest();
 
