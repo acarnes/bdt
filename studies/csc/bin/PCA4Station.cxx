@@ -51,7 +51,7 @@ bool usePCA = false;
 bool saveTrees = false;
 bool useFlatPt = true;
 bool useCharge = false;
-unsigned long long whichVars = 0xfffffffff;
+unsigned long long whichVars = 0x3ffffffff;
 unsigned int nvars = 34;
 
 //////////////////////////////////////////////////////////////////////////
@@ -361,7 +361,8 @@ const char* settingsString(Int_t t)
     // Make sure the name has the transform, prelimfit, nodes, trees, etc.
     if(transform!=0) settings << transform->name() << "_";
     if(prelimfit!=0) settings << prelimfit->name() << "_";
-    settings << nodes << "_" << t << "_" << lr << "_mode_" << mode << "_chg_" << useCharge << "_" << wvars.str().c_str() << "_PCA_" << usePCA << "_nPCAvars_" << nvars;
+    settings << lf->name().c_str() << "_" << nodes << "_" << t << "_" << lr << "_mode_"
+     << mode << "_chg_" << useCharge << "_" << wvars.str().c_str() << "_PCA_" << usePCA << "_nPCAvars_" << nvars;
 
     // Make sure the name tells us whether it uses the flat testing sample or the flat in 1/pt testing sample.
     if(useFlatPt) settings << "_flatPt";
@@ -438,7 +439,7 @@ void saveVarImportance(std::vector<Double_t>& vr)
     // The variables we will save in the variable ranking ntuple.
     TString ntupleVars = decodeWord();
 
-    ntupleVars+=":Mode:transformation:prelimFit:useCharge:whichVars";
+    ntupleVars+=":Mode:transformation:prelimFit:useCharge:whichVars:lossFunction";
     std::vector<Float_t> vranking;
     // vr[0] is the target variable and doesn't determine the trueValue.
     for(unsigned int i=1; i<vr.size(); i++)
@@ -453,6 +454,7 @@ void saveVarImportance(std::vector<Double_t>& vr)
     vranking.push_back((float)(prelimfit!=0?prelimfit->id():0));
     vranking.push_back((float)useCharge);
     vranking.push_back((float)whichVars);
+    vranking.push_back((float)lf->id());
 
     // Fill the ntuple.
     rankingtuple->Fill(&vranking[0]);
@@ -562,7 +564,7 @@ void buildAndEvaluateForest()
     trainDir << "../ntuples/trainresults/" << mode << "/";
 
     // The ntuple in which we will save the error vs learning parameters info.
-    TNtuple* errortuple = new TNtuple("error", "error", "rms:reg_rms:resolution:training_rms:reg_training_rms:training_resolution:nodes:trees:lr:transformation:prelimFit:useCharge:isFlatPt:whichVars:usePCA:nvars");
+    TNtuple* errortuple = new TNtuple("error", "error", "rms:reg_rms:resolution:training_rms:reg_training_rms:training_resolution:nodes:trees:lr:transformation:prelimFit:useCharge:isFlatPt:whichVars:usePCA:nvars:lossFunction");
 
     // Undo the transformation, so that we may properly process the events for prediction.
     // During preprocessing the preliminary fit assumes untransformed values.
@@ -641,7 +643,7 @@ void buildAndEvaluateForest()
 
         // Add to the error tuple.
         Float_t x[17] = {rms_error, reg_rms_error, absres_error, rms_error_train, reg_rms_error_train, absres_error_train, nodes, t, lr, 
-        (transform!=0)?transform->id():0, (prelimfit!=0)?prelimfit->id():0, useCharge, useFlatPt, whichVars, usePCA, nvars};
+        (transform!=0)?transform->id():0, (prelimfit!=0)?prelimfit->id():0, useCharge, useFlatPt, whichVars, usePCA, nvars, lf->id()};
         errortuple->Fill(&x[0]);
     }
     ///////////////////////////////////////////////////////
@@ -679,6 +681,7 @@ int main(int argc, char* argv[])
 // Run a regression with the appropriate settings.
 
     // Settings.
+    usePCA = false;
     saveTrees = false;
     useFlatPt = true;
     useCharge = false;
@@ -688,9 +691,10 @@ int main(int argc, char* argv[])
     int whichTransform = 0;
     int whichPrelim = 0;
     int intUsePCA = 0;
+    int whichLossFunction = 1;
 
     // Settings gathered from command line.
-    // Assuming "./FindBestParameters nodes trees lr whichTransform whichPrelim usePCA" as input from the terminal.
+    // Assuming "./FindBestParameters nodes trees lr whichTransform whichPrelim usePCA lossFunction" as input from the terminal.
     for(int i=1; i<argc; i++)
     {
         std::stringstream ss;
@@ -701,15 +705,20 @@ int main(int argc, char* argv[])
         if(i==4) ss >> whichTransform;
         if(i==5) ss >> whichPrelim;
         if(i==6) ss >> intUsePCA;
+        if(i==7) ss >> whichLossFunction;
     }
 
     //Loss Function
     lf = new LeastSquares();
+    if(whichLossFunction == 2) lf = new AbsoluteDeviation();
+    if(whichLossFunction == 3) lf = new Huber();
+    if(whichLossFunction == 4) lf = new PercentErrorSquared();
 
     // Preprocessing
     prelimfit = 0;
     transform = 0;
     if(whichTransform == 1) transform = new Inverse();
+    if(whichTransform == 2) transform = new Log();
     if(whichPrelim == 1) prelimfit = new CSCFit();
     if(intUsePCA == 1) usePCA = true;
     else usePCA = false;

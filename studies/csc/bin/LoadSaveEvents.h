@@ -66,6 +66,7 @@ void preprocessTrain(std::vector<Event*>& events, LossFunction* lf, PreliminaryF
     std::cout << "Preprocessing training events ... " << std::endl;
     Int_t failed = 0;
 
+    // Apply the preliminary fit and the transformation for each event.
     for(unsigned int i=0; i<events.size(); i++)
     {
         bool failure = false;
@@ -85,13 +86,24 @@ void preprocessTrain(std::vector<Event*>& events, LossFunction* lf, PreliminaryF
         if(failure)
         {
             failed++;
-            std::cout << "Event " << e->id << ": trueValue := LOG(" << e->trueValue << ") " << "is UNDEFINED" << std::endl;
+            std::cout << "Event " << e->id << ": trueValue := TRANFORM(" << e->trueValue << ") " << "is UNDEFINED" << std::endl;
             std::cout << "Event " << e->id << " has been removed from the collection." << std::endl;
             events.erase(events.begin()+i);
             delete e;
             i--;
         }
-        else e->data[0] = lf->target(e);
+    }
+
+    // Huber needs the residual quantile and the residual median before assigning the target.
+    // These are set and calculated in the fit function.
+    if(lf->name().compare("Huber")==0) lf->fit(events);
+
+    // Set the initial regression target for each event.
+    for(unsigned int i=0; i<events.size(); i++)
+    {
+       Event* e = events[i];
+       if(prelimfit!=0) e->data[0] = lf->target(e);
+       else e->data[0] = e->trueValue;
     }
 
     if(failed > 0)
@@ -127,7 +139,6 @@ void preprocessTest(std::vector<Event*>& events, LossFunction* lf, PreliminaryFi
             failed++;
             //std::cout << "Transforming " << e->id << " has resulted in an undefined value." << std::endl;
         }
-        else e->data[0] = lf->target(e);
     }
 
     if(failed > 0)

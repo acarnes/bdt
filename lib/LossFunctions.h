@@ -27,6 +27,7 @@ class LossFunction
         // terminal node at each iteration.
         virtual Double_t fit(std::vector<Event*>& v) = 0;
         virtual std::string name() = 0;
+        virtual int id() = 0;
 };
 
 // ========================================================
@@ -59,6 +60,7 @@ class LeastSquares : public LossFunction
             return SUM/v.size();
         }
         std::string name() { return "Least_Squares"; }
+        int id(){ return 1; }
        
 };
 
@@ -84,6 +86,7 @@ class AbsoluteDeviation : public LossFunction
         Double_t fit(std::vector<Event*>& v)
         {
         // The median of the residuals minimizes absolute deviation.
+            if(v.size()==0) return 0;
             std::vector<Double_t> residuals(v.size());
        
             // Load the residuals into a vector. 
@@ -94,7 +97,7 @@ class AbsoluteDeviation : public LossFunction
             }
 
             // Get the median and return it.
-            unsigned int median_loc = (residuals.size()-1)/2;
+            int median_loc = (residuals.size()-1)/2;
 
             // Odd.
             if(residuals.size()%2 != 0)
@@ -114,6 +117,7 @@ class AbsoluteDeviation : public LossFunction
             }
         }
         std::string name() { return "Absolute_Deviation"; }
+        int id(){ return 2; }
 };
 
 // ========================================================
@@ -143,9 +147,6 @@ class Huber : public LossFunction
         {
         // The constant fit that minimizes Huber in a region.
 
-            std::cout << std::endl << "Calculating fit for terminal node..." << std::endl;
-            std::cout << "v.size() = " << v.size() << std::endl;
-
             quantile = calculateQuantile(v, 0.7);
             residual_median = calculateQuantile(v, 0.5); 
 
@@ -157,23 +158,16 @@ class Huber : public LossFunction
                 double diff = residual - residual_median; 
                 x += ((diff > 0)?1.0:-1.0)*std::min(quantile, TMath::Abs(diff));
             }
-           
-
-            std::cout << std::endl << "fit = " << (residual_median + x/v.size()) << std::endl;
-            std::cout << "quantile = " << quantile << std::endl;
-            std::cout << "residual_median = " << residual_median << std::endl;
-            std::cout << "x/N = " << x/v.size() << std::endl;
-            std::cout << "Done calculating fit." << std::endl;
 
            return (residual_median + x/v.size());
             
         }
 
         std::string name() { return "Huber"; }
+        int id(){ return 3; }
 
         double calculateQuantile(std::vector<Event*>& v, double whichQuantile)
         {
-            std::cout << std::endl << "Running calculateQuantile ... " << std::endl;
             // Container for the residuals.
             std::vector<Double_t> residuals(v.size());
        
@@ -186,11 +180,45 @@ class Huber : public LossFunction
 
             std::sort(residuals.begin(), residuals.end());             
             unsigned int quantile_location = whichQuantile*(residuals.size()-1);
-            std::cout << "residuals.size() = " << residuals.size() << std::endl;
-            std::cout << "whichQuantile = " << whichQuantile << std::endl;
-            std::cout << "quantile_location = " << quantile_location << std::endl;
-            std::cout << "quantile = " << residuals[quantile_location] << std::endl;
             return residuals[quantile_location];
         }        
 };
+
+// ========================================================
+// ============== Percent Error ===========================
+// ========================================================
+
+class PercentErrorSquared : public LossFunction
+{
+    public:
+        PercentErrorSquared(){}
+        ~PercentErrorSquared(){}
+
+        Double_t target(Event* e)
+        {   
+        // The gradient of the squared percent error.
+            return (e->trueValue - e->predictedValue)/(e->trueValue * e->trueValue);
+        }   
+
+        Double_t fit(std::vector<Event*>& v)
+        {   
+        // The average of the weighted residuals minimizes the squared percent error.
+        // Weight(i) = 1/true(i)^2. 
+    
+            Double_t SUMtop = 0;
+            Double_t SUMbottom = 0;
+    
+            for(unsigned int i=0; i<v.size(); i++)
+            {   
+                Event* e = v[i];
+                SUMtop += (e->trueValue - e->predictedValue)/(e->trueValue*e->trueValue); 
+                SUMbottom += 1/(e->trueValue*e->trueValue);
+            }   
+    
+            return SUMtop/SUMbottom;
+        }   
+        std::string name() { return "Percent_Error"; }
+        int id(){ return 4; }
+};
+
 #endif
