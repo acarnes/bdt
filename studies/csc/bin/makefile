@@ -7,7 +7,7 @@ LIBFLAGS = `root-config --libs` -lXMLIO -lMLP -lMinuit
 LIBDIR = ../../../lib/
 CFLAGS = -I${LIBDIR} -c `root-config --cflags`
 DEPS = LoadSaveEvents.h Functions.h
-MAINPROGRAM = PCA4StationReduced
+MAINPROGRAM = Eval4Station
 
 CompileStuff: ${LIBDIR}Utilities.o ${LIBDIR}Node.o ${LIBDIR}Tree.o ${LIBDIR}Forest.o ${MAINPROGRAM}.o
 	$(CC) $(LIBFLAGS) ${LIBDIR}Utilities.o ${LIBDIR}Node.o ${LIBDIR}Tree.o ${LIBDIR}Forest.o ${MAINPROGRAM}.o -o ${MAINPROGRAM}

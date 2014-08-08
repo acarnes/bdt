@@ -255,9 +255,6 @@ void Tree::addXMLAttributes(TXMLEngine* xml, Node* node, XMLNodePointer_t np)
 
 void Tree::saveToXML(const char* c)
 {
-// There are problems with this when we have lots of nodes. But it works
-// fine with less. There is some kind of stack shenanigans going on due 
-// to the recursive process.
 
     TXMLEngine* xml = new TXMLEngine();
 

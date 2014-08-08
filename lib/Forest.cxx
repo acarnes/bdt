@@ -393,7 +393,10 @@ void Forest::predictEvents(std::vector<Event*> eventsp, Int_t numtrees)
 
     // i iterates through the trees in the forest. Each tree corrects the last prediction.
     for(unsigned int i=0; i < numtrees; i++) 
+    {
+        std::cout << "++Tree " << i << "..." << std::endl;
         appendCorrection(eventsp, i);
+    }
 }
 
 //////////////////////////////////////////////////////////////////////////
