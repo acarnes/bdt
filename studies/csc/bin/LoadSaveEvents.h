@@ -860,6 +860,56 @@ void load4station(const char* inputfilename, std::vector<Event*>& events, bool u
     delete ntuple;
     delete f;
 }
+
+//////////////////////////////////////////////////////////////////////////
+// ______________________Post_Process___________________________________//
+//////////////////////////////////////////////////////////////////////////
+
+void postProcess(std::vector<Event*> events)
+{
+// Discretize and scale the BDTPt so that it can be compared to CSCPt appropriately.
+// Also take care of negative BDTPt values and extremely high BDTPt values.
+    std::cout << "Post-processing events ... " << std::endl;
+
+    float ptscale[31] =  { 0,
+                           1.5,   2.0,   2.5,   3.0,   3.5,   4.0,
+                           4.5,   5.0,   6.0,   7.0,   8.0,  10.0,  12.0,  14.0,
+                           16.0,  18.0,  20.0,  25.0,  30.0,  35.0,  40.0,  45.0,
+                           50.0,  60.0,  70.0,  80.0,  90.0, 100.0, 120.0, 140.0 };
+ 
+    // Add events to the ntuple.
+    for(unsigned int i=0; i<events.size(); i++) 
+    {        
+        Event* e = events[i];
+  
+        float BDTPt = e->predictedValue;
+
+        // Before discretizing and scaling take care of negative predictions.
+        if(BDTPt < 0) BDTPt = 0;
+  
+        // Scale for increased efficiency.
+        float scaleF = 1.2; 
+        BDTPt = scaleF*BDTPt;
+  
+        // Discretize predictions according to ptscale.
+        for (int pts=0; pts<31; pts++)
+        {        
+            if (ptscale[pts]<=BDTPt && ptscale[pts+1]>BDTPt)
+            {        
+                BDTPt = ptscale[pts];
+                break;
+            }    
+        }    
+  
+        // Fix values beyond the scale.
+        if (BDTPt > 120) BDTPt = 120; 
+        if (BDTPt < 0) BDTPt = 0;  
+    
+        // Replace the old prediction with the processed prediction.
+        e->predictedValue = BDTPt;
+    }    
+}
+
 //////////////////////////////////////////////////////////////////////////
 // ______________________Save Events____________________________________//
 //////////////////////////////////////////////////////////////////////////
@@ -1046,6 +1096,7 @@ void saveFull(const char* savefilename, std::vector<Event*>& events)
     //delete n;
     delete f;
 }
+
 
 //////////////////////////////////////////////////////////////////////////
 // ______________________Split_Up_Sample________________________________//

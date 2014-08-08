@@ -191,6 +191,9 @@ TString decodeWord()
     return ntupleVars;
 }
 
+/////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------
+/////////////////////////////////////////////////////////////////////////
 
 void evaluateForest()
 {
@@ -224,6 +227,7 @@ void evaluateForest()
     if(transform != 0) std::cout << "Transform Function: " << transform->name() << std::endl;
     else std::cout << "Transform Function: None" << std::endl;
     std::cout << "=======================================" << std::endl;
+    std::cout << std::endl;
 
     // Read In events.
     std::vector<Event*> trainingEvents;
@@ -246,7 +250,9 @@ void evaluateForest()
 
     // Predict the test and rate sets.
     forest->predictEvents(testingEvents, trees);
+    std::cout << std::endl;
     forest->predictEvents(rateEvents, trees);
+    std::cout << std::endl;
 
     // Get the save locations in order.
     // The directories that will store the predicted events.
@@ -271,9 +277,15 @@ void evaluateForest()
     invertTransform(testingEvents, transform);
     invertTransform(rateEvents, transform);
 
+    // Discretize and scale the predictions.
+    postProcess(testingEvents);
+    postProcess(rateEvents);
+    std::cout << std::endl;
+
     // Save the events. 
     save4station(savetestto.str().c_str(), testingEvents, whichVars);
     save4station(saverateto.str().c_str(), rateEvents, whichVars);
+    std::cout << std::endl;
 
     delete forest;
 }
