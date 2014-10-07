@@ -109,7 +109,7 @@ void Tree::buildTree(Int_t nodeLimit)
 {
     // We greedily pick the best terminal node to split.
     Double_t bestNodeErrorReduction = -1;
-    Node* nodeToSplit;
+    Node* nodeToSplit = 0;
 
     if(numTerminalNodes == 1)
     {   
@@ -126,6 +126,11 @@ void Tree::buildTree(Int_t nodeLimit)
            nodeToSplit = (*it);
        }    
     }   
+
+    //std::cout << "nodeToSplit size = " << nodeToSplit->getNumEvents() << std::endl;
+
+    // If all of the nodes have one event we can't add any more nodes and reduce the error.
+    if(nodeToSplit == 0) return;
 
     // Create daughter nodes, and link the nodes together appropriately.
     nodeToSplit->theMiracleOfChildBirth();
@@ -205,10 +210,18 @@ void Tree::rankVariablesRecursive(Node* node, std::vector<Double_t>& v)
     Node* left = node->getLeftDaughter();
     Node* right = node->getRightDaughter();
 
+    // Terminal nodes don't contribute to error reduction.
     if(left==0 || right==0) return;
 
-    Int_t sv = node->getSplitVariable();
+    Int_t sv =  node->getSplitVariable();
     Double_t er = node->getErrorReduction();
+
+    if(sv == -1)
+    {
+        std::cout << "ERROR: negative split value for nonterminal node." << std::endl;
+        std::cout << "rankVarRecursive Split Variable = " << sv << std::endl;
+        std::cout << "rankVarRecursive Error Reduction = " << er << std::endl;
+    }
 
     // Add error reduction to the current total for the appropriate
     // variable.

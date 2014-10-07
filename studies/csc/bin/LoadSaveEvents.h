@@ -190,11 +190,13 @@ void preprocessRate(std::vector<Event*>& events, LossFunction* lf, PreliminaryFi
 void invertTransform(std::vector<Event*>& events, TransformFunction* transform)
 {
     if(transform == 0) return;
-    //std::cout << "Untransforming events ... " << std::endl;
+    std::cout << "Untransforming events ... " << std::endl;
 
     for(unsigned int i=0; i<events.size(); i++)
     {
         Event* e = events[i];
+        if(e->trueValue == 0) std::cout << e->id << ": e->trueValue == 0" << std::endl;
+        if(e->predictedValue == 0) std::cout << e->id << ": e->predictedValue == 0" << std::endl;
         transform->invertTransformation(e); 
     }
 }
@@ -502,6 +504,47 @@ void loadFull(const char* inputfilename, std::vector<Event*>& events)
         // Put the info from the ntuple entry into the vars above.
         ntuple->GetEntry(i);
 
+        // Remap CLCT values.
+        if(CLCT1 == 10) CLCT1 = 0;
+        else if(CLCT1 == 9)  CLCT1 = 1;
+        else if(CLCT1 == 8)  CLCT1 = -1;
+        else if(CLCT1 == 7)  CLCT1 = 2;
+        else if(CLCT1 == 6)  CLCT1 = -2;
+        else if(CLCT1 == 5)  CLCT1 = 3;
+        else if(CLCT1 == 4)  CLCT1 = -3;
+        else if(CLCT1 == 3)  CLCT1 = 4;
+        else if(CLCT1 == 2)  CLCT1 = -4;
+
+        if(CLCT2 == 10) CLCT2 = 0;
+        else if(CLCT2 == 9)  CLCT2 = 1;
+        else if(CLCT2 == 8)  CLCT2 = -1;
+        else if(CLCT2 == 7)  CLCT2 = 2;
+        else if(CLCT2 == 6)  CLCT2 = -2;
+        else if(CLCT2 == 5)  CLCT2 = 3;
+        else if(CLCT2 == 4)  CLCT2 = -3;
+        else if(CLCT2 == 3)  CLCT2 = 4;
+        else if(CLCT2 == 2)  CLCT2 = -4;
+
+        if(CLCT3 == 10) CLCT3 = 0;
+        else if(CLCT3 == 9)  CLCT3 = 1;
+        else if(CLCT3 == 8)  CLCT3 = -1;
+        else if(CLCT3 == 7)  CLCT3 = 2;
+        else if(CLCT3 == 6)  CLCT3 = -2;
+        else if(CLCT3 == 5)  CLCT3 = 3;
+        else if(CLCT3 == 4)  CLCT3 = -3;
+        else if(CLCT3 == 3)  CLCT3 = 4;
+        else if(CLCT3 == 2)  CLCT3 = -4;
+
+        if(CLCT4 == 10) CLCT4 = 0;
+        else if(CLCT4 == 9)  CLCT4 = 1;
+        else if(CLCT4 == 8)  CLCT4 = -1;
+        else if(CLCT4 == 7)  CLCT4 = 2;
+        else if(CLCT4 == 6)  CLCT4 = -2;
+        else if(CLCT4 == 5)  CLCT4 = 3;
+        else if(CLCT4 == 4)  CLCT4 = -3;
+        else if(CLCT4 == 3)  CLCT4 = 4;
+        else if(CLCT4 == 2)  CLCT4 = -4;
+
         // Store the variables needed for prediciton.
         std::vector<Double_t> x(39);
         x[0] = GenPt;
@@ -562,164 +605,11 @@ void loadFull(const char* inputfilename, std::vector<Event*>& events)
     delete ntuple;
     delete f;
 }
-
 //////////////////////////////////////////////////////////////////////////
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-void load4stationRate(const char* inputfilename, std::vector<Event*>& events, bool useCharge, unsigned long long whichVars)
-{
-    std::cout << "Reading in events from " << inputfilename << " ..." << std::endl;
-
-    std::cout << "a" << std::endl;
-    // Get the ntuple.
-    TFile* f = new TFile(inputfilename);
-    TNtuple* ntuple = (TNtuple*)f->Get("FullNtuple");
-
-    std::cout << "b" << std::endl;
-    // The variables in the ntuple.
-    Float_t GenPt, GenEta, GenPhi, GenCharge;
-    Float_t TrackPt, TrackEta, TrackPhi;
-    Float_t dPhi12, dPhi13, dPhi14, dPhi24, dPhi23, dPhi34;
-    Float_t dTheta12, dTheta13, dTheta14, dTheta24, dTheta23, dTheta34;
-    Float_t dEta12, dEta13, dEta14, dEta24, dEta23, dEta34;
-    Float_t CLCT1, CLCT2, CLCT3, CLCT4; 
-    Float_t cscid1, cscid2, cscid3, cscid4; 
-    Float_t fr1, fr2, fr3, fr4; 
-    Float_t Mode, SFR; 
-
-    std::cout << "c" << std::endl;
-    // Let the ntuple know about our variables above.
-    ntuple->SetBranchAddress("GenPt", &GenPt);
-    ntuple->SetBranchAddress("GenEta", &GenEta);
-    ntuple->SetBranchAddress("GenPhi", &GenPhi);
-    ntuple->SetBranchAddress("GenCharge", &GenCharge);
-
-    ntuple->SetBranchAddress("TrackPt", &TrackPt);
-    ntuple->SetBranchAddress("TrackEta", &TrackEta);
-    ntuple->SetBranchAddress("TrackPhi", &TrackPhi);
-
-    ntuple->SetBranchAddress("dPhi12", &dPhi12);
-    ntuple->SetBranchAddress("dPhi13", &dPhi13);
-    ntuple->SetBranchAddress("dPhi14", &dPhi14);
-    ntuple->SetBranchAddress("dPhi23", &dPhi23);
-    ntuple->SetBranchAddress("dPhi24", &dPhi24);
-    ntuple->SetBranchAddress("dPhi34", &dPhi34);
-
-    ntuple->SetBranchAddress("dTheta12", &dTheta12);
-    ntuple->SetBranchAddress("dTheta13", &dTheta13);
-    ntuple->SetBranchAddress("dTheta14", &dTheta14);
-    ntuple->SetBranchAddress("dTheta23", &dTheta23);
-    ntuple->SetBranchAddress("dTheta24", &dTheta24);
-    ntuple->SetBranchAddress("dTheta34", &dTheta34);
-
-    ntuple->SetBranchAddress("dEta12", &dEta12);
-    ntuple->SetBranchAddress("dEta13", &dEta13);
-    ntuple->SetBranchAddress("dEta14", &dEta14);
-    ntuple->SetBranchAddress("dEta23", &dEta23);
-    ntuple->SetBranchAddress("dEta24", &dEta24);
-    ntuple->SetBranchAddress("dEta34", &dEta34);
-
-    ntuple->SetBranchAddress("CLCT1", &CLCT1);
-    ntuple->SetBranchAddress("CLCT2", &CLCT2);
-    ntuple->SetBranchAddress("CLCT3", &CLCT3);
-    ntuple->SetBranchAddress("CLCT4", &CLCT4);
-
-    ntuple->SetBranchAddress("cscid1", &cscid1);
-    ntuple->SetBranchAddress("cscid2", &cscid2);
-    ntuple->SetBranchAddress("cscid3", &cscid3);
-    ntuple->SetBranchAddress("cscid4", &cscid4);
-
-    ntuple->SetBranchAddress("fr1", &fr1);
-    ntuple->SetBranchAddress("fr2", &fr2);
-    ntuple->SetBranchAddress("fr3", &fr3);
-    ntuple->SetBranchAddress("fr4", &fr4);
-
-    ntuple->SetBranchAddress("Mode", &Mode);
-    ntuple->SetBranchAddress("SFR", &SFR);
-
-    std::cout << "d" << std::endl;
-    // Store the events into a vector.
-    std::vector<Event*> v;
-
-    // Loop through the events.
-    for(unsigned int i=0; i<ntuple->GetEntries(); i++)
-    {
-        // Put the info from the ntuple entry into the vars above.
-        ntuple->GetEntry(i);
- 
-        // We only want 4 station tracks.
-        if((int)Mode != 0xf) continue;
-
-        // Store the variables needed for prediciton.
-        std::vector<Double_t> x;
-        x.push_back(GenPt);
-        //x.push_back(GenEta);
-        //x.push_back(GenPhi);
-        //x.push_back(GenCharge);
-        if((whichVars & (1<<0)) == (1<<0)) x.push_back(TrackPt);
-        if((whichVars & (1<<1)) == (1<<1)) x.push_back(TrackEta);
-        if((whichVars & (1<<2)) == (1<<2)) x.push_back(TrackPhi);
-        if((whichVars & (1<<3)) == (1<<3)) x.push_back(dPhi12);
-        if((whichVars & (1<<4)) == (1<<4)) x.push_back(dPhi13);
-        if((whichVars & (1<<5)) == (1<<5)) x.push_back(dPhi14);
-        if((whichVars & (1<<6)) == (1<<6)) x.push_back(dPhi23);
-        if((whichVars & (1<<7)) == (1<<7)) x.push_back(dPhi24);
-        if((whichVars & (1<<8)) == (1<<8)) x.push_back(dPhi34);
-        if((whichVars & (1<<9)) == (1<<9)) x.push_back(dTheta12);
-        if((whichVars & (1<<10)) == (1<<10)) x.push_back(dTheta13);
-        if((whichVars & (1<<11)) == (1<<11)) x.push_back(dTheta14);
-        if((whichVars & (1<<12)) == (1<<12)) x.push_back(dTheta23);
-        if((whichVars & (1<<13)) == (1<<13)) x.push_back(dTheta24);
-        if((whichVars & (1<<14)) == (1<<14)) x.push_back(dTheta34);
-        if((whichVars & (1<<15)) == (1<<15)) x.push_back(dEta12);
-        if((whichVars & (1<<16)) == (1<<16)) x.push_back(dEta13);
-        if((whichVars & (1<<17)) == (1<<17)) x.push_back(dEta14);
-        if((whichVars & (1<<18)) == (1<<18)) x.push_back(dEta23);
-        if((whichVars & (1<<19)) == (1<<19)) x.push_back(dEta24);
-        if((whichVars & (1<<20)) == (1<<20)) x.push_back(dEta34);
-        if((whichVars & (1<<21)) == (1<<21)) x.push_back(CLCT1);
-        if((whichVars & (1<<22)) == (1<<22)) x.push_back(CLCT2);
-        if((whichVars & (1<<23)) == (1<<23)) x.push_back(CLCT3);
-        if((whichVars & (1<<24)) == (1<<24)) x.push_back(CLCT4);
-        if((whichVars & (1<<25)) == (1<<25)) x.push_back(cscid1);
-        if((whichVars & (1<<26)) == (1<<26)) x.push_back(cscid2);
-        if((whichVars & (1<<27)) == (1<<27)) x.push_back(cscid3);
-        if((whichVars & (1<<28)) == (1<<28)) x.push_back(cscid4);
-        if((whichVars & (1<<29)) == (1<<29)) x.push_back(fr1);
-        if((whichVars & (1<<30)) == (1<<30)) x.push_back(fr2);
-        if((whichVars & ((unsigned long long)1<<31)) == ((unsigned long long)1<<31)) x.push_back(fr3);
-        if((whichVars & ((unsigned long long)1<<32)) == ((unsigned long long)1<<32)) x.push_back(fr4);
-        if((whichVars & ((unsigned long long)1<<33)) == ((unsigned long long)1<<33)) x.push_back(SFR);
-
-        // Load info into the event data structure.
-        Event* e = new Event();
-        e->trueValue = GenPt;
-        if(useCharge) e->trueValue = e->trueValue*GenCharge;
-        if(useCharge) x[0] = x[0]*GenCharge;
-        e->predictedValue = 0;
-        e->data = x;
-        e->id = i;
-        e->Mode = Mode;
-        e->CSCPt = TrackPt;
-
-        // Store in the vector of events.
-        v.push_back(e);
-    }
-    
-    std::cout << "e" << std::endl;
-    events = v;
-
-    std::cout << "f" << std::endl;
-    delete ntuple;
-    delete f;
-}
-
-//////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------
-//////////////////////////////////////////////////////////////////////////
-
-void load4station(const char* inputfilename, std::vector<Event*>& events, bool useCharge, unsigned long long whichVars)
+void loadEventsInclusive(const char* inputfilename, std::vector<Event*>& events, bool useCharge, unsigned long long whichVars, int mode)
 {
     std::cout << "Reading in events from " << inputfilename << " ..." << std::endl;
 
@@ -796,8 +686,154 @@ void load4station(const char* inputfilename, std::vector<Event*>& events, bool u
         // Put the info from the ntuple entry into the vars above.
         ntuple->GetEntry(i);
  
-        // We only want 4 station tracks.
-        if((int)Mode != 0xf) continue;
+        // Skip tracks with the incorrect mode.
+        if(((int)Mode & mode) != mode) continue;
+
+        // Store the variables needed for prediciton.
+        std::vector<Double_t> x;
+        x.push_back(GenPt);
+        //x.push_back(GenEta);
+        //x.push_back(GenPhi);
+        //x.push_back(GenCharge);
+        if((whichVars & (1<<0)) == (1<<0)) x.push_back(TrackPt);
+        if((whichVars & (1<<1)) == (1<<1)) x.push_back(TrackEta);
+        if((whichVars & (1<<2)) == (1<<2)) x.push_back(TrackPhi);
+        if((whichVars & (1<<3)) == (1<<3)) x.push_back(dPhi12);
+        if((whichVars & (1<<4)) == (1<<4)) x.push_back(dPhi13);
+        if((whichVars & (1<<5)) == (1<<5)) x.push_back(dPhi14);
+        if((whichVars & (1<<6)) == (1<<6)) x.push_back(dPhi23);
+        if((whichVars & (1<<7)) == (1<<7)) x.push_back(dPhi24);
+        if((whichVars & (1<<8)) == (1<<8)) x.push_back(dPhi34);
+        if((whichVars & (1<<9)) == (1<<9)) x.push_back(dTheta12);
+        if((whichVars & (1<<10)) == (1<<10)) x.push_back(dTheta13);
+        if((whichVars & (1<<11)) == (1<<11)) x.push_back(dTheta14);
+        if((whichVars & (1<<12)) == (1<<12)) x.push_back(dTheta23);
+        if((whichVars & (1<<13)) == (1<<13)) x.push_back(dTheta24);
+        if((whichVars & (1<<14)) == (1<<14)) x.push_back(dTheta34);
+        if((whichVars & (1<<15)) == (1<<15)) x.push_back(dEta12);
+        if((whichVars & (1<<16)) == (1<<16)) x.push_back(dEta13);
+        if((whichVars & (1<<17)) == (1<<17)) x.push_back(dEta14);
+        if((whichVars & (1<<18)) == (1<<18)) x.push_back(dEta23);
+        if((whichVars & (1<<19)) == (1<<19)) x.push_back(dEta24);
+        if((whichVars & (1<<20)) == (1<<20)) x.push_back(dEta34);
+        if((whichVars & (1<<21)) == (1<<21)) x.push_back(CLCT1);
+        if((whichVars & (1<<22)) == (1<<22)) x.push_back(CLCT2);
+        if((whichVars & (1<<23)) == (1<<23)) x.push_back(CLCT3);
+        if((whichVars & (1<<24)) == (1<<24)) x.push_back(CLCT4);
+        if((whichVars & (1<<25)) == (1<<25)) x.push_back(cscid1);
+        if((whichVars & (1<<26)) == (1<<26)) x.push_back(cscid2);
+        if((whichVars & (1<<27)) == (1<<27)) x.push_back(cscid3);
+        if((whichVars & (1<<28)) == (1<<28)) x.push_back(cscid4);
+        if((whichVars & (1<<29)) == (1<<29)) x.push_back(fr1);
+        if((whichVars & (1<<30)) == (1<<30)) x.push_back(fr2);
+        if((whichVars & ((unsigned long long)1<<31)) == ((unsigned long long)1<<31)) x.push_back(fr3);
+        if((whichVars & ((unsigned long long)1<<32)) == ((unsigned long long)1<<32)) x.push_back(fr4);
+        if((whichVars & ((unsigned long long)1<<33)) == ((unsigned long long)1<<33)) x.push_back(SFR);
+
+        // Load info into the event data structure.
+        Event* e = new Event();
+        e->trueValue = GenPt;
+        if(useCharge) e->trueValue = e->trueValue*GenCharge;
+        if(useCharge) x[0] = x[0]*GenCharge;
+        e->predictedValue = 0;
+        e->data = x;
+        e->id = i;
+        e->Mode = Mode;
+        e->CSCPt = TrackPt;
+
+        // Store in the vector of events.
+        v.push_back(e);
+    }
+    
+    events = v;
+
+    delete ntuple;
+    delete f;
+}
+
+//////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////
+
+void loadEventsExclusive(const char* inputfilename, std::vector<Event*>& events, bool useCharge, unsigned long long whichVars, int mode)
+{
+    std::cout << "Reading in events from " << inputfilename << " ..." << std::endl;
+
+    // Get the ntuple.
+    TFile* f = new TFile(inputfilename);
+    TNtuple* ntuple = (TNtuple*)f->Get("theNtuple");
+
+    // The variables in the ntuple.
+    Float_t GenPt, GenEta, GenPhi, GenCharge;
+    Float_t TrackPt, TrackEta, TrackPhi;
+    Float_t dPhi12, dPhi13, dPhi14, dPhi24, dPhi23, dPhi34;
+    Float_t dTheta12, dTheta13, dTheta14, dTheta24, dTheta23, dTheta34;
+    Float_t dEta12, dEta13, dEta14, dEta24, dEta23, dEta34;
+    Float_t CLCT1, CLCT2, CLCT3, CLCT4; 
+    Float_t cscid1, cscid2, cscid3, cscid4; 
+    Float_t fr1, fr2, fr3, fr4; 
+    Float_t Mode, SFR; 
+
+    // Let the ntuple know about our variables above.
+    ntuple->SetBranchAddress("GenPt", &GenPt);
+    ntuple->SetBranchAddress("GenEta", &GenEta);
+    ntuple->SetBranchAddress("GenPhi", &GenPhi);
+    ntuple->SetBranchAddress("GenCharge", &GenCharge);
+
+    ntuple->SetBranchAddress("TrackPt", &TrackPt);
+    ntuple->SetBranchAddress("TrackEta", &TrackEta);
+    ntuple->SetBranchAddress("TrackPhi", &TrackPhi);
+
+    ntuple->SetBranchAddress("dPhi12", &dPhi12);
+    ntuple->SetBranchAddress("dPhi13", &dPhi13);
+    ntuple->SetBranchAddress("dPhi14", &dPhi14);
+    ntuple->SetBranchAddress("dPhi23", &dPhi23);
+    ntuple->SetBranchAddress("dPhi24", &dPhi24);
+    ntuple->SetBranchAddress("dPhi34", &dPhi34);
+
+    ntuple->SetBranchAddress("dTheta12", &dTheta12);
+    ntuple->SetBranchAddress("dTheta13", &dTheta13);
+    ntuple->SetBranchAddress("dTheta14", &dTheta14);
+    ntuple->SetBranchAddress("dTheta23", &dTheta23);
+    ntuple->SetBranchAddress("dTheta24", &dTheta24);
+    ntuple->SetBranchAddress("dTheta34", &dTheta34);
+
+    ntuple->SetBranchAddress("dEta12", &dEta12);
+    ntuple->SetBranchAddress("dEta13", &dEta13);
+    ntuple->SetBranchAddress("dEta14", &dEta14);
+    ntuple->SetBranchAddress("dEta23", &dEta23);
+    ntuple->SetBranchAddress("dEta24", &dEta24);
+    ntuple->SetBranchAddress("dEta34", &dEta34);
+
+    ntuple->SetBranchAddress("CLCT1", &CLCT1);
+    ntuple->SetBranchAddress("CLCT2", &CLCT2);
+    ntuple->SetBranchAddress("CLCT3", &CLCT3);
+    ntuple->SetBranchAddress("CLCT4", &CLCT4);
+
+    ntuple->SetBranchAddress("cscid1", &cscid1);
+    ntuple->SetBranchAddress("cscid2", &cscid2);
+    ntuple->SetBranchAddress("cscid3", &cscid3);
+    ntuple->SetBranchAddress("cscid4", &cscid4);
+
+    ntuple->SetBranchAddress("fr1", &fr1);
+    ntuple->SetBranchAddress("fr2", &fr2);
+    ntuple->SetBranchAddress("fr3", &fr3);
+    ntuple->SetBranchAddress("fr4", &fr4);
+
+    ntuple->SetBranchAddress("Mode", &Mode);
+    ntuple->SetBranchAddress("SFR", &SFR);
+
+    // Store the events into a vector.
+    std::vector<Event*> v;
+
+    // Loop through the events.
+    for(unsigned int i=0; i<ntuple->GetEntries(); i++)
+    {
+        // Put the info from the ntuple entry into the vars above.
+        ntuple->GetEntry(i);
+ 
+        // Skip tracks with the incorrect mode.
+        if((int)Mode != mode) continue;
 
         // Store the variables needed for prediciton.
         std::vector<Double_t> x;
@@ -902,7 +938,7 @@ void postProcess(std::vector<Event*> events)
         }    
   
         // Fix values beyond the scale.
-        if (BDTPt > 120) BDTPt = 120; 
+        if (BDTPt > 140) BDTPt = 140; 
         if (BDTPt < 0) BDTPt = 0;  
     
         // Replace the old prediction with the processed prediction.
@@ -977,7 +1013,7 @@ void saveEvents(const char* savefilename, std::vector<Event*>& events, int which
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-void save4station(const char* savefilename, std::vector<Event*>& events, unsigned long long whichVars)
+void saveEvents(const char* savefilename, std::vector<Event*>& events, unsigned long long whichVars)
 
 {
 // After using the forest to predict values for a collection of events, save them along with their predicted values into an ntuple.

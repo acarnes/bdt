@@ -205,7 +205,7 @@ void Forest::sortEventVectors(std::vector< std::vector<Event*> >& e)
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-std::vector<Double_t> Forest::rankVariables()
+void Forest::rankVariables(std::vector<Int_t>& rank)
 {
 // This function ranks the determining variables according to their importance
 // in determining the fit. Use a low learning rate for better results.
@@ -225,6 +225,14 @@ std::vector<Double_t> Forest::rankVariables()
     {
         trees[j]->rankVariables(v); 
     }
+
+    // Output unranked variable importance.
+    for(unsigned int i=0; i < v.size(); i++)
+    {
+        std::cout << "x" << i << ": " << v[i] << std::endl;
+    }
+
+    std::cout << std::endl;
 
     Double_t max = *std::max_element(v.begin(), v.end());
    
@@ -249,12 +257,11 @@ std::vector<Double_t> Forest::rankVariables()
     // Output the results.
     for(int i=(v.size()-1); i>=0; i--)
     {
+        rank.push_back(w[i].second);
         std::cout << "x" << w[i].second  << ": " << w[i].first  << std::endl; 
     }
     
     std::cout << std::endl << "Done." << std::endl << std::endl;
-    return v;
-
 }
 
 //////////////////////////////////////////////////////////////////////////

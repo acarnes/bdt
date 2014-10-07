@@ -201,6 +201,7 @@ std::vector< std::vector<Event*> >& Node::getEvents()
 void Node::setEvents(std::vector< std::vector<Event*> >& sEvents)
 {
     events = sEvents;
+    numEvents = events[0].size();
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -216,13 +217,13 @@ void Node::calcOptimumSplit()
     // Intialize some variables.
     Double_t bestSplitValue = 0;
     Int_t bestSplitVariable = -1; 
-    Double_t bestErrorReduction = 0;
+    Double_t bestErrorReduction = -1;
 
     Double_t SUM = 0;
     Double_t SSUM = 0;
     numEvents = events[0].size();
 
-    Double_t candidateErrorReduction = 0;
+    Double_t candidateErrorReduction = -1;
 
     // Calculate the sum of the target variables and the sum of
     // the target variables squared. We use these later.
@@ -238,6 +239,7 @@ void Node::calcOptimumSplit()
     // Calculate the best split point for each variable
     for(unsigned int variableToCheck = 1; variableToCheck < numVars; variableToCheck++)
     { 
+
         // The sum of the target variables in the left, right nodes
         Double_t SUMleft = 0;
         Double_t SUMright = SUM;
@@ -305,6 +307,7 @@ void Node::calcOptimumSplit()
     splitValue = bestSplitValue;
 //    std::cout << "splitValue= " << splitValue << std::endl;
 
+    //if(bestSplitVariable == -1) std::cout << "splitVar = -1. numEvents = " << numEvents << ". errRed = " << errorReduction << std::endl;
 }
 
 // ----------------------------------------------------------------------
@@ -378,4 +381,8 @@ void Node::filterEventsToDaughters()
 
     left->getEvents().swap(l);
     right->getEvents().swap(r);    
+
+    // Set the number of events in the node.
+    left->setNumEvents(left->getEvents()[0].size());
+    right->setNumEvents(right->getEvents()[0].size());
 }
