@@ -48,7 +48,8 @@ TransformFunction* transform;
 Int_t mode;
 bool useCharge;
 unsigned long long whichVars;
-TString treesDirectory("../trees/");
+//TString treesDirectory("/lfs/scratch/mrcarver/CMSSW_7_2_0_pre3/src/L1Trigger/L1TMuon/plugins/ModeVariables/trees/3");
+TString treesDirectory("../trees/3/");
 
 /////////////////////////////////////////////////////////////////////////
 // ---------------------------------------------------------------------
@@ -57,7 +58,7 @@ TString treesDirectory("../trees/");
 void loadSettingsFromXML(const char* directory)
 {
     TXMLEngine* xml = new TXMLEngine;
-    XMLDocPointer_t xmldoc = xml->ParseFile(TString(directory)+"settings.xml");
+    XMLDocPointer_t xmldoc = xml->ParseFile(TString(directory)+"/settings.xml");
     if(xmldoc==0)
     {
         delete xml;
@@ -233,8 +234,8 @@ void evaluateForest()
     std::vector<Event*> trainingEvents;
     std::vector<Event*> testingEvents;
     std::vector<Event*> rateEvents;
-    load4station("../100k_csc_singlemu_flatpt.root", testingEvents, useCharge, whichVars);
-    load4station("../rate_sample.root", rateEvents, useCharge, whichVars);
+    loadEvents("../100k_csc_singlemu_flatpt.root", testingEvents, useCharge, whichVars, mode);
+    loadEvents("../rate_sample.root", rateEvents, useCharge, whichVars, 15);
 
     // Preprocess datasets.
     preprocessTest(testingEvents, lf, prelimfit, transform);
@@ -257,10 +258,10 @@ void evaluateForest()
     // Get the save locations in order.
     // The directories that will store the predicted events.
     std::stringstream testDir;
-    testDir << "../ntuples/testresults/";
+    testDir << "../ntuples/testresults/test/";
 
     std::stringstream rateDir;
-    rateDir << "../ntuples/rateresults/";
+    rateDir << "../ntuples/rateresults/test/";
 
     // The name of the root files.
     std::stringstream name;
@@ -283,8 +284,8 @@ void evaluateForest()
     std::cout << std::endl;
 
     // Save the events. 
-    save4station(savetestto.str().c_str(), testingEvents, whichVars);
-    save4station(saverateto.str().c_str(), rateEvents, whichVars);
+    saveEvents(savetestto.str().c_str(), testingEvents, whichVars);
+    saveEvents(saverateto.str().c_str(), rateEvents, whichVars);
     std::cout << std::endl;
 
     delete forest;
