@@ -731,9 +731,7 @@ void buildAndEvaluateForest()
 
     // Rank the variable importance and output it to the screen.
     std::vector<Int_t> rank;
-    std::cout << "check 2.0" << std::endl;
     forest->rankVariables(rank);
-    std::cout << "check 2.1" << std::endl;
 
     // Get the save locations in order.
     // The directories that will store the predicted events.
@@ -742,7 +740,7 @@ void buildAndEvaluateForest()
     
     std::stringstream rateDir;
     rateDir << "../ntuples/rateresults/" << mode << "/";
-/*
+
     // Evaluate the test and rate sets and save the results for different numbers of trees.
     for(unsigned int t=0; t<forest->size(); t++)
     {
@@ -788,16 +786,20 @@ void buildAndEvaluateForest()
             std::cout << std::endl;
         }
     }
-*/
+
     delete forest;
     // ----------------------------------------------------
     ///////////////////////////////////////////////////////
    }
   }
  }
- TString analysisxml = TString("../AnalysisXML/")+TString(mode)+"/eff_study.root";
- saveAnalysisXML(analysisxml, xml, root);
- displayAnalysisXML(analysisxml);
+
+ // Save information from the study so that we can automatically load the files for analysis.
+ std::stringstream analysisxml;
+ analysisxml << "../AnalysisXML/" << mode << "/eff_study.xml";
+ std::cout << "analysisxml = " << analysisxml.str().c_str() << std::endl;
+ saveAnalysisXML(analysisxml.str().c_str(), xml, root);
+ displayAnalysisXML(analysisxml.str().c_str());
 }
 
 
