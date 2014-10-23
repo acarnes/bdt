@@ -218,7 +218,7 @@ void Tree::rankVariablesRecursive(Node* node, std::vector<Double_t>& v)
 
     if(sv == -1)
     {
-        std::cout << "ERROR: negative split value for nonterminal node." << std::endl;
+        std::cout << "ERROR: negative split variable for nonterminal node." << std::endl;
         std::cout << "rankVarRecursive Split Variable = " << sv << std::endl;
         std::cout << "rankVarRecursive Error Reduction = " << er << std::endl;
     }
@@ -237,6 +237,44 @@ void Tree::rankVariablesRecursive(Node* node, std::vector<Double_t>& v)
 void Tree::rankVariables(std::vector<Double_t>& v)
 {
     rankVariablesRecursive(rootNode, v);
+}
+
+// ----------------------------------------------------------------------
+
+
+void Tree::getSplitValuesRecursive(Node* node, std::vector<std::vector<Double_t>>& v)
+{
+// We recursively go through all of the nodes in the tree and find the
+// split points used for each split variable.
+
+    Node* left = node->getLeftDaughter();
+    Node* right = node->getRightDaughter();
+
+    // Terminal nodes don't contribute.
+    if(left==0 || right==0) return;
+
+    Int_t sv =  node->getSplitVariable();
+    Double_t sp = node->getSplitValue();
+
+    if(sv == -1)
+    {
+        std::cout << "ERROR: negative split variable for nonterminal node." << std::endl;
+        std::cout << "rankVarRecursive Split Variable = " << sv << std::endl;
+    }
+
+    // Add the split point to the list for the correct split variable.
+    v[sv].push_back(sp);
+
+    getSplitValuesRecursive(left, v);
+    getSplitValuesRecursive(right, v); 
+
+}
+
+// ----------------------------------------------------------------------
+
+void Tree::getSplitValues(std::vector<std::vector<Double_t>>& v)
+{
+    getSplitValuesRecursive(rootNode, v);
 }
 
 //////////////////////////////////////////////////////////////////////////

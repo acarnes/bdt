@@ -226,14 +226,6 @@ void Forest::rankVariables(std::vector<Int_t>& rank)
         trees[j]->rankVariables(v); 
     }
 
-    // Output unranked variable importance.
-    for(unsigned int i=0; i < v.size(); i++)
-    {
-        std::cout << "x" << i << ": " << v[i] << std::endl;
-    }
-
-    std::cout << std::endl;
-
     Double_t max = *std::max_element(v.begin(), v.end());
    
     // Scale the importance. Maximum importance = 100.
@@ -264,6 +256,54 @@ void Forest::rankVariables(std::vector<Int_t>& rank)
     std::cout << std::endl << "Done." << std::endl << std::endl;
 }
 
+//////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////
+
+void Forest::saveSplitValues(const char* savefilename)
+{
+// This function gathers all of the split values from the forest and puts them into lists.
+
+    std::ofstream splitvaluefile;
+    splitvaluefile.open(savefilename);
+
+    // Initialize the matrix v, which will store the list of split values
+    // for each variable i in v[i].
+    std::vector<std::vector<Double_t>> v(events.size(), std::vector<Double_t>());
+
+    std::cout << std::endl << "Gathering split values... " << std::endl;
+
+    // Gather the split values from each tree in the forest.
+    for(unsigned int j=0; j<trees.size(); j++)
+    {
+        trees[j]->getSplitValues(v); 
+    }
+
+    // Sort the lists of split values and remove the duplicates.
+    for(unsigned int i=0; i<v.size(); i++)
+    {
+        std::sort(v[i].begin(),v[i].end());
+        v[i].erase( unique( v[i].begin(), v[i].end() ), v[i].end() );
+    }
+
+    // Output the results after removing duplicates.
+    // The 0th variable is special and is not used for splitting, so we start at 1.
+    for(unsigned int i=1; i<v.size(); i++)
+    {
+      TString splitValues;
+      for(unsigned int j=0; j<v[i].size(); j++)
+      {
+        std::stringstream ss;
+        ss.precision(14);
+        ss << std::scientific << v[i][j];
+        splitValues+=","; 
+        splitValues+=ss.str().c_str();
+      }
+
+      splitValues=splitValues(1,splitValues.Length());
+      splitvaluefile << splitValues << std::endl << std::endl;;
+    }
+}
 //////////////////////////////////////////////////////////////////////////
 // ______________________Update_Events_After_Fitting____________________//
 //////////////////////////////////////////////////////////////////////////

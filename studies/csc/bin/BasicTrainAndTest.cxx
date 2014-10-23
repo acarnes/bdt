@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////////////////////
-//                            FullInfoEfficiency.cxx                    //
+//                            BasicTrainAndTest.cxx                     //
 // =====================================================================//
 //                                                                      //
-//   Train the forest on the training sample and save the trees.        //
+//   Train the forest, save the trees, and test the results.            //
 //                                                                      //
 //////////////////////////////////////////////////////////////////////////
 
@@ -51,6 +51,7 @@ Double_t lr = 0.3;
 // Choose whichever training variables you want and make your own word if you so please.
 // It's defaulted to 0x00202014a = dPhi12, dPhi23, dPhi34, TrackEta, dEta14, CLCT1, cscid1
 // The algorithm time is linear in the number of training variables, using 7 takes like an hour.
+// If you use buildVarWordFromMode() this gets overwritten.
 unsigned long long whichVars = 0x00202014a;
 
 // Choose which loss function to use.
@@ -83,7 +84,10 @@ bool useCharge = false;
 // Where to save the trees.
 TString treesDirectory("../trees/");
 
+// Whether to use CSCPt as a training variable.
 bool useCSCPt = false;
+
+// Whether to train inclusive or exclusive.
 bool trainInclusive = true;
 
 /////////////////////////////////////////////////////////////////////////
@@ -382,64 +386,6 @@ void buildVarWordFromMode()
 // ---------------------------------------------------------------------
 /////////////////////////////////////////////////////////////////////////
 
-void clearVar(int var)
-{
-    // Remove the specified variable from the training variable set.
-    std::cout << "Removing worst variable from training..." << std::endl;
-    whichVars = whichVars & ~((unsigned long long) 1<<var);
-}
-
-/////////////////////////////////////////////////////////////////////////
-// ---------------------------------------------------------------------
-/////////////////////////////////////////////////////////////////////////
-
-void removeWorstVar(std::vector<int> rank)
-{
-// Look through the bits in whichVars and remove the worst ranking variable
-// from the training set. If there are 5 variables in the training set then
-// rank will contain the numbers 0 through 5 which represent the 0th training
-// variable, the 1st training variable etc. Each of these in turn correspond
-// to a certain bit in whichVars. 1 will be the first activated bit, 2
-// the 2nd activated bit, etc. rank orders the training variables by
-// their importance in the regression. rank is ordered from least important
-// training variable to most important, however rank[0] always contains 0,
-// which is a special variable not used in training. Therefore, rank[1] has the 
-// least important variable of worth. 
-
-
-   // Keep track of which training variables we are on.
-   int var = 0;
-
-   // Tells us which training variable is the worst. This doesn't tell us
-   // the corresponding bit number in whichVars however.
-   // If the worst training varaible is training variable two then we must
-   // figure out which bit is the 2nd activated bit and turn it off.
-   int worstvar = rank[rank.size()-2];
-
-   for(unsigned int i=0; i<34; i++)
-   {
-       // Is the ith bit in whichVars active?
-       bool bit = whichVars & ((unsigned long long) 1<<i);
-
-       // If so, this is the next training variable.
-       if(bit) var++;
-
-       // If this training variable is the worst training variable
-       // remove it from whichVars, so that we don't use it for training
-       // next time.
-       if(bit && var==worstvar)
-       {
-           clearVar(i);
-           break;
-       }
-   }
-}
-
-
-/////////////////////////////////////////////////////////////////////////
-// ---------------------------------------------------------------------
-/////////////////////////////////////////////////////////////////////////
-
 TString settingsString(int t)
 {
 // Creates the names for the test results based upon the regression settings.
@@ -454,38 +400,13 @@ TString settingsString(int t)
     if(trainInclusive) settings << "trainIN" << "_";
     else settings << "trainEX" << "_";
     settings << lf->name().c_str() << "_" << nodes << "_" << t << "_" << lr << "_mode_"
-     << mode << "_chg_" << useCharge << "_" << wvars.str().c_str() << "_eff_study";
+     << mode << "_chg_" << useCharge << "_" << wvars.str().c_str() << "_chg_study";
 
     TString set = TString(settings.str().c_str());
 
     return set;
 }
 
-/////////////////////////////////////////////////////////////////////////
-// ---------------------------------------------------------------------
-/////////////////////////////////////////////////////////////////////////
-
-TString analysisNameString()
-{
-// Creates the names for the test results based upon the regression settings.
-    std::stringstream wvars;
-    wvars << std::hex << whichVars;
-
-    std::stringstream settings;
-
-    // Make sure the name has the transform, prelimfit, nodes, trees, etc.
-    if(transform!=0) settings << transform->name() << "_";
-    if(lf!=0) settings << lf->name() << "_";
-    if(useCSCPt) settings << "useCSCPt_";
-    else settings << "noCSCPt_";
-    if(trainInclusive) settings << "trainIN" << "_";
-    else settings << "trainEX" << "_";
-    settings << "mode_" << mode << "_" << wvars.str().c_str();
-
-    TString set = TString(settings.str().c_str());
-
-    return set;
-}
 /////////////////////////////////////////////////////////////////////////
 // ---------------------------------------------------------------------
 /////////////////////////////////////////////////////////////////////////
@@ -560,71 +481,6 @@ void displaySettingsFromXML(const char* directory)
         attr = xml->GetNextAttr(attr);
     }
 }
-/////////////////////////////////////////////////////////////////////////
-// ---------------------------------------------------------------------
-/////////////////////////////////////////////////////////////////////////
-
-void saveRunForAnalysisXML(TXMLEngine* xml, XMLNodePointer_t root)
-{
-    std::stringstream wvars;
-    wvars << std::hex << whichVars;
-
-    const char* none = "NONE";
-
-    XMLNodePointer_t settings = xml->NewChild(root,0,"settings");
-    xml->NewAttr(settings, 0, "name", analysisNameString());
-    xml->NewAttr(settings, 0, "filename", settingsString(trees-1)+".root");
-    xml->NewAttr(settings, 0, "nodes", numToStr(nodes).c_str());
-    xml->NewAttr(settings, 0, "trees", numToStr(trees).c_str());
-    xml->NewAttr(settings, 0, "learning_rate", numToStr(lr).c_str());
-    xml->NewAttr(settings, 0, "loss_function", lf->name().c_str());
-    xml->NewAttr(settings, 0, "prelim_fit", ((prelimfit!=0)?prelimfit->name():none));
-    xml->NewAttr(settings, 0, "transform", ((transform!=0)?transform->name():none));
-    xml->NewAttr(settings, 0, "var_word", wvars.str().c_str());
-    xml->NewAttr(settings, 0, "vars", decodeWord());
-    xml->NewAttr(settings, 0, "mode", numToStr(mode).c_str());
-    xml->NewAttr(settings, 0, "use_charge", numToStr(useCharge).c_str());
-}
-
-/////////////////////////////////////////////////////////////////////////
-// ---------------------------------------------------------------------
-/////////////////////////////////////////////////////////////////////////
-
-void saveAnalysisXML(const char* savefilename, TXMLEngine* xml, XMLNodePointer_t root)
-{
-    XMLDocPointer_t xmldoc = xml->NewDoc();
-    xml->DocSetRootElement(xmldoc, root);
-
-    xml->SaveDoc(xmldoc, savefilename);
-    xml->FreeDoc(xmldoc);
-    delete xml;
-}
-
-/////////////////////////////////////////////////////////////////////////
-// ---------------------------------------------------------------------
-/////////////////////////////////////////////////////////////////////////
-
-void displayAnalysisXML(const char* infilename)
-{
-    TXMLEngine* xml = new TXMLEngine;
-    XMLDocPointer_t xmldoc = xml->ParseFile(infilename);
-    if(xmldoc==0)
-    {
-        delete xml;
-        return;
-    }
-    XMLNodePointer_t root = xml->DocGetRootElement(xmldoc);
-    XMLNodePointer_t child = xml->GetChild(root);
-
-    while(child!=0)
-    {
-        const char* name = xml->GetAttr(child, "name");
-        const char* filename = xml->GetAttr(child, "filename");
-        std::cout << "name = " << name << std::endl; 
-        std::cout << "filename = " << filename << std::endl << std::endl; 
-        child = xml->GetNext(child);
-    }
-}
 
 //////////////////////////////////////////////////////////////////////////
 // ______________________Regression_________ ___________________________//
@@ -634,172 +490,140 @@ void buildAndEvaluateForest()
 {
 // Build a forest with certain parameters and save the trees somewhere.
 
-  // Automatically determine the training variables from the mode.
-  std::vector<bool> usecscpt;
-  usecscpt.push_back(false);
-  usecscpt.push_back(true);
- 
-  std::vector<LossFunction*> lfs;
-  lfs.push_back(new LeastSquares());
-  lfs.push_back(new AbsoluteDeviation());
-  lfs.push_back(new AbsoluteDeviation());
+  ///////////////////////////////////
+  // Train 
+  ///////////////////////////////////
 
-  std::vector<TransformFunction*> transforms;
-  transforms.push_back(new Log());
-  transforms.push_back(new Log());
-  transforms.push_back(new Inverse());
+  // Use CSCPt as a preliminary fit.
+  // This doesn't work with useCharge = true yet, since there is no TrackCharge in the ntuples.
+  if(useCSCPt) prelimfit = new CSCFit();
+  
+  // Automatically determine the training variables to use based upon the mode.
+  buildVarWordFromMode();
 
-  std::vector<bool> inclusive;
-  inclusive.push_back(true);
-  inclusive.push_back(false);
+  // Store the hex format of whichVars into wvars.
+  std::stringstream wvars;
+  wvars << std::hex << whichVars;
 
-  TXMLEngine* xml = new TXMLEngine();
-  XMLNodePointer_t root = xml->NewChild(0,0,"root");
+  // Display which variables we are using in this regression.
+  TString ntupleVars = decodeWord();
+  std::cout << std::endl;
+  std::cout << "////////////////////////////////////////////////////////////////////////////////////////////////////" << std::endl;
+  std::cout << "Using variables: " << ntupleVars << std::endl;
+  std::cout << "////////////////////////////////////////////////////////////////////////////////////////////////////" << std::endl;
+  std::cout << std::endl;
 
- for(unsigned int i=0; i<usecscpt.size(); i++)
- {
-  for(unsigned int j=0; j<lfs.size(); j++)
-  {
-   for(unsigned int k=0; k<inclusive.size(); k++)
-   {
-    useCSCPt = usecscpt[i];
-    if(useCSCPt) prelimfit = new CSCFit();
+  std::cout << settingsString(63) << std::endl;
+  std::cout << std::endl;
 
-    lf = lfs[j];
-    transform = transforms[j];
-    trainInclusive = inclusive[k];
-    
-    buildVarWordFromMode();
-    saveRunForAnalysisXML(xml, root);
+  // The training and testing events.
+  std::vector<Event*> trainingEvents;
+  std::vector<Event*> testingEvents;
 
-    // Store the hex format of whichVars into wvars.
-    std::stringstream wvars;
-    wvars << std::hex << whichVars;
+  // Load training events from an ntuple into the training vector.
+  if(trainInclusive) loadEventsInclusive("../14M_csc_singlemu_flat1overPt_reCLCT.root", trainingEvents, useCharge, whichVars, mode);
+  else loadEventsExclusive("../14M_csc_singlemu_flat1overPt_reCLCT.root", trainingEvents, useCharge, whichVars, mode);
 
-    // Display which variables we are using in this regression.
-    TString ntupleVars = decodeWord();
-    std::cout << std::endl;
-    std::cout << "////////////////////////////////////////////////////////////////////////////////////////////////////" << std::endl;
-    std::cout << "Using variables: " << ntupleVars << std::endl;
-    std::cout << "////////////////////////////////////////////////////////////////////////////////////////////////////" << std::endl;
-    std::cout << std::endl;
+  // Preprocess datasets: apply the transformations and preliminary fits.
+  preprocessTrain(trainingEvents, lf, prelimfit, transform);
 
-    std::cout << settingsString(63) << std::endl;
-    std::cout << std::endl;
+  std::cout << std::endl << "Number of training events: " << trainingEvents.size() << std::endl << std::endl;
 
-    // The training and testing events.
-    std::vector<Event*> trainingEvents;
-    std::vector<Event*> testingEvents;
+  // Initialize new forest.
+  Forest* forest = new Forest(trainingEvents, testingEvents);
 
-    // Load training events from an ntuple into the training vector.
-    if(trainInclusive) loadEventsInclusive("../14M_csc_singlemu_flat1overPt_reCLCT.root", trainingEvents, useCharge, whichVars, mode);
-    else loadEventsExclusive("../14M_csc_singlemu_flat1overPt_reCLCT.root", trainingEvents, useCharge, whichVars, mode);
+  // Output the parameters of the current run. 
+  std::cout << "=======================================" << std::endl;
+  std::cout << "Nodes: " << nodes << std::endl;
+  std::cout << "Trees: " << trees << std::endl;
+  std::cout << "Learning Rate: " << lr << std::endl;
+  std::cout << "Loss Function: " << lf->name().c_str() << std::endl;
+  std::cout << "Mode: " << mode << std::endl;
+  std::cout << "Use Charge: " << useCharge << std::endl;
+  std::cout << "whichVars: " << wvars.str().c_str() << std::endl;
 
-    // Preprocess datasets: apply the transformations and preliminary fits.
-    preprocessTrain(trainingEvents, lf, prelimfit, transform);
+  if(prelimfit != 0) std::cout << "Preliminary Fit: " << prelimfit->name() << std::endl;
+  else std::cout << "Preliminary Fit: None" << std::endl;
+  if(transform != 0) std::cout << "Transform Function: " << transform->name() << std::endl;
+  else std::cout << "Transform Function: None" << std::endl;
+  std::cout << "=======================================" << std::endl;
+  
+  // Output the save directory to the screen.
+  if(saveTrees) std::cout << "treesDirectory " << treesDirectory.Data() << std::endl;
 
-    std::cout << std::endl << "Number of training events: " << trainingEvents.size() << std::endl << std::endl;
+  // Save the settings for the current regression to XML.
+  // This way the parameters of the forest will be stored as well as the trees.
+  if(saveTrees) saveSettingsToXML(treesDirectory);
 
-    // Initialize new forest.
-    Forest* forest = new Forest(trainingEvents, testingEvents);
+  // Do the regression and save the trees.
+  forest->doRegression(nodes, trees, lr, lf, treesDirectory, saveTrees);
 
-    // Output the parameters of the current run. 
-    std::cout << "=======================================" << std::endl;
-    std::cout << "Nodes: " << nodes << std::endl;
-    std::cout << "Trees: " << trees << std::endl;
-    std::cout << "Learning Rate: " << lr << std::endl;
-    std::cout << "Loss Function: " << lf->name().c_str() << std::endl;
-    std::cout << "Mode: " << mode << std::endl;
-    std::cout << "Use Charge: " << useCharge << std::endl;
-    std::cout << "whichVars: " << wvars.str().c_str() << std::endl;
+  // Rank the variable importance and output it to the screen.
+  std::vector<Int_t> rank;
+  forest->rankVariables(rank);
 
-    if(prelimfit != 0) std::cout << "Preliminary Fit: " << prelimfit->name() << std::endl;
-    else std::cout << "Preliminary Fit: None" << std::endl;
-    if(transform != 0) std::cout << "Transform Function: " << transform->name() << std::endl;
-    else std::cout << "Transform Function: None" << std::endl;
-    std::cout << "=======================================" << std::endl;
-   
-    // Output the save directory to the screen.
-    if(saveTrees) std::cout << "treesDirectory " << treesDirectory.Data() << std::endl;
+  // Save the lists of split values for each variable into a file.
+  forest->saveSplitValues("./splitvalues.dat");
 
-    // Save the settings for the current regression to XML.
-    // This way the parameters of the forest will be stored as well as the trees.
-    if(saveTrees) saveSettingsToXML(treesDirectory);
+  ///////////////////////////////////
+  // Test 
+  ///////////////////////////////////
 
-    // Do the regression and save the trees.
-    forest->doRegression(nodes, trees, lr, lf, treesDirectory, saveTrees);
+  // The forest built from the training above is already in memory. There is no need to load from xml.
+  // If you wish to test from a forest that was saved to xml you would do the following.
+  // forest->loadForestFromXML(treesDirectory);
+  // displaySettingsFromXML(treesDirectory); 
 
-    // Rank the variable importance and output it to the screen.
-    std::vector<Int_t> rank;
-    forest->rankVariables(rank);
+  // Get the save locations in order.
+  // The directories that will store the predicted events.
+  std::stringstream testDir;
+  testDir << "../ntuples/testresults/" << mode << "/";
+  
+  std::stringstream rateDir;
+  rateDir << "../ntuples/rateresults/" << mode << "/";
 
-    // Get the save locations in order.
-    // The directories that will store the predicted events.
-    std::stringstream testDir;
-    testDir << "../ntuples/testresults/" << mode << "/";
-    
-    std::stringstream rateDir;
-    rateDir << "../ntuples/rateresults/" << mode << "/";
+  // Read In events.
+  std::vector<Event*> rateEvents;
+  trainingEvents = std::vector<Event*>();
+  loadEventsExclusive("../2M_csc_singlemu_flatpt_reCLCT.root", testingEvents, useCharge, whichVars, mode);
+  loadEventsExclusive("../3M_minbias_rate_sample_reCLCT.root", rateEvents, useCharge, whichVars, mode);
+  
+  // Preprocess datasets.
+  preprocessTest(testingEvents, lf, prelimfit, transform);
+  preprocessRate(rateEvents, lf, prelimfit, transform);
+  
+  std::cout << "Number of test events: " << testingEvents.size() << std::endl;
+  std::cout << "Number of rate events: " << rateEvents.size() << std::endl << std::endl;
+  
+  // Predict the test and rate sets.
+  forest->predictEvents(testingEvents, trees);
+  std::cout << std::endl;
+  forest->predictEvents(rateEvents, trees);
+  std::cout << std::endl;
+  
+  // Form the savefile names.
+  TString savetestto = outfileName(testDir.str().c_str(), trees);
+  TString saverateto = outfileName(rateDir.str().c_str(), trees);
 
-    // Evaluate the test and rate sets and save the results for different numbers of trees.
-    for(unsigned int t=0; t<forest->size(); t++)
-    {
-        // Only evaluate and save when the number of trees is a power of two.
-        if((((t+1) & ((t+1) - 1)) == 0) || t+1 == forest->size())
-        {
-            // Read In events.
-            std::vector<Event*> rateEvents;
-            trainingEvents = std::vector<Event*>();
-            loadEventsExclusive("../2M_csc_singlemu_flatpt_reCLCT.root", testingEvents, useCharge, whichVars, mode);
-            loadEventsExclusive("../3M_minbias_rate_sample_reCLCT.root", rateEvents, useCharge, whichVars, mode);
-    
-            // Preprocess datasets.
-            preprocessTest(testingEvents, lf, prelimfit, transform);
-            preprocessRate(rateEvents, lf, prelimfit, transform);
-    
-            std::cout << "Number of test events: " << testingEvents.size() << std::endl;
-            std::cout << "Number of rate events: " << rateEvents.size() << std::endl << std::endl;
-    
-            // Predict the test and rate sets.
-            forest->predictEvents(testingEvents, t+1);
-            std::cout << std::endl;
-            forest->predictEvents(rateEvents, t+1);
-            std::cout << std::endl;
-    
-            // Concatenate the directory and the names.
-            TString savetestto = outfileName(testDir.str().c_str(), t);
-            TString saverateto = outfileName(rateDir.str().c_str(), t);
+  // We want to save the Pt predictions not the transformed Pt predictions that we trained/tested with.
+  invertTransform(testingEvents, transform);
+  invertTransform(rateEvents, transform);
+  std::cout << std::endl;
+  
+  // Discretize and scale the predictions.
+  postProcess(testingEvents);
+  postProcess(rateEvents);
+  std::cout << std::endl;
+  
+  // Save the events. 
+  saveEvents(savetestto, testingEvents, whichVars);
+  saveEvents(saverateto, rateEvents, whichVars);
+  std::cout << std::endl;
 
-            // We want to save the Pt predictions not the transformed Pt predictions that we trained/tested with.
-            invertTransform(testingEvents, transform);
-            invertTransform(rateEvents, transform);
-            std::cout << std::endl;
-    
-            // Discretize and scale the predictions.
-            postProcess(testingEvents);
-            postProcess(rateEvents);
-            std::cout << std::endl;
-    
-            // Save the events. 
-            saveEvents(savetestto, testingEvents, whichVars);
-            saveEvents(saverateto, rateEvents, whichVars);
-            std::cout << std::endl;
-        }
-    }
+  delete forest;
 
-    delete forest;
-    // ----------------------------------------------------
-    ///////////////////////////////////////////////////////
-   }
-  }
- }
-
- // Save information from the study so that we can automatically load the files for analysis.
- std::stringstream analysisxml;
- analysisxml << "../AnalysisXML/" << mode << "/eff_study.xml";
- std::cout << "analysisxml = " << analysisxml.str().c_str() << std::endl;
- saveAnalysisXML(analysisxml.str().c_str(), xml, root);
- displayAnalysisXML(analysisxml.str().c_str());
+  // ----------------------------------------------------
+  ///////////////////////////////////////////////////////
 }
 
 

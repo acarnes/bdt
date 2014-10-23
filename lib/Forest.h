@@ -26,6 +26,9 @@ class Forest
 
         // Get info on variable importance.
         void rankVariables(std::vector<Int_t>& rank);
+ 
+        // Output the list of split values used for each variable.
+        void saveSplitValues(const char* savefilename);
 
         // Helpful operations
         void listEvents(std::vector< std::vector<Event*> >& e);

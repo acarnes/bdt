@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////
-//                            FullInfoEfficiency.cxx                    //
+//                            VarReduction.cxx                          //
 // =====================================================================//
 //                                                                      //
 //   Train the forest on the training sample and save the trees.        //
@@ -83,9 +83,6 @@ bool useCharge = false;
 // Where to save the trees.
 TString treesDirectory("../trees/");
 
-bool useCSCPt = false;
-bool trainInclusive = true;
-
 /////////////////////////////////////////////////////////////////////////
 // ---------------------------------------------------------------------
 /////////////////////////////////////////////////////////////////////////
@@ -166,7 +163,6 @@ void buildVarWordFromMode()
     // Hits in 12
     if(mode == 0x3)
     {
-        if(useCSCPt == true) buildWord = buildWord | (1<<0); // TrackPt
         buildWord = buildWord | (1<<1);  // TrackEta
         buildWord = buildWord | (1<<2);  // TrackPhi
         buildWord = buildWord | (1<<3);  // dPhi12
@@ -182,7 +178,6 @@ void buildVarWordFromMode()
     // Hits in 13
     if(mode == 0x5)
     {
-        if(useCSCPt == true) buildWord = buildWord | (1<<0); // TrackPt
         buildWord = buildWord | (1<<1);  // TrackEta
         buildWord = buildWord | (1<<2);  // TrackPhi
         buildWord = buildWord | (1<<4);  // dPhi13
@@ -198,7 +193,6 @@ void buildVarWordFromMode()
     // Hits in 14
     if(mode == 0x9)
     {
-        if(useCSCPt == true) buildWord = buildWord | (1<<0); // TrackPt
         buildWord = buildWord | (1<<1);  // TrackEta
         buildWord = buildWord | (1<<2);  // TrackPhi
         buildWord = buildWord | (1<<5);  // dPhi14
@@ -214,7 +208,6 @@ void buildVarWordFromMode()
     // Hits in 23
     if(mode == 0x6)
     {
-        if(useCSCPt == true) buildWord = buildWord | (1<<0); // TrackPt
         buildWord = buildWord | (1<<1);  // TrackEta
         buildWord = buildWord | (1<<2);  // TrackPhi
         buildWord = buildWord | (1<<6);  // dPhi23
@@ -230,7 +223,6 @@ void buildVarWordFromMode()
     // Hits in 24
     if(mode == 0xa)
     {
-        if(useCSCPt == true) buildWord = buildWord | (1<<0); // TrackPt
         buildWord = buildWord | (1<<1);  // TrackEta
         buildWord = buildWord | (1<<2);  // TrackPhi
         buildWord = buildWord | (1<<7);  // dPhi24
@@ -246,7 +238,6 @@ void buildVarWordFromMode()
     // Hits in 34
     if(mode == 0xc)
     {
-        if(useCSCPt == true) buildWord = buildWord | (1<<0); // TrackPt
         buildWord = buildWord | (1<<1);  // TrackEta
         buildWord = buildWord | (1<<2);  // TrackPhi
         buildWord = buildWord | (1<<8);  // dPhi34
@@ -264,7 +255,6 @@ void buildVarWordFromMode()
     // Hits in 234
     if(mode == 0xe)
     {
-        if(useCSCPt == true) buildWord = buildWord | (1<<0); // TrackPt
         buildWord = buildWord | (1<<1);  // TrackEta
         buildWord = buildWord | (1<<2);  // TrackPhi
         buildWord = buildWord | (1<<6);  // dPhi23
@@ -274,9 +264,6 @@ void buildVarWordFromMode()
         buildWord = buildWord | (1<<22); // CLCT2
         buildWord = buildWord | (1<<23); // CLCT3
         buildWord = buildWord | (1<<24); // CLCT4
-        buildWord = buildWord | (1<<26); // cscid2
-        buildWord = buildWord | (1<<27); // cscid3
-        buildWord = buildWord | (1<<28); // cscid4
         buildWord = buildWord | (1<<30); // fr2
         buildWord = buildWord | ((unsigned long long) 1<<31); // fr3
         buildWord = buildWord | ((unsigned long long) 1<<32); // fr4
@@ -286,7 +273,6 @@ void buildVarWordFromMode()
     // Hits in 134
     if(mode == 0xd)
     {
-        if(useCSCPt == true) buildWord = buildWord | (1<<0); // TrackPt
         buildWord = buildWord | (1<<1);  // TrackEta
         buildWord = buildWord | (1<<2);  // TrackPhi
         buildWord = buildWord | (1<<4);  // dPhi13
@@ -296,9 +282,6 @@ void buildVarWordFromMode()
         buildWord = buildWord | (1<<21); // CLCT1
         buildWord = buildWord | (1<<23); // CLCT3
         buildWord = buildWord | (1<<24); // CLCT4
-        buildWord = buildWord | (1<<25); // cscid1
-        buildWord = buildWord | (1<<27); // cscid3
-        buildWord = buildWord | (1<<28); // cscid4
         buildWord = buildWord | (1<<29); // fr1
         buildWord = buildWord | ((unsigned long long) 1<<31); // fr3
         buildWord = buildWord | ((unsigned long long) 1<<32); // fr4
@@ -307,7 +290,6 @@ void buildVarWordFromMode()
     // Hits in 124
     if(mode == 0xb)
     {
-        if(useCSCPt == true) buildWord = buildWord | (1<<0); // TrackPt
         buildWord = buildWord | (1<<1);  // TrackEta
         buildWord = buildWord | (1<<2);  // TrackPhi
         buildWord = buildWord | (1<<3);  // dPhi12
@@ -317,9 +299,6 @@ void buildVarWordFromMode()
         buildWord = buildWord | (1<<21); // CLCT1
         buildWord = buildWord | (1<<22); // CLCT2
         buildWord = buildWord | (1<<24); // CLCT4
-        buildWord = buildWord | (1<<25); // cscid1
-        buildWord = buildWord | (1<<26); // cscid2
-        buildWord = buildWord | (1<<28); // cscid4
         buildWord = buildWord | (1<<29); // fr1
         buildWord = buildWord | (1<<30); // fr2
         buildWord = buildWord | ((unsigned long long) 1<<32); // fr4
@@ -328,7 +307,6 @@ void buildVarWordFromMode()
     // Hits in 123
     if(mode == 0x7)
     {
-        if(useCSCPt == true) buildWord = buildWord | (1<<0); // TrackPt
         buildWord = buildWord | (1<<1);  // TrackEta
         buildWord = buildWord | (1<<2);  // TrackPhi
         buildWord = buildWord | (1<<3);  // dPhi12
@@ -338,9 +316,6 @@ void buildVarWordFromMode()
         buildWord = buildWord | (1<<21); // CLCT1
         buildWord = buildWord | (1<<22); // CLCT2
         buildWord = buildWord | (1<<23); // CLCT3
-        buildWord = buildWord | (1<<25); // cscid1
-        buildWord = buildWord | (1<<26); // cscid2
-        buildWord = buildWord | (1<<27); // cscid3
         buildWord = buildWord | (1<<29); // fr1
         buildWord = buildWord | (1<<30); // fr2
         buildWord = buildWord | ((unsigned long long) 1<<31); // fr3
@@ -351,7 +326,6 @@ void buildVarWordFromMode()
     // Hits in 1234
     if(mode == 0xf)
     {
-        if(useCSCPt == true) buildWord = buildWord | (1<<0); // TrackPt
         buildWord = buildWord | (1<<1);  // TrackEta
         buildWord = buildWord | (1<<2);  // TrackPhi
         buildWord = buildWord | (1<<3);  // dPhi12
@@ -364,10 +338,6 @@ void buildVarWordFromMode()
         buildWord = buildWord | (1<<22); // CLCT2
         buildWord = buildWord | (1<<23); // CLCT3
         buildWord = buildWord | (1<<24); // CLCT4
-        buildWord = buildWord | (1<<25); // cscid1
-        buildWord = buildWord | (1<<26); // cscid2
-        buildWord = buildWord | (1<<27); // cscid3
-        buildWord = buildWord | (1<<28); // cscid4
         buildWord = buildWord | (1<<29); // fr1
         buildWord = buildWord | (1<<30); // fr2
         buildWord = buildWord | ((unsigned long long) 1<<31); // fr3
@@ -435,69 +405,6 @@ void removeWorstVar(std::vector<int> rank)
    }
 }
 
-
-/////////////////////////////////////////////////////////////////////////
-// ---------------------------------------------------------------------
-/////////////////////////////////////////////////////////////////////////
-
-TString settingsString(int t)
-{
-// Creates the names for the test results based upon the regression settings.
-    std::stringstream wvars;
-    wvars << std::hex << whichVars;
-
-    std::stringstream settings;
-
-    // Make sure the name has the transform, prelimfit, nodes, trees, etc.
-    if(transform!=0) settings << transform->name() << "_";
-    if(prelimfit!=0) settings << prelimfit->name() << "_";
-    if(trainInclusive) settings << "trainIN" << "_";
-    else settings << "trainEX" << "_";
-    settings << lf->name().c_str() << "_" << nodes << "_" << t << "_" << lr << "_mode_"
-     << mode << "_chg_" << useCharge << "_" << wvars.str().c_str() << "_eff_study";
-
-    TString set = TString(settings.str().c_str());
-
-    return set;
-}
-
-/////////////////////////////////////////////////////////////////////////
-// ---------------------------------------------------------------------
-/////////////////////////////////////////////////////////////////////////
-
-TString analysisNameString()
-{
-// Creates the names for the test results based upon the regression settings.
-    std::stringstream wvars;
-    wvars << std::hex << whichVars;
-
-    std::stringstream settings;
-
-    // Make sure the name has the transform, prelimfit, nodes, trees, etc.
-    if(transform!=0) settings << transform->name() << "_";
-    if(lf!=0) settings << lf->name() << "_";
-    if(useCSCPt) settings << "useCSCPt_";
-    else settings << "noCSCPt_";
-    if(trainInclusive) settings << "trainIN" << "_";
-    else settings << "trainEX" << "_";
-    settings << "mode_" << mode << "_" << wvars.str().c_str();
-
-    TString set = TString(settings.str().c_str());
-
-    return set;
-}
-/////////////////////////////////////////////////////////////////////////
-// ---------------------------------------------------------------------
-/////////////////////////////////////////////////////////////////////////
-
-TString outfileName(const char* directory, int t)
-{
-    std::stringstream outfileName;
-    outfileName << directory << settingsString(t) << ".root";
-    TString out = TString(outfileName.str().c_str());
-    return out;
-}
-
 /////////////////////////////////////////////////////////////////////////
 // ---------------------------------------------------------------------
 /////////////////////////////////////////////////////////////////////////
@@ -533,7 +440,6 @@ void saveSettingsToXML(const char* directory)
     delete xml;
 }
 
-
 /////////////////////////////////////////////////////////////////////////
 // ---------------------------------------------------------------------
 /////////////////////////////////////////////////////////////////////////
@@ -560,70 +466,40 @@ void displaySettingsFromXML(const char* directory)
         attr = xml->GetNextAttr(attr);
     }
 }
+
 /////////////////////////////////////////////////////////////////////////
 // ---------------------------------------------------------------------
 /////////////////////////////////////////////////////////////////////////
 
-void saveRunForAnalysisXML(TXMLEngine* xml, XMLNodePointer_t root)
+TString settingsString(int t)
 {
+// Creates the names for the test results based upon the regression settings.
     std::stringstream wvars;
     wvars << std::hex << whichVars;
 
-    const char* none = "NONE";
+    std::stringstream settings;
 
-    XMLNodePointer_t settings = xml->NewChild(root,0,"settings");
-    xml->NewAttr(settings, 0, "name", analysisNameString());
-    xml->NewAttr(settings, 0, "filename", settingsString(trees-1)+".root");
-    xml->NewAttr(settings, 0, "nodes", numToStr(nodes).c_str());
-    xml->NewAttr(settings, 0, "trees", numToStr(trees).c_str());
-    xml->NewAttr(settings, 0, "learning_rate", numToStr(lr).c_str());
-    xml->NewAttr(settings, 0, "loss_function", lf->name().c_str());
-    xml->NewAttr(settings, 0, "prelim_fit", ((prelimfit!=0)?prelimfit->name():none));
-    xml->NewAttr(settings, 0, "transform", ((transform!=0)?transform->name():none));
-    xml->NewAttr(settings, 0, "var_word", wvars.str().c_str());
-    xml->NewAttr(settings, 0, "vars", decodeWord());
-    xml->NewAttr(settings, 0, "mode", numToStr(mode).c_str());
-    xml->NewAttr(settings, 0, "use_charge", numToStr(useCharge).c_str());
+    // Make sure the name has the transform, prelimfit, nodes, trees, etc.
+    if(transform!=0) settings << transform->name() << "_";
+    if(prelimfit!=0) settings << prelimfit->name() << "_";
+    settings << lf->name().c_str() << "_" << nodes << "_" << t << "_" << lr << "_mode_"
+     << mode << "_chg_" << useCharge << "_" << wvars.str().c_str() << "_trainIN_testEX";
+
+    TString set = TString(settings.str().c_str());
+
+    return set;
 }
 
 /////////////////////////////////////////////////////////////////////////
 // ---------------------------------------------------------------------
 /////////////////////////////////////////////////////////////////////////
 
-void saveAnalysisXML(const char* savefilename, TXMLEngine* xml, XMLNodePointer_t root)
+TString outfileName(const char* directory, int t)
 {
-    XMLDocPointer_t xmldoc = xml->NewDoc();
-    xml->DocSetRootElement(xmldoc, root);
-
-    xml->SaveDoc(xmldoc, savefilename);
-    xml->FreeDoc(xmldoc);
-    delete xml;
-}
-
-/////////////////////////////////////////////////////////////////////////
-// ---------------------------------------------------------------------
-/////////////////////////////////////////////////////////////////////////
-
-void displayAnalysisXML(const char* infilename)
-{
-    TXMLEngine* xml = new TXMLEngine;
-    XMLDocPointer_t xmldoc = xml->ParseFile(infilename);
-    if(xmldoc==0)
-    {
-        delete xml;
-        return;
-    }
-    XMLNodePointer_t root = xml->DocGetRootElement(xmldoc);
-    XMLNodePointer_t child = xml->GetChild(root);
-
-    while(child!=0)
-    {
-        const char* name = xml->GetAttr(child, "name");
-        const char* filename = xml->GetAttr(child, "filename");
-        std::cout << "name = " << name << std::endl; 
-        std::cout << "filename = " << filename << std::endl << std::endl; 
-        child = xml->GetNext(child);
-    }
+    std::stringstream outfileName;
+    outfileName << directory << settingsString(t) << ".root";
+    TString out = TString(outfileName.str().c_str());
+    return out;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -635,43 +511,10 @@ void buildAndEvaluateForest()
 // Build a forest with certain parameters and save the trees somewhere.
 
   // Automatically determine the training variables from the mode.
-  std::vector<bool> usecscpt;
-  usecscpt.push_back(false);
-  usecscpt.push_back(true);
- 
-  std::vector<LossFunction*> lfs;
-  lfs.push_back(new LeastSquares());
-  lfs.push_back(new AbsoluteDeviation());
-  lfs.push_back(new AbsoluteDeviation());
+  buildVarWordFromMode();
 
-  std::vector<TransformFunction*> transforms;
-  transforms.push_back(new Log());
-  transforms.push_back(new Log());
-  transforms.push_back(new Inverse());
-
-  std::vector<bool> inclusive;
-  inclusive.push_back(true);
-  inclusive.push_back(false);
-
-  TXMLEngine* xml = new TXMLEngine();
-  XMLNodePointer_t root = xml->NewChild(0,0,"root");
-
- for(unsigned int i=0; i<usecscpt.size(); i++)
- {
-  for(unsigned int j=0; j<lfs.size(); j++)
+  while(whichVars != 0)
   {
-   for(unsigned int k=0; k<inclusive.size(); k++)
-   {
-    useCSCPt = usecscpt[i];
-    if(useCSCPt) prelimfit = new CSCFit();
-
-    lf = lfs[j];
-    transform = transforms[j];
-    trainInclusive = inclusive[k];
-    
-    buildVarWordFromMode();
-    saveRunForAnalysisXML(xml, root);
-
     // Store the hex format of whichVars into wvars.
     std::stringstream wvars;
     wvars << std::hex << whichVars;
@@ -692,8 +535,7 @@ void buildAndEvaluateForest()
     std::vector<Event*> testingEvents;
 
     // Load training events from an ntuple into the training vector.
-    if(trainInclusive) loadEventsInclusive("../14M_csc_singlemu_flat1overPt_reCLCT.root", trainingEvents, useCharge, whichVars, mode);
-    else loadEventsExclusive("../14M_csc_singlemu_flat1overPt_reCLCT.root", trainingEvents, useCharge, whichVars, mode);
+    loadEventsInclusive("../14M_csc_singlemu_flat1overPt_reCLCT.root", trainingEvents, useCharge, whichVars, mode);
 
     // Preprocess datasets: apply the transformations and preliminary fits.
     preprocessTrain(trainingEvents, lf, prelimfit, transform);
@@ -730,8 +572,7 @@ void buildAndEvaluateForest()
     forest->doRegression(nodes, trees, lr, lf, treesDirectory, saveTrees);
 
     // Rank the variable importance and output it to the screen.
-    std::vector<Int_t> rank;
-    forest->rankVariables(rank);
+    std::vector<int> rank = forest->rankVariables();
 
     // Get the save locations in order.
     // The directories that will store the predicted events.
@@ -787,19 +628,11 @@ void buildAndEvaluateForest()
         }
     }
 
+    removeWorstVar(rank);
     delete forest;
     // ----------------------------------------------------
     ///////////////////////////////////////////////////////
-   }
   }
- }
-
- // Save information from the study so that we can automatically load the files for analysis.
- std::stringstream analysisxml;
- analysisxml << "../AnalysisXML/" << mode << "/eff_study.xml";
- std::cout << "analysisxml = " << analysisxml.str().c_str() << std::endl;
- saveAnalysisXML(analysisxml.str().c_str(), xml, root);
- displayAnalysisXML(analysisxml.str().c_str());
 }
 
 
