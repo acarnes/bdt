@@ -920,8 +920,10 @@ void postProcess(std::vector<Event*> events)
   
         float BDTPt = e->predictedValue;
 
-        // Before discretizing and scaling take care of negative predictions.
-        if(BDTPt < 0) BDTPt = 0;
+        // Keep track of charge.
+        int BDTCharge = (BDTPt>=0)?1:-1;
+
+        BDTPt = TMath::Abs(BDTPt);
   
         // Scale for increased efficiency.
         float scaleF = 1.2; 
@@ -942,7 +944,7 @@ void postProcess(std::vector<Event*> events)
         if (BDTPt < 0) BDTPt = 0;  
     
         // Replace the old prediction with the processed prediction.
-        e->predictedValue = BDTPt;
+        e->predictedValue = BDTCharge*BDTPt;
     }    
 }
 
@@ -950,71 +952,7 @@ void postProcess(std::vector<Event*> events)
 // ______________________Save Events____________________________________//
 //////////////////////////////////////////////////////////////////////////
 
-void saveEvents(const char* savefilename, std::vector<Event*>& events, int whichVars)
-{
-// After using the forest to predict values for a collection of events, save them along with their predicted values into an ntuple.
-
-    std::stringstream wvars;
-    wvars << std::hex << whichVars;
-
-    std::cout << "Saving events into " << savefilename << "..." << std::endl;
-
-    // Will detail all of the variables used in the regression. They will be saved into the ntuple.
-    TString ntupleVars("GenPt:CSCPt:BDTPt:Mode");
-
-    // Figure out which variables were used during the regression so that we can save them appropriately.
-    // The user inputs whichVars in which each bit represents a boolean value telling us whether or not to use that variable.
-    if((whichVars & (1<<0)) == (1<<0)) ntupleVars+=":dPhiAB"; 
-    if((whichVars & (1<<1)) == (1<<1)) ntupleVars+=":dThetaAB"; 
-    if((whichVars & (1<<2)) == (1<<2)) ntupleVars+=":dEtaAB"; 
-    if((whichVars & (1<<3)) == (1<<3)) ntupleVars+=":TrackEta"; 
-    if((whichVars & (1<<4)) == (1<<4)) ntupleVars+=":TrackPhi"; 
-    if((whichVars & (1<<5)) == (1<<5)) ntupleVars+=":CLCTA"; 
-    if((whichVars & (1<<6)) == (1<<6)) ntupleVars+=":CLCTB"; 
-    if((whichVars & (1<<7)) == (1<<7)) ntupleVars+=":cscidA"; 
-    if((whichVars & (1<<8)) == (1<<8)) ntupleVars+=":cscidB"; 
-    if((whichVars & (1<<9)) == (1<<9)) ntupleVars+=":frA"; 
-    if((whichVars & (1<<10)) == (1<<10)) ntupleVars+=":frB"; 
-    if((whichVars & (1<<11)) == (1<<11)) ntupleVars+=":SFR"; 
-
-    // Make a new ntuple.
-    TNtuple* n = new TNtuple("BDTresults", "BDTresults", ntupleVars); 
-
-    // Add events to the ntuple.
-    for(unsigned int i=0; i<events.size(); i++) 
-    {    
-        Event* e = events[i];
-        Float_t predictedValue = e->predictedValue;
-        Float_t trueValue = e->trueValue;
-
-        std::vector<Float_t> x;
-        x.push_back(trueValue);
-        x.push_back(e->CSCPt);
-        x.push_back(predictedValue);
-        x.push_back(e->Mode);
-
-        for(unsigned int j=1; j<e->data.size(); j++)
-            x.push_back((Float_t) e->data[j]);
-
-
-        n->Fill(&x[0]);
-    }
-
-    // Make a new root file.
-    TFile* f = new TFile(savefilename, "RECREATE");
-    f->cd();
-    n->Write();
-    f->Close();
-    //delete n;
-    delete f;
-}
-
-//////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------
-//////////////////////////////////////////////////////////////////////////
-
 void saveEvents(const char* savefilename, std::vector<Event*>& events, unsigned long long whichVars)
-
 {
 // After using the forest to predict values for a collection of events, save them along with their predicted values into an ntuple.
 
@@ -1024,7 +962,7 @@ void saveEvents(const char* savefilename, std::vector<Event*>& events, unsigned 
     std::cout << "Saving events into " << savefilename << "..." << std::endl;
 
     // Will detail all of the variables used in the regression. They will be saved into the ntuple.
-    TString ntupleVars("GenPt:CSCPt:BDTPt:Mode");
+    TString ntupleVars("GenPt:GenCharge:CSCPt:BDTPt:BDTCharge:Mode");
     std::vector<TString> x;
 
     // Figure out which variables were used during the regression so that we can save them appropriately.
@@ -1074,13 +1012,19 @@ void saveEvents(const char* savefilename, std::vector<Event*>& events, unsigned 
     for(unsigned int i=0; i<events.size(); i++) 
     {    
         Event* e = events[i];
+
         Float_t predictedValue = e->predictedValue;
+        int pcharge = (predictedValue>=0)?1:-1;
+
         Float_t trueValue = e->trueValue;
+        int tcharge = (trueValue>=0)?1:-1;
 
         std::vector<Float_t> y;
-        y.push_back(trueValue);
+        y.push_back(TMath::Abs(trueValue));
+        y.push_back(tcharge);
         y.push_back(e->CSCPt);
-        y.push_back(predictedValue);
+        y.push_back(TMath::Abs(predictedValue));
+        y.push_back(pcharge);
         y.push_back(e->Mode);
 
         for(unsigned int j=1; j<e->data.size(); j++)
