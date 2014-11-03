@@ -22,6 +22,7 @@ struct Event
     Double_t CSCPt;
     Double_t tmvaPt;
     Double_t tmvaPt1;
+    Double_t emuPt;
     Int_t Mode;
     Int_t Quality;
 
@@ -38,6 +39,8 @@ struct Event
     {
         std::cout << "trueValue = " << trueValue << std::endl;
         std::cout << "predictedValue = " << predictedValue << std::endl;
+        std::cout << "emuPt = " << emuPt << std::endl;
+        std::cout << "predictedValue - emuPt = " << (predictedValue - emuPt) << std::endl;
         std::cout << "id = " << id << std::endl;
         for(unsigned int i=0; i<data.size(); i++)
         {

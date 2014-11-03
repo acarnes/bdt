@@ -1,0 +1,26 @@
+#! /bin/sh
+#PBS -r n
+#PBS -N eff_study
+#PBS -o eff_study.out
+#PBS -e eff_study.err
+#PBS -m a
+#PBS -M acarnes@phys.ufl.edu
+#PBS -l walltime=072:00:00
+#PBS -l pmem=32gb
+#PBS -l nodes=1:ppn=1
+#PBS -t 15
+
+cd /scratch/osg/acarnes/CMSSW_6_2_0_SLHC10/src
+eval `scram runtime -sh`
+
+cd /scratch/osg/acarnes/bdt/studies/csc/bin
+
+date
+hostname
+pwd
+echo "JOB ID: ${PBS_JOBID}"
+echo "ARRAY ID: ${PBS_ARRAYID}"
+echo ""
+#./FullInfoEfficiency mode
+./FullInfoEfficiency ${PBS_ARRAYID}
+date
