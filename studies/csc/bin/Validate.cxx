@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////////////////////
-//                            BasicTrainAndTest.cxx                     //
+//                            Validate.cxx                              //
 // =====================================================================//
 //                                                                      //
-//   Train the forest, save the trees, and test the results.            //
+//   Validate the CMSSW BDT system implemented by Matt.                 //
 //                                                                      //
 //////////////////////////////////////////////////////////////////////////
 
@@ -386,6 +386,32 @@ void buildVarWordFromMode()
 // ---------------------------------------------------------------------
 /////////////////////////////////////////////////////////////////////////
 
+void outputRegressionParameters()
+{
+  std::stringstream wvars;
+  wvars << std::hex << whichVars;
+
+  // Output the parameters of the current run. 
+  std::cout << "=======================================" << std::endl;
+  std::cout << "Nodes: " << nodes << std::endl;
+  std::cout << "Trees: " << trees << std::endl;
+  std::cout << "Learning Rate: " << lr << std::endl;
+  std::cout << "Loss Function: " << lf->name().c_str() << std::endl;
+  std::cout << "Mode: " << mode << std::endl;
+  std::cout << "Use Charge: " << useCharge << std::endl;
+  std::cout << "whichVars: " << wvars.str().c_str() << std::endl;
+
+  if(prelimfit != 0) std::cout << "Preliminary Fit: " << prelimfit->name() << std::endl;
+  else std::cout << "Preliminary Fit: None" << std::endl;
+  if(transform != 0) std::cout << "Transform Function: " << transform->name() << std::endl;
+  else std::cout << "Transform Function: None" << std::endl;
+  std::cout << "=======================================" << std::endl;
+}
+
+/////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------
+/////////////////////////////////////////////////////////////////////////
+
 TString settingsString(int t)
 {
 // Creates the names for the test results based upon the regression settings.
@@ -482,150 +508,150 @@ void displaySettingsFromXML(const char* directory)
     }
 }
 
+/////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------
+/////////////////////////////////////////////////////////////////////////
+
+void loadSettingsFromXML(const char* directory)
+{
+    TXMLEngine* xml = new TXMLEngine;
+    XMLDocPointer_t xmldoc = xml->ParseFile(TString(directory)+"settings.xml");
+    if(xmldoc==0)
+    {
+        delete xml;
+        return;
+    }
+    XMLNodePointer_t root = xml->DocGetRootElement(xmldoc);
+    XMLNodePointer_t settings = xml->GetChild(root);
+
+    XMLAttrPointer_t attr = xml->GetFirstAttr(settings);
+
+    while(attr!=0)
+    {
+        std::stringstream valueConverter;
+        TString name = xml->GetAttrName(attr);
+        const char* value = xml->GetAttrValue(attr);
+        std::cout << name << " = " << value << std::endl;  
+        if(name.EqualTo("nodes"))
+        {
+            valueConverter << value;
+            valueConverter >> nodes;
+        }
+        if(name.EqualTo("trees"))
+        {
+            valueConverter << value;
+            valueConverter >> trees;
+        }
+        if(name.EqualTo("learning_rate"))
+        {
+            valueConverter << value;
+            valueConverter >> lr;
+        }
+        if(name.EqualTo("loss_function"))
+        {
+            TString tvalue = value;
+            if(tvalue.EqualTo("Least_Squares")) lf = new LeastSquares();
+            else if(tvalue.EqualTo("Absolute_Deviation")) lf = new AbsoluteDeviation();
+            else if(tvalue.EqualTo("Huber")) lf = new Huber();
+            else std::cout << "Invalid loss function: " << value << std::endl;
+        }
+        if(name.EqualTo("prelim_fit"))
+        {
+            TString tvalue = value;
+            if(tvalue.EqualTo("NONE")) prelimfit = 0;
+            else if(tvalue.EqualTo("CSC_Fit")) prelimfit = new CSCFit();
+            else std::cout << "Invalid prelimfit: " << value << std::endl;
+        }
+        if(name.EqualTo("transform"))
+        {
+            TString tvalue = value;
+            if(tvalue.EqualTo("INVERSE")) transform = new Inverse();
+            else if(tvalue.EqualTo("LOG")) transform = new Log();
+            else if(tvalue.EqualTo("NONE")) transform = 0;
+            else std::cout << "Invalid loss function: " << value << std::endl;
+        }
+        if(name.EqualTo("var_word"))
+        {
+            valueConverter << std::hex << value;
+            valueConverter >> whichVars;
+        }
+        if(name.EqualTo("mode"))
+        {
+            valueConverter << value;
+            valueConverter >> mode;
+        }
+        if(name.EqualTo("use_charge"))
+        {
+            valueConverter << value;
+            valueConverter >> useCharge;
+        }
+
+        attr = xml->GetNextAttr(attr);
+    }
+}
+
 //////////////////////////////////////////////////////////////////////////
 // ______________________Regression_________ ___________________________//
 /////////////////////////////////////////////////////////////////////////
 
-void buildAndEvaluateForest()
+void validate()
 {
-// Build a forest with certain parameters and save the trees somewhere.
+  Forest* forest = new Forest();
 
-  ///////////////////////////////////
-  // Train 
-  ///////////////////////////////////
+  const char* treedir = "/home/mrcarver/ModeVariables/trees/";
 
-  // Use CSCPt as a preliminary fit.
-  // This doesn't work with useCharge = true yet, since there is no TrackCharge in the ntuples.
-  if(useCSCPt) prelimfit = new CSCFit();
-  
-  // Automatically determine the training variables to use based upon the mode.
-  buildVarWordFromMode();
-
-  // Store the hex format of whichVars into wvars.
-  std::stringstream wvars;
-  wvars << std::hex << whichVars;
-
-  // Display which variables we are using in this regression.
-  TString ntupleVars = decodeWord();
-  std::cout << std::endl;
-  std::cout << "////////////////////////////////////////////////////////////////////////////////////////////////////" << std::endl;
-  std::cout << "Using variables: " << ntupleVars << std::endl;
-  std::cout << "////////////////////////////////////////////////////////////////////////////////////////////////////" << std::endl;
-  std::cout << std::endl;
-
-  std::cout << settingsString(63) << std::endl;
-  std::cout << std::endl;
-
-  // The training and testing events.
-  std::vector<Event*> trainingEvents;
-  std::vector<Event*> testingEvents;
-
-  // Load training events from an ntuple into the training vector.
-  if(trainInclusive) loadEventsInclusive("../14M_csc_singlemu_flat1overPt_reCLCT.root", trainingEvents, useCharge, whichVars, mode);
-  else loadEventsExclusive("../14M_csc_singlemu_flat1overPt_reCLCT.root", trainingEvents, useCharge, whichVars, mode);
-
-  // Preprocess datasets: apply the transformations and preliminary fits.
-  preprocessTrain(trainingEvents, lf, prelimfit, transform);
-
-  std::cout << std::endl << "Number of training events: " << trainingEvents.size() << std::endl << std::endl;
-
-  // Initialize new forest.
-  Forest* forest = new Forest(trainingEvents, testingEvents);
-
-  // Output the parameters of the current run. 
-  std::cout << "=======================================" << std::endl;
-  std::cout << "Nodes: " << nodes << std::endl;
-  std::cout << "Trees: " << trees << std::endl;
-  std::cout << "Learning Rate: " << lr << std::endl;
-  std::cout << "Loss Function: " << lf->name().c_str() << std::endl;
-  std::cout << "Mode: " << mode << std::endl;
-  std::cout << "Use Charge: " << useCharge << std::endl;
-  std::cout << "whichVars: " << wvars.str().c_str() << std::endl;
-
-  if(prelimfit != 0) std::cout << "Preliminary Fit: " << prelimfit->name() << std::endl;
-  else std::cout << "Preliminary Fit: None" << std::endl;
-  if(transform != 0) std::cout << "Transform Function: " << transform->name() << std::endl;
-  else std::cout << "Transform Function: None" << std::endl;
-  std::cout << "=======================================" << std::endl;
-  
-  // Output the save directory to the screen.
-  if(saveTrees) std::cout << "treesDirectory " << treesDirectory.Data() << std::endl;
-
-  // Save the settings for the current regression to XML.
-  // This way the parameters of the forest will be stored as well as the trees.
-  if(saveTrees) saveSettingsToXML(treesDirectory);
-
-  // Do the regression and save the trees.
-  forest->doRegression(nodes, trees, lr, lf, treesDirectory, saveTrees);
-
-  // Rank the variable importance and output it to the screen.
-  std::vector<Int_t> rank;
-  forest->rankVariables(rank);
-
-  // Save the lists of split values for each variable into a file.
-  forest->saveSplitValues("./splitvalues.dat");
+  std::stringstream fulltreedir;
+  fulltreedir <<  treedir << "3/";
 
   ///////////////////////////////////
   // Test 
   ///////////////////////////////////
 
-  // The forest built from the training above is already in memory. There is no need to load from xml.
-  // If you wish to test from a forest that was saved to xml you would do the following.
-  // forest->loadForestFromXML(treesDirectory);
-  // displaySettingsFromXML(treesDirectory); 
+  forest->loadForestFromXML(fulltreedir.str().c_str(), 64);
+  loadSettingsFromXML(fulltreedir.str().c_str());
+  std::cout << std::endl;
+  outputRegressionParameters();
+  std::cout << std::endl;
 
   // Get the save locations in order.
   // The directories that will store the predicted events.
-  std::stringstream testDir;
-  testDir << "../ntuples/testresults/" << mode << "/";
+  std::stringstream valDir;
+  valDir << "../ntuples/testresults/" << mode << "/";
   
-  std::stringstream rateDir;
-  rateDir << "../ntuples/rateresults/" << mode << "/";
-
   // Read In events.
-  std::vector<Event*> rateEvents;
-  trainingEvents = std::vector<Event*>();
-  loadEventsExclusive("../2M_csc_singlemu_flatpt_reCLCT.root", testingEvents, useCharge, whichVars, mode);
-  loadEventsExclusive("../3M_minbias_rate_sample_reCLCT.root", rateEvents, useCharge, whichVars, mode);
-  
+  std::vector<Event*> testingEvents;
+  std::vector<Event*> trainingEvents = std::vector<Event*>();
+  loadEventsExclusive("/home/mrcarver/ntuple1k.root", testingEvents, useCharge, whichVars, mode);
+  std::cout << "Number of test events: " << testingEvents.size() << std::endl;
+
+/*  
   // Preprocess datasets.
   preprocessTest(testingEvents, lf, prelimfit, transform);
-  preprocessRate(rateEvents, lf, prelimfit, transform);
-  
-  std::cout << "Number of test events: " << testingEvents.size() << std::endl;
-  std::cout << "Number of rate events: " << rateEvents.size() << std::endl << std::endl;
   
   // Predict the test and rate sets.
   forest->predictEvents(testingEvents, trees);
-  std::cout << std::endl;
-  forest->predictEvents(rateEvents, trees);
-  std::cout << std::endl;
   
   // Form the savefile names.
   TString savetestto = outfileName(testDir.str().c_str(), trees);
-  TString saverateto = outfileName(rateDir.str().c_str(), trees);
 
   // We want to save the Pt predictions not the transformed Pt predictions that we trained/tested with.
   invertTransform(testingEvents, transform);
-  invertTransform(rateEvents, transform);
   std::cout << std::endl;
   
   // Discretize and scale the predictions.
   postProcess(testingEvents);
-  postProcess(rateEvents);
   std::cout << std::endl;
   
   // Save the events. 
   saveEvents(savetestto, testingEvents, whichVars);
-  saveEvents(saverateto, rateEvents, whichVars);
   std::cout << std::endl;
+*/
 
   delete forest;
 
   // ----------------------------------------------------
   ///////////////////////////////////////////////////////
 }
-
 
 //////////////////////////////////////////////////////////////////////////
 // ______________________Main___________________________________________//
@@ -648,6 +674,6 @@ int main(int argc, char* argv[])
         if(i==1) ss >> mode;
     }
 
-    buildAndEvaluateForest();
+    validate();
     return 0;
 }

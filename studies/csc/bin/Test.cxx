@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////////////////////
-//                            BasicTrainAndTest.cxx                     //
+//                            Test.cxx                                  //
 // =====================================================================//
 //                                                                      //
-//   Train the forest, save the trees, and test the results.            //
+//   Test out functionality.                                            //
 //                                                                      //
 //////////////////////////////////////////////////////////////////////////
 
@@ -486,19 +486,16 @@ void displaySettingsFromXML(const char* directory)
 // ______________________Regression_________ ___________________________//
 /////////////////////////////////////////////////////////////////////////
 
-void buildAndEvaluateForest()
+void buildForest()
 {
 // Build a forest with certain parameters and save the trees somewhere.
 
-  ///////////////////////////////////
-  // Train 
-  ///////////////////////////////////
+  TXMLEngine* xml = new TXMLEngine();
+  XMLNodePointer_t root = xml->NewChild(0,0,"root");
 
-  // Use CSCPt as a preliminary fit.
-  // This doesn't work with useCharge = true yet, since there is no TrackCharge in the ntuples.
+  // This doesn't work with useCharge = true yet.
   if(useCSCPt) prelimfit = new CSCFit();
   
-  // Automatically determine the training variables to use based upon the mode.
   buildVarWordFromMode();
 
   // Store the hex format of whichVars into wvars.
@@ -565,15 +562,6 @@ void buildAndEvaluateForest()
   // Save the lists of split values for each variable into a file.
   forest->saveSplitValues("./splitvalues.dat");
 
-  ///////////////////////////////////
-  // Test 
-  ///////////////////////////////////
-
-  // The forest built from the training above is already in memory. There is no need to load from xml.
-  // If you wish to test from a forest that was saved to xml you would do the following.
-  // forest->loadForestFromXML(treesDirectory);
-  // displaySettingsFromXML(treesDirectory); 
-
   // Get the save locations in order.
   // The directories that will store the predicted events.
   std::stringstream testDir;
@@ -581,45 +569,53 @@ void buildAndEvaluateForest()
   
   std::stringstream rateDir;
   rateDir << "../ntuples/rateresults/" << mode << "/";
+/*
+  // Evaluate the test and rate sets and save the results for different numbers of trees.
+  for(unsigned int t=0; t<forest->size(); t++)
+  {
+      // Only evaluate and save when the number of trees is a power of two.
+      if((((t+1) & ((t+1) - 1)) == 0) || t+1 == forest->size())
+      {
+          // Read In events.
+          std::vector<Event*> rateEvents;
+          trainingEvents = std::vector<Event*>();
+          loadEventsExclusive("../2M_csc_singlemu_flatpt_reCLCT.root", testingEvents, useCharge, whichVars, mode);
+          loadEventsExclusive("../3M_minbias_rate_sample_reCLCT.root", rateEvents, useCharge, whichVars, mode);
+  
+          // Preprocess datasets.
+          preprocessTest(testingEvents, lf, prelimfit, transform);
+          preprocessRate(rateEvents, lf, prelimfit, transform);
+  
+          std::cout << "Number of test events: " << testingEvents.size() << std::endl;
+          std::cout << "Number of rate events: " << rateEvents.size() << std::endl << std::endl;
+  
+          // Predict the test and rate sets.
+          forest->predictEvents(testingEvents, t+1);
+          std::cout << std::endl;
+          forest->predictEvents(rateEvents, t+1);
+          std::cout << std::endl;
+  
+          // Concatenate the directory and the names.
+          TString savetestto = outfileName(testDir.str().c_str(), t);
+          TString saverateto = outfileName(rateDir.str().c_str(), t);
 
-  // Read In events.
-  std::vector<Event*> rateEvents;
-  trainingEvents = std::vector<Event*>();
-  loadEventsExclusive("../2M_csc_singlemu_flatpt_reCLCT.root", testingEvents, useCharge, whichVars, mode);
-  loadEventsExclusive("../3M_minbias_rate_sample_reCLCT.root", rateEvents, useCharge, whichVars, mode);
+          // We want to save the Pt predictions not the transformed Pt predictions that we trained/tested with.
+          invertTransform(testingEvents, transform);
+          invertTransform(rateEvents, transform);
+          std::cout << std::endl;
   
-  // Preprocess datasets.
-  preprocessTest(testingEvents, lf, prelimfit, transform);
-  preprocessRate(rateEvents, lf, prelimfit, transform);
+          // Discretize and scale the predictions.
+          postProcess(testingEvents);
+          postProcess(rateEvents);
+          std::cout << std::endl;
   
-  std::cout << "Number of test events: " << testingEvents.size() << std::endl;
-  std::cout << "Number of rate events: " << rateEvents.size() << std::endl << std::endl;
-  
-  // Predict the test and rate sets.
-  forest->predictEvents(testingEvents, trees);
-  std::cout << std::endl;
-  forest->predictEvents(rateEvents, trees);
-  std::cout << std::endl;
-  
-  // Form the savefile names.
-  TString savetestto = outfileName(testDir.str().c_str(), trees);
-  TString saverateto = outfileName(rateDir.str().c_str(), trees);
-
-  // We want to save the Pt predictions not the transformed Pt predictions that we trained/tested with.
-  invertTransform(testingEvents, transform);
-  invertTransform(rateEvents, transform);
-  std::cout << std::endl;
-  
-  // Discretize and scale the predictions.
-  postProcess(testingEvents);
-  postProcess(rateEvents);
-  std::cout << std::endl;
-  
-  // Save the events. 
-  saveEvents(savetestto, testingEvents, whichVars);
-  saveEvents(saverateto, rateEvents, whichVars);
-  std::cout << std::endl;
-
+          // Save the events. 
+          saveEvents(savetestto, testingEvents, whichVars);
+          saveEvents(saverateto, rateEvents, whichVars);
+          std::cout << std::endl;
+      }
+  }
+*/
   delete forest;
 
   // ----------------------------------------------------
@@ -648,6 +644,6 @@ int main(int argc, char* argv[])
         if(i==1) ss >> mode;
     }
 
-    buildAndEvaluateForest();
+    buildForest();
     return 0;
 }

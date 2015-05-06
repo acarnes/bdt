@@ -49,10 +49,9 @@ Forest::Forest()
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-Forest::Forest(std::vector<Event*>& trainingEvents, std::vector<Event*>& testingEvents)
+Forest::Forest(std::vector<Event*>& trainingEvents)
 {
     setTrainingEvents(trainingEvents);
-    setTestEvents(testingEvents);
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -70,16 +69,6 @@ Forest::~Forest()
     { 
         delete trees[i];
     }
-
-    for(unsigned int j=0; j < events[0].size(); j++)
-    {
-        delete events[0][j];
-    }   
-
-    for(unsigned int j=0; j < testEvents.size(); j++)
-    {
-        delete testEvents[j];
-    }   
 }
 //////////////////////////////////////////////////////////////////////////
 // ______________________Get/Set_Functions______________________________//
@@ -105,25 +94,8 @@ void Forest::setTrainingEvents(std::vector<Event*>& trainingEvents)
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::setTestEvents(std::vector<Event*>& testingEvents)
-{   
-// tell the forest which events to use for testing
-    testEvents = testingEvents; 
-}
-
-//////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------
-//////////////////////////////////////////////////////////////////////////
-
 // return a copy of the training events
 std::vector<Event*> Forest::getTrainingEvents(){ return events[0]; }
-
-//////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------
-//////////////////////////////////////////////////////////////////////////
-
-// return a copy of the testEvents
-std::vector<Event*> Forest::getTestEvents(){ return testEvents; }
 
 //////////////////////////////////////////////////////////////////////////
 // ______________________Various_Helpful_Functions______________________//
@@ -205,7 +177,7 @@ void Forest::sortEventVectors(std::vector< std::vector<Event*> >& e)
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::rankVariables(std::vector<Int_t>& rank)
+void Forest::rankVariables(std::vector<int>& rank)
 {
 // This function ranks the determining variables according to their importance
 // in determining the fit. Use a low learning rate for better results.
@@ -571,112 +543,4 @@ void Forest::doStochasticRegression(Int_t nodeLimit, Int_t treeLimit, Double_t l
     std::cout << std::endl << "Done." << std::endl << std::endl;
 
     std::cout << std::endl << "Total calculation time: " << timer.RealTime() << std::endl;
-}
-//////////////////////////////////////////////////////////////////////////
-// ______________________Generate_Events________________________________//
-//////////////////////////////////////////////////////////////////////////
-
-void Forest::generate(Int_t n, Int_t m, Double_t sigma)
-{
-// Generate events to use for the building and testing of the forest.
-// We keep as many copies of the events as there are variables.
-// And we store these copies in the events vector of vectors.
-// events[0] is a vector sorted by var 0, events[1] by var 1, etc.
-// All of the vectors have the same events, but each vector is just
-// sorted by a different variable.
- 
-    // Store these in case we need them
-    // for plotting or troubleshooting.
-    std::ofstream trainData;
-    trainData.open("training.data");
-
-    std::ofstream testData;
-    testData.open("testing.data");
-
-    // Prepare our containers.
-    TRandom3 r(0);
-    std::vector<Event*> v(n);
-
-    events = std::vector< std::vector<Event*> >(3, std::vector<Event*>(n));
-    testEvents = std::vector<Event*>(m);
-
-    std::cout << std::endl << "Generating " << n << " events..." << std::endl;
-
-    // Generate the data set we will use to build the forest. 
-    for(unsigned int i=0; i< (unsigned) n; i++)
-    {  
-        // data[0] is the target, which is determined
-        // by the other variables data[1], data[2] ... 
-        std::vector<Double_t> x(3);
-        x[1] = r.Rndm();
-        x[2] = r.Rndm();
-
-        // Store the variable which is determined by the others.
-        // Our target for BDT prediction.
-        x[0] = x[1]*x[2];
-
-
-        // Add noise to the determining variables.
-        x[1] += r.Gaus(0,sigma);
-        x[2] += r.Gaus(0,sigma);
-
-        // Create the event.
-        Event* e = new Event();
-        v[i]=e;
-
-        // Store the event.
-        e->predictedValue = 0;
-        e->trueValue = x[0];
-        e->data = x;  
-        e->id = i;
-    }
-
-    // Set up the events matrix and the events vector.
-    for(unsigned int i=0; i < events.size(); i++)
-    {
-        events[i] = v;
-    }
-
-    // Generate a separate data set for testing.
-    for(unsigned int i=0; i< (unsigned) m; i++)
-    {  
-        // data[0] is the target, which is determined
-        // by the other variables data[1], data[2] ... 
-        std::vector<Double_t> x(3);
-        x[1] = r.Rndm();
-        x[2] = r.Rndm();
-        x[0] = x[1]*x[2];
-
-        x[1] += r.Gaus(0,sigma);
-        x[2] += r.Gaus(0,sigma);
-
-        // Create the event.
-        Event* e = new Event();
-        Event* f = new Event();
-
-        testEvents[i] = e;
-
-        // Store the event.
-        e->predictedValue = 0;
-        e->trueValue = x[0];
-        e->data = x;  
-        e->id = i;
-
-        f->predictedValue = 0;
-        f->trueValue = x[0];
-        f->data = x;  
-        f->id = i;
-        
-    }
-
-    // Sort the events by the target variable.
-    Event::sortingIndex=0;
-
-    for(unsigned int i=0; i< (unsigned) n; i++)
-    {
-        // Argh, write to files if ye want, matie.
-    }
-
-    trainData.close();
-    testData.close();
 }
