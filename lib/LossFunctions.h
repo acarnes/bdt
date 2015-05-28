@@ -221,4 +221,62 @@ class PercentErrorSquared : public LossFunction
         int id(){ return 4; }
 };
 
+// ========================================================
+// ============== BinaryClassification=====================
+// ========================================================
+
+class BinaryClassification : public LossFunction
+{
+    public:
+        BinaryClassification(){}
+        ~BinaryClassification(){}
+ 
+        double quantile;
+        double residual_median;
+
+        Double_t target(Event* e)
+        {
+        // The gradient of the loss function.
+            Double_t targetValue = 2*e->trueValue/(1+TMath::Exp(2*e->trueValue*e->predictedValue));
+            return targetValue; 
+        }
+
+        Double_t fit(std::vector<Event*>& v)
+        {
+        // The constant fit that minimizes the LF in a region.
+
+            Double_t numerator = 0;
+            Double_t denominator = 0;
+
+            for(unsigned int i=0; i<v.size(); i++)
+            {
+                Event* e = v[i];
+                double response = 2*e->trueValue/(1+TMath::Exp(2*e->trueValue*e->predictedValue));
+                numerator += response;
+                denominator += TMath::Abs(response)*(2-TMath::Abs(response));
+            }
+
+           return numerator/denominator;
+            
+        }
+
+        Double_t initialize(std::vector<Event*>& v)
+        {
+        // This lossfunction requires the predicted values to be initialized during preprocessing. 
+        // The predictedValue for all events should be set to the return value from this function.
+
+            Double_t SUM = 0;
+            for(unsigned int i=0; i<v.size(); i++)
+            {
+                Event* e = v[i];
+                SUM += e->trueValue;
+            }
+    
+            Double_t avg_true = SUM/v.size();
+            return 0.5*TMath::Log(1+avg_true)/TMath::Log(1-avg_true);
+        }
+
+        std::string name() { return "BinaryClassification"; }
+        int id(){ return 5; }
+};
 #endif
