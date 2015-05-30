@@ -147,8 +147,8 @@ class Huber : public LossFunction
         {
         // The constant fit that minimizes Huber in a region.
 
-            quantile = calculateQuantile(v, 0.7);
-            residual_median = calculateQuantile(v, 0.5); 
+            quantile = calculateQuantile(v, 0.7, true);
+            residual_median = calculateQuantile(v, 0.5, false); 
 
             double x = 0;
             for(unsigned int i=0; i<v.size(); i++)
@@ -166,7 +166,7 @@ class Huber : public LossFunction
         std::string name() { return "Huber"; }
         int id(){ return 3; }
 
-        double calculateQuantile(std::vector<Event*>& v, double whichQuantile)
+        double calculateQuantile(std::vector<Event*>& v, double whichQuantile, bool absValue)
         {
             // Container for the residuals.
             std::vector<Double_t> residuals(v.size());
@@ -175,7 +175,8 @@ class Huber : public LossFunction
             for(unsigned int i=0; i<v.size(); i++)
             {
                 Event* e = v[i];
-                residuals[i] = TMath::Abs(e->trueValue - e->predictedValue);
+                if(absValue) residuals[i] = TMath::Abs(e->trueValue - e->predictedValue);
+                else residuals[i] = (e->trueValue - e->predictedValue);
             }
 
             std::sort(residuals.begin(), residuals.end());             
