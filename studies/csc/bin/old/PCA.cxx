@@ -206,6 +206,7 @@ TMatrixD getPrincipalAxes()
 void loadAndConvertEvents(const char* infilename, std::vector<Event*>& events, unsigned int numAxes)
 {
 // Load events from the infile then convert them to the new PCA basis.
+// We initially load the events vector normally, then convert his events vector to the PCA basis. 
 
     std::stringstream wvars;
     wvars << std::hex << whichVars;
@@ -217,14 +218,19 @@ void loadAndConvertEvents(const char* infilename, std::vector<Event*>& events, u
     TMatrixD axes = getPrincipalAxes();
     readInEvents(infilename, events, mode, useCharge, isExclusive, whichVars);
 
+    // Use as many PCA components as there are feature variables.
+    if(numAxes=-1) numAxes = axes.GetNcols();
+
     std::cout << "events[0] before conversion: " << std::endl;
     events[0]->outputEvent();
     // Each PCA axis points in some direction in our old basis. We want to take the dot product of
-    // our current vector with each PCA axis to find the components in the new basis. We end up
-    // with an event int he PCA basis, which we will use for prediction. Do this for all events.
+    // our current feature vector with each PCA axis to find the components in the new basis. We then end up
+    // with an event whose features are now in the PCA basis. Do this for all events.
     for(unsigned int i=0; i<events.size(); i++)
     {
+        // The feature information before PCA conversion
         std::vector<Double_t> oldvec = events[i]->data;
+
         // Check to make sure the user doesn't try to use more axes than possible.
         if(numAxes > axes.GetNcols())
         {
@@ -232,12 +238,14 @@ void loadAndConvertEvents(const char* infilename, std::vector<Event*>& events, u
             std::cout << "Proceeding by using the maximum number possible. (" << axes.GetNcols() << ")" << std::endl;
             numAxes = axes.GetNcols();
         }
-        // Each column is a PCA axis.
+        // Each column is a PCA axis. We want a new feature vector with numAxes total PCA components.
         for(unsigned int col=0; col<numAxes; col++)
         {
             std::stringstream ss;
             Double_t dot_product = 0;
             // Each row is a component of the PCA axis vector.
+            // We want the dot product of the current PCA basis vector (a column) with the old vector
+            // to get the component in the new PCA basis.
             for(unsigned int row=0; row<axes.GetNrows(); row++)
             {
                 // Calculate the component for this axis in the new basis.
@@ -246,9 +254,12 @@ void loadAndConvertEvents(const char* infilename, std::vector<Event*>& events, u
                 dot_product+= oldvec[row+1]*axes[row][col];
             }
             if(i==0) std::cout << col << ":" << ss.str().c_str() << "=" << dot_product << std::endl;
+
+            // Once again, the new component is the dot product of the old feature vector with the current pca unit vector (col).
             events[i]->data[col+1] = dot_product;
         }
         
+        // We only want numAxes PCA components total so we get rid of the extra components. We never wrote over these components with the PCA components.
         events[i]->data.erase(events[i]->data.begin()+numAxes+1, events[i]->data.end());
     }
     std::cout << "events[0] after conversion: " << std::endl;
@@ -261,6 +272,8 @@ void loadAndConvertEvents(const char* infilename, std::vector<Event*>& events, u
 
 void savePCAEvents(const char* savefilename, std::vector<Event*>& events)
 {
+// Save the events vector with PCA info to an ntuple.
+
     TString ntupleVars("GenPt:CSCPt:BDTPt:Mode");
 
     for(unsigned int j=1; j<events[0]->data.size(); j++)
@@ -301,9 +314,11 @@ void savePCAEvents(const char* savefilename, std::vector<Event*>& events)
 // ---------------------------------------------------------------------
 /////////////////////////////////////////////////////////////////////////
 
-
 void loadPCAEvents(const char* infilename, std::vector<Event*> events, unsigned int nvars)
 {
+// Load the events with the PCA feature data from an ntuple.
+// The PCA feature variables in the ntuple are assumed to be named x1, x2, ..., xN
+
     std::cout << "Reading in events from " << infilename << "..." << std::endl; 
 
     // Get the ntuple.
@@ -311,12 +326,15 @@ void loadPCAEvents(const char* infilename, std::vector<Event*> events, unsigned 
     TNtuple* ntuple = (TNtuple*)f->Get("BDTresults");
 
     Float_t GenPt=-999999, Mode=-999999, CSCPt=-999999, BDTPt=-999999;
+
+    // This vector will contain the PCA feature info.
     std::vector<Float_t>x(nvars, -999999);
 
     ntuple->SetBranchAddress("GenPt", &GenPt);    
     ntuple->SetBranchAddress("Mode", &Mode);    
     ntuple->SetBranchAddress("CSCPt", &CSCPt);    
     
+    // The variables will be named x1 -> xnvars
     for(unsigned int j=1; j<=nvars; j++)
     {
         std::stringstream ss;
@@ -324,17 +342,26 @@ void loadPCAEvents(const char* infilename, std::vector<Event*> events, unsigned 
         ntuple->SetBranchAddress(ss.str().c_str(), &x[j-1]);
     }
 
+    // We want to load all of the tracks from the ntuple into this container
     std::vector<Event*> v;
   
     for(unsigned int i=0; i<ntuple->GetEntries(); i++)
     {
+        // Get a track from the ntuple
         ntuple->GetEntry(i);
+
+        // This vector contains the feature information as well as the target information
+        // The target is in spot zero the features are in the later spots
         std::vector<Double_t> data;
+
+        // First put the target in the 0th location
         data.push_back(GenPt);
 
+        // Put the PCAed features into the rest of the data vector
         for(unsigned int j=1; j<=nvars; j++)
             data.push_back(x[j-1]);
        
+        // Store all of the appropriate info into the data structure that the BDT uses
         Event* e = new Event();
         e->trueValue = GenPt;
         e->predictedValue = BDTPt;

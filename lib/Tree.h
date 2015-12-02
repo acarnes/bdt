@@ -28,6 +28,8 @@ class Tree
         void calcError();
         void filterEvents(std::vector<Event*>& tEvents);
         void filterEventsRecursive(Node* node);
+        Node* filterEvent(Event* e);
+        Node* filterEventRecursive(Node* node, Event* e);
 
         void saveToXML(const char* filename);
         void saveToXMLRecursive(TXMLEngine* xml, Node* node, XMLNodePointer_t np);

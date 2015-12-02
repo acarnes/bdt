@@ -2,7 +2,7 @@
 //                            ChargeAndPt.cxx                           //
 // =====================================================================//
 //                                                                      //
-//   Train the forest on the training sample and save the trees.        //
+//  Train and test on Q/Pt and compare to training and testing on 1/Pt  //
 //                                                                      //
 //////////////////////////////////////////////////////////////////////////
 

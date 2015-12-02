@@ -598,10 +598,10 @@ void validate()
 {
   Forest* forest = new Forest();
 
-  const char* treedir = "/home/mrcarver/ModeVariables/trees/";
+  const char* treedir = "/scratch/osg/acarnes/bdt/studies/csc/trees/";
 
   std::stringstream fulltreedir;
-  fulltreedir <<  treedir << "3/";
+  fulltreedir <<  treedir << mode << "/";
 
   ///////////////////////////////////
   // Test 
@@ -621,18 +621,66 @@ void validate()
   // Read In events.
   std::vector<Event*> testingEvents;
   std::vector<Event*> trainingEvents = std::vector<Event*>();
-  loadEventsExclusive("/home/mrcarver/ntuple1k.root", testingEvents, useCharge, whichVars, mode);
-  std::cout << "Number of test events: " << testingEvents.size() << std::endl;
+  loadEventsExclusive("../14M_csc_singlemu_flat1overPt_reCLCT.root", testingEvents, useCharge, whichVars, mode);
 
-/*  
-  // Preprocess datasets.
-  preprocessTest(testingEvents, lf, prelimfit, transform);
-  
-  // Predict the test and rate sets.
-  forest->predictEvents(testingEvents, trees);
-  
+  // use a subset of the testingEvents
+  testingEvents = std::vector<Event*>(&testingEvents[0], &testingEvents[1000000]);
+
+  std::cout << "Number of test events: " << testingEvents.size() << std::endl;
+ 
+  bool onebyone = true;
+
+  if(!onebyone)
+  { 
+    TStopwatch timer;
+    timer.Start();
+
+    std::cout << std::endl << "====== Predicting Events ..." << std::endl;
+    // Preprocess datasets.
+    preprocessTest(testingEvents, lf, prelimfit, transform);
+    
+    // Predict the test and rate sets.
+    forest->predictEvents(testingEvents, trees);
+    std::cout << "====== Done predicting events: " << timer.CpuTime() << std::endl;
+    timer.Stop();
+    std::cout << std::endl;
+
+  }
+
+  if(onebyone)
+  {
+    TStopwatch timer;
+    int numZero = 0;
+    std::cout << std::endl << "====== Predicting Events ..." << std::endl;
+    timer.Start();
+    for(unsigned int i=0; i<testingEvents.size(); i++)
+    {
+        Event* e = testingEvents[i];
+        //std::cout << "Predicting event " << i << "..."<< std::endl;
+        //e->outputEvent();
+
+        //std::vector<Event*> testingEvent = std::vector<Event*>();
+        //testingEvent.push_back(e);
+        //preprocessTest(testingEvent, lf, prelimfit, transform);
+        //forest->predictEvents(testingEvent, trees);
+        preprocessTest(e, lf, prelimfit, transform);
+        forest->predictEvent(e, trees);
+    }
+    timer.Stop();
+    std::cout << "====== Done predicting events: " << timer.CpuTime() << std::endl;
+    std::cout << "====== num predictedValue == 0: " << numZero << std::endl;
+  }
+
+
+ std::cout << std::endl << "====== Verify Events ..." << std::endl;
+ for(unsigned int i=0; i<5; i++)
+ {
+     std::cout << "Done predicting event " << i << "..."<< std::endl;
+     testingEvents[i]->outputEvent();
+ }
+/*
   // Form the savefile names.
-  TString savetestto = outfileName(testDir.str().c_str(), trees);
+  TString savetestto = outfileName(valDir.str().c_str(), trees);
 
   // We want to save the Pt predictions not the transformed Pt predictions that we trained/tested with.
   invertTransform(testingEvents, transform);
@@ -645,10 +693,9 @@ void validate()
   // Save the events. 
   saveEvents(savetestto, testingEvents, whichVars);
   std::cout << std::endl;
-*/
 
   delete forest;
-
+*/
   // ----------------------------------------------------
   ///////////////////////////////////////////////////////
 }

@@ -3,11 +3,11 @@
 # Set the Compiler
 CC = g++
 
-LIBFLAGS = `root-config --libs` -lXMLIO -lMLP -lMinuit
+LIBFLAGS = `root-config --libs` -g -lXMLIO -lMLP -lMinuit
 LIBDIR = ../../../lib/
-CFLAGS = -I${LIBDIR} -c `root-config --cflags`
+CFLAGS = -I${LIBDIR} -c -g `root-config --cflags`
 DEPS = LoadSaveEvents.h Functions.h
-MAINPROGRAM = Eval4Station
+MAINPROGRAM = Validate
 
 CompileStuff: ${LIBDIR}Utilities.o ${LIBDIR}Node.o ${LIBDIR}Tree.o ${LIBDIR}Forest.o ${MAINPROGRAM}.o
 	$(CC) $(LIBFLAGS) ${LIBDIR}Utilities.o ${LIBDIR}Node.o ${LIBDIR}Tree.o ${LIBDIR}Forest.o ${MAINPROGRAM}.o -o ${MAINPROGRAM}

@@ -2,9 +2,10 @@
 //                            PCAVarReduction.cxx                       //
 // =====================================================================//
 //                                                                      //
-//   Use PCA to create an orthogonal set of variables. Start with the   //
-//   complete set of PCA variables and look at the results as you       //
-//   take away the least important variable each time.                  //
+//   Use PCA to create an orthogonal set of variables from the original //
+//   basis. Then start with the complete set of PCA variables and       //
+//   produce BDT results as you take away the least important           //
+//   variable each time. Compare to non PCA variable reduction.         //
 //                                                                      //
 //////////////////////////////////////////////////////////////////////////
 
@@ -522,7 +523,7 @@ TString settingsString(int t)
     if(trainInclusive) settings << "trainIN" << "_";
     else settings << "trainEX" << "_";
     settings << lf->name().c_str() << "_" << nodes << "_" << t << "_" << lr << "_mode_"
-     << mode << "_pca_" << usePCA << "_chg_" << useCharge << "_" << "varWord_" << wvars.str().c_str() << "_pca_control_study";
+     << mode << "_pca_" << usePCA << "_chg_" << useCharge << "_" << "varWord_" << wvars.str().c_str() << "_pca_fixed_study";
 
     TString set = TString(settings.str().c_str());
 
@@ -843,7 +844,7 @@ TMatrixD loadEventsIntoMatrix(const char* infilename, bool isInclusive)
 // ---------------------------------------------------------------------
 /////////////////////////////////////////////////////////////////////////
 
-TMatrixD getPrincipalAxes(const char* infilename, bool isInclusive)
+TMatrixD getPrincipalAxes(const char* infilename, bool isInclusive, std::vector<double>& mu, std::vector<double>& sigma)
 {
 // We find the principal axes by finding the eigenvectors of the
 // correlation matrix, which we calculate using the training sample.
@@ -853,13 +854,20 @@ TMatrixD getPrincipalAxes(const char* infilename, bool isInclusive)
     std::cout << "=====================================================================================================" << std::endl;
     // load the events into a matrix then normalize them.
     TMatrixD x = loadEventsIntoMatrix(infilename, isInclusive);
+
+    // Get the mean and std deviation from the pre-normalized data
+    // We will need this information to normalize the events->data vector in loadAndConvertEvents
+
+    mu = getMean(x);
+    sigma = getVariance(x);
+
     normalize(x);
 
     // Make sure the vars were normalized correctly.
-    std::vector<double> mu = getMean(x);
-    std::vector<double> sigma = getVariance(x);
-    for(unsigned int i=0; i<mu.size(); i++)
-        std::cout << mu[i] << "," << sigma[i] << std::endl;
+    std::vector<double> norm_mu = getMean(x);
+    std::vector<double> norm_sigma = getVariance(x);
+    for(unsigned int i=0; i<norm_mu.size(); i++)
+        std::cout << norm_mu[i] << "," << norm_sigma[i] << std::endl;
 
     // After normalizing we find the transpose of the events matrix.
     TMatrixD x_t = x;
@@ -901,7 +909,9 @@ void loadAndConvertEvents(const char* infilename, std::vector<Event*>& events, i
     std::cout << "Using whichVars: " << wvars.str().c_str() << std::endl;
 
     // Always calculate the PCA axes from the training set. Use these axes to convert whatever input given by infilename.
-    TMatrixD axes = getPrincipalAxes("../14M_csc_singlemu_flat1overPt_reCLCT.root", trainInclusive);
+    std::vector<double> mu;
+    std::vector<double> sigma;
+    TMatrixD axes = getPrincipalAxes("../14M_csc_singlemu_flat1overPt_reCLCT.root", trainInclusive, mu, sigma);
 
     // Load events from an ntuple.
     if(trainInclusive) loadEventsInclusive(infilename, events, useCharge, whichVars, mode);
@@ -913,7 +923,7 @@ void loadAndConvertEvents(const char* infilename, std::vector<Event*>& events, i
     if(numAxes<0) numAxes = axes.GetNcols();
     std::cout << "Using " << numAxes << " PCA axes." << std::endl;
 
-    std::cout << std::endl << "events[0] before conversion: " << std::endl;
+    std::cout << std::endl << "events[0] before pca conversion: " << std::endl;
     events[0]->outputEvent();
 
     // Each PCA axis points in some direction in our old basis. We want to take the dot product of
@@ -923,6 +933,7 @@ void loadAndConvertEvents(const char* infilename, std::vector<Event*>& events, i
     for(unsigned int i=0; i<events.size(); i++)
     {
         std::vector<Double_t> oldvec = events[i]->data;
+        
         // Check to make sure the user doesn't try to use more axes than possible.
         if(numAxes > axes.GetNcols())
         {
@@ -931,7 +942,7 @@ void loadAndConvertEvents(const char* infilename, std::vector<Event*>& events, i
             numAxes = axes.GetNcols();
         }
         // Each column is a PCA axis.
-        for(unsigned int col=0; col<numAxes; col++)
+        for(unsigned int pcacol=0; pcacol<numAxes; pcacol++)
         {
             std::stringstream ss;
             Double_t dot_product = 0;
@@ -939,17 +950,19 @@ void loadAndConvertEvents(const char* infilename, std::vector<Event*>& events, i
             // Each row is a component of the PCA axis vector.
             // We want the dot product of the current PCA basis vector (a column) with the old vector
             // to get the component in the new PCA basis. So we multiply like components of the two vectors and add them all.
-            for(unsigned int row=0; row<axes.GetNrows(); row++)
+            for(unsigned int pcarow=0; pcarow<axes.GetNrows(); pcarow++)
             {
                 // Calculate the new component for this PCA axis (column).
                 // data[0] is the target variable and data[>0] are the feature variables.
-                if(i==0) ss << oldvec[row+1] << "*" << axes[row][col] << "+";
-                dot_product+= oldvec[row+1]*axes[row][col];
+                Double_t normalized_oldvec_value = (oldvec[pcarow+1] - mu[pcarow])/sigma[pcarow];
+                if(i==0) ss << "(" << oldvec[pcarow+1] << "-" << mu[pcarow] << ")" << "/" << sigma[pcarow] << "*" << axes[pcarow][pcacol] << "+";
+                dot_product+= normalized_oldvec_value*axes[pcarow][pcacol];
             }
-            if(i==0) std::cout << std::endl << col << ":" << ss.str().c_str() << "=" << dot_product << std::endl;
-            events[i]->data[col+1] = dot_product;
+            if(i==0) std::cout << std::endl << pcacol << ":" << ss.str().c_str() << "=" << dot_product << std::endl;
+            events[i]->data[pcacol+1] = dot_product;
         }
 
+        // Get rid of extra PCA vars
         events[i]->data.erase(events[i]->data.begin()+numAxes+1, events[i]->data.end());
     }
     std::cout << std::endl << "events[0] after conversion: " << std::endl;
@@ -1077,6 +1090,9 @@ XMLNodePointer_t root = xml->NewChild(0,0,"root");
 
 // Automatically determine the initial set of training variables from the mode.
 // We will gradually reduce from this set. This set may be converted to a new basis by PCA.
+
+// usePCA set to false so that decodeWord will initially output the non pca variables being used.
+// if you want to usePCA set it to true after this block.
 usePCA = false;
 buildVarWordFromMode();
 TString ntupleVars = decodeWord();
@@ -1090,8 +1106,8 @@ wvars << std::hex << whichVars;
 std::cout << "whichVars: " << wvars.str().c_str() << std::endl;
 std::cout << std::endl;
 
-// Let's load in all of the events into their appropriate vectors now.
-// Then instead of loading each time we will just 
+// Set usePCA here
+usePCA = true;
 
 // The training and testing events.
 std::vector<Event*> trainingEvents;
@@ -1279,7 +1295,7 @@ while(whichVars!=0)
 
  // Save information from the study so that we can automatically load the files for analysis.
  std::stringstream analysisxml;
- analysisxml << "../AnalysisXML/" << mode << "/pca_control_study.xml";
+ analysisxml << "../AnalysisXML/" << mode << "/pca_study_fixed_true.xml";
  std::cout << "analysisxml = " << analysisxml.str().c_str() << std::endl;
  saveAnalysisXML(analysisxml.str().c_str(), xml, root);
  displayAnalysisXML(analysisxml.str().c_str());

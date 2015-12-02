@@ -200,6 +200,32 @@ void Tree::filterEventsRecursive(Node* node)
 
 // ----------------------------------------------------------------------
 
+Node* Tree::filterEvent(Event* e)
+{
+// Use trees which have already been built to fit a bunch of events
+// given by the tEvents vector.
+
+    // Filter the event into a predictive region (terminal node).
+    Node* node = filterEventRecursive(rootNode, e);
+    return node;
+}
+
+// ----------------------------------------------------------------------
+
+Node* Tree::filterEventRecursive(Node* node, Event* e)
+{
+// Filter the event repeatedly into the daughter nodes until it
+// falls into a terminal node.
+
+
+    Node* nextNode = node->filterEventToDaughter(e);
+    if(nextNode == 0) return node;
+
+    return filterEventRecursive(nextNode, e);
+}
+
+// ----------------------------------------------------------------------
+
 
 void Tree::rankVariablesRecursive(Node* node, std::vector<Double_t>& v)
 {

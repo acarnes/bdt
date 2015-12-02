@@ -46,8 +46,10 @@ class Forest
 
         // Predict some events
         void updateEvents(Tree* tree);
-        void appendCorrection(std::vector<Event*> eventsp, Int_t treenum);
-        void predictEvents(std::vector<Event*> eventsp, Int_t trees);
+        void appendCorrection(std::vector<Event*>& eventsp, Int_t treenum);
+        void predictEvents(std::vector<Event*>& eventsp, Int_t trees);
+        void appendCorrection(Event* e, Int_t treenum);
+        void predictEvent(Event* e, Int_t trees);
 
     private:
 

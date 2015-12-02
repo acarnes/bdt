@@ -399,11 +399,11 @@ void Forest::doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRat
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::predictEvents(std::vector<Event*> eventsp, Int_t numtrees)
+void Forest::predictEvents(std::vector<Event*>& eventsp, Int_t numtrees)
 {
 // Predict values for eventsp by running them through the forest up to numtrees.
 
-    std::cout << "Using " << numtrees << " trees from the forest to predict events ... " << std::endl;
+    //std::cout << "Using " << numtrees << " trees from the forest to predict events ... " << std::endl;
     if(numtrees > trees.size())
     {
         std::cout << std::endl << "!! Input greater than the forest size. Using forest.size() = " << trees.size() << " to predict instead." << std::endl;
@@ -413,7 +413,7 @@ void Forest::predictEvents(std::vector<Event*> eventsp, Int_t numtrees)
     // i iterates through the trees in the forest. Each tree corrects the last prediction.
     for(unsigned int i=0; i < numtrees; i++) 
     {
-        std::cout << "++Tree " << i << "..." << std::endl;
+        //std::cout << "++Tree " << i << "..." << std::endl;
         appendCorrection(eventsp, i);
     }
 }
@@ -422,7 +422,7 @@ void Forest::predictEvents(std::vector<Event*> eventsp, Int_t numtrees)
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::appendCorrection(std::vector<Event*> eventsp, Int_t treenum)
+void Forest::appendCorrection(std::vector<Event*>& eventsp, Int_t treenum)
 {
 // Update the prediction by appending the next correction.
 
@@ -433,6 +433,44 @@ void Forest::appendCorrection(std::vector<Event*> eventsp, Int_t treenum)
     updateEvents(tree);
 }
 
+//////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////
+
+void Forest::predictEvent(Event* e, Int_t numtrees)
+{
+// Predict values for eventsp by running them through the forest up to numtrees.
+
+    //std::cout << "Using " << numtrees << " trees from the forest to predict events ... " << std::endl;
+    if(numtrees > trees.size())
+    {
+        std::cout << std::endl << "!! Input greater than the forest size. Using forest.size() = " << trees.size() << " to predict instead." << std::endl;
+        numtrees = trees.size();
+    }
+
+    // i iterates through the trees in the forest. Each tree corrects the last prediction.
+    for(unsigned int i=0; i < numtrees; i++) 
+    {
+        //std::cout << "++Tree " << i << "..." << std::endl;
+        appendCorrection(e, i);
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////
+
+void Forest::appendCorrection(Event* e, Int_t treenum)
+{
+// Update the prediction by appending the next correction.
+
+    Tree* tree = trees[treenum];
+    Node* terminalNode = tree->filterEvent(e); 
+
+    // Update the event with its new prediction.
+    Double_t fit = terminalNode->getFitValue();
+    e->predictedValue += fit;
+}
 /////////////////////////////////////////////////////////////////////////////////////
 // ----------------------------------------------------------------------------------
 /////////////////////////////////////////////////////////////////////////////////////

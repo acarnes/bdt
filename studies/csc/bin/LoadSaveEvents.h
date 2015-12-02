@@ -116,7 +116,7 @@ void preprocessTrain(std::vector<Event*>& events, LossFunction* lf, PreliminaryF
 
 void preprocessTest(std::vector<Event*>& events, LossFunction* lf, PreliminaryFit* prelimfit, TransformFunction* transform)
 {
-    std::cout << "Preprocessing test events ... " << std::endl;
+    //std::cout << "Preprocessing test events ... " << std::endl;
     Int_t failed = 0;
 
     for(unsigned int i=0; i<events.size(); i++)
@@ -143,6 +143,26 @@ void preprocessTest(std::vector<Event*>& events, LossFunction* lf, PreliminaryFi
 
     if(failed > 0)
         std::cout << "==== NUM UNDEFINED TRANSFORMATIONS: " << failed << std::endl;
+}
+
+////////////////////////////////////////////////////////////
+//----------------------------------------------------------
+////////////////////////////////////////////////////////////
+
+bool preprocessTest(Event* e, LossFunction* lf, PreliminaryFit* prelimfit, TransformFunction* transform)
+{
+    //std::cout << "Preprocessing test events ... " << std::endl;
+
+    bool transformfailure = false;
+
+    // Apply preliminary fit.
+    if(prelimfit != 0) prelimfit->fit(e);
+    else e->predictedValue = 0;
+
+    // Apply transform to true and predicted values.
+    if(transform != 0) transformfailure = transform->transform(e); 
+
+    return transformfailure;
 }
 
 ////////////////////////////////////////////////////////////
@@ -199,6 +219,20 @@ void invertTransform(std::vector<Event*>& events, TransformFunction* transform)
         if(e->predictedValue == 0) std::cout << e->id << ": e->predictedValue == 0" << std::endl;
         transform->invertTransformation(e); 
     }
+}
+
+////////////////////////////////////////////////////////////
+//----------------------------------------------------------
+////////////////////////////////////////////////////////////
+
+void invertTransform(Event* e, TransformFunction* transform)
+{
+    if(transform == 0) return;
+    std::cout << "Untransforming event ... " << std::endl;
+
+    if(e->trueValue == 0) std::cout << e->id << ": e->trueValue == 0" << std::endl;
+    if(e->predictedValue == 0) std::cout << e->id << ": e->predictedValue == 0" << std::endl;
+    transform->invertTransformation(e); 
 }
 
 // ========================================================

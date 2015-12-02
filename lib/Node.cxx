@@ -386,3 +386,27 @@ void Node::filterEventsToDaughters()
     left->setNumEvents(left->getEvents()[0].size());
     right->setNumEvents(right->getEvents()[0].size());
 }
+
+// ----------------------------------------------------------------------
+
+Node* Node::filterEventToDaughter(Event* e)
+{
+// Anyways, this function takes an event from the parent node
+// and filters an event into the left or right daughter
+// node depending on whether it is < or > the split point
+// for the given split variable. 
+
+    Int_t sv = splitVariable;
+    Double_t sp = splitValue;
+
+    Node* left = leftDaughter;
+    Node* right = rightDaughter;
+    Node* nextNode = 0;
+
+    if(left ==0 || right ==0) return 0;
+
+    if(e->data[sv] < sp) nextNode = left;
+    if(e->data[sv] > sp) nextNode = right;
+    
+    return nextNode;
+}
