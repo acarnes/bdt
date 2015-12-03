@@ -98,6 +98,21 @@ void Forest::setTrainingEvents(std::vector<Event*>& trainingEvents)
 std::vector<Event*> Forest::getTrainingEvents(){ return events[0]; }
 
 //////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////
+
+// return the ith tree
+Tree* Forest::getTree(unsigned int i)
+{ 
+    if(i>=0 && i<trees.size()) return trees[i]; 
+    else
+    {
+        std::cout << i << "is an invalid input for getTree. Out of range." << std::endl;
+        return 0;
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////
 // ______________________Various_Helpful_Functions______________________//
 //////////////////////////////////////////////////////////////////////////
 

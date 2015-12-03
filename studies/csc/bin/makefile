@@ -7,7 +7,7 @@ LIBFLAGS = `root-config --libs` -g -lXMLIO -lMLP -lMinuit
 LIBDIR = ../../../lib/
 CFLAGS = -I${LIBDIR} -c -g `root-config --cflags`
 DEPS = LoadSaveEvents.h Functions.h
-MAINPROGRAM = Validate
+MAINPROGRAM = FastEval
 
 CompileStuff: ${LIBDIR}Utilities.o ${LIBDIR}Node.o ${LIBDIR}Tree.o ${LIBDIR}Forest.o ${MAINPROGRAM}.o
 	$(CC) $(LIBFLAGS) ${LIBDIR}Utilities.o ${LIBDIR}Node.o ${LIBDIR}Tree.o ${LIBDIR}Forest.o ${MAINPROGRAM}.o -o ${MAINPROGRAM}

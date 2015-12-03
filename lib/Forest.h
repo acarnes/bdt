@@ -51,6 +51,8 @@ class Forest
         void appendCorrection(Event* e, Int_t treenum);
         void predictEvent(Event* e, Int_t trees);
 
+        Tree* getTree(unsigned int i);
+
     private:
 
         std::vector< std::vector<Event*> > events;
