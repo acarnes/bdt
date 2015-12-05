@@ -594,41 +594,52 @@ void loadSettingsFromXML(const char* directory)
 // ---------------------------------------------------------------------
 /////////////////////////////////////////////////////////////////////////
 
-unsigned long long int convertNode()
+unsigned long long int makeNode(bool isTerminal, float value, unsigned char varIndex, unsigned char leftLoc, unsigned char rightLoc)
 {
-    std::cout << "Converting node..." << std::endl;
+// Create a node with all of the information stored inside a 64-bit word
+// Useful for the fast evaluation of an event's predicted value
 
+    std::cout << "Creating node..." << std::endl;
+
+    // initialize the 64 bit word to all zeros
     unsigned long long int nodeword = 0;
 
-    float value = 1.32;
+    // Get the address to the float in order to convert it to an integer
     unsigned int* valueIntAddress = (unsigned int*) &value;
-
-    bool isTerminal = 1;
-    unsigned char rightLoc = 5; 
-    unsigned char leftLoc = 3;
-    unsigned char varIndex = 2;
     
+    // Use the last byte for the index of the right daughter node
     nodeword |= (rightLoc & 0xFF);
 
+    // Use second to last byte for the index of the left daughter
     nodeword <<= 8;
     nodeword |= (leftLoc & 0xFF);
 
+    // Use the third to last byte for the index of the feature variable to compare
     nodeword <<= 8;
     nodeword |= (varIndex & 0xFF);
 
+    // Use 4-bytes to store the fit value for the node (if terminal) or the comparison value (if internal)
     nodeword <<= 32;
     nodeword |= (*valueIntAddress);
 
+    // Use the first byte to flag the node as terminal (true) or internal (false)
     nodeword <<= 8;
     nodeword |= (isTerminal & 0x1);
 
     std::cout << std::endl;
-    std::cout << "value as int = " << std::hex << (*valueIntAddress) << std::endl;
-    std::cout << "value as float = " << *(float*) valueIntAddress << std::endl;
-    std::cout << "isTerminal = " << isTerminal << std::endl;
-    std::cout << "rightLoc = " << std::hex << (int) rightLoc << std::endl;
-    std::cout << "leftLoc = " << std::hex << (int) leftLoc << std::endl;
-    std::cout << "varIndex = " << std::hex << (int) varIndex << std::endl;
+    std::cout << "++ value as int = " << std::hex << (*valueIntAddress) << std::endl;
+    std::cout << "++ value as float = " << *(float*) valueIntAddress << std::endl;
+    std::cout << std::endl;
+    std::cout << "++ isTerminal = " << isTerminal << std::endl;
+    std::cout << std::endl;
+    std::cout << "++ leftLoc as int = " << std::dec << (int) leftLoc << std::endl;
+    std::cout << "++ leftLoc as hex = " << std::hex << (int) leftLoc << std::endl;
+    std::cout << std::endl;
+    std::cout << "++ rightLoc as int= " << std::dec << (int) rightLoc << std::endl;
+    std::cout << "++ rightLoc as hex = " << std::hex << (int) rightLoc << std::endl;
+    std::cout << std::endl;
+    std::cout << "++ varIndex as int = " << std::dec << (int) varIndex << std::endl;
+    std::cout << "++ varIndex as hex = " << std::hex << (int) varIndex << std::endl;
     std::cout << std::endl;
 
     std::cout << "Nodeword: " << std::hex << nodeword << std::endl;
@@ -641,8 +652,128 @@ unsigned long long int convertNode()
 // ---------------------------------------------------------------------
 /////////////////////////////////////////////////////////////////////////
 
+void addNodeToTree(unsigned long long int nodeWord, int nodeIndex, unsigned long long int (&tree)[39])
+{
+// The forest consists of 64 trees with 20 terminal nodes (39 total nodes) 
+// Here each node is representated as a 64 bit word and each tree is an array of nodes
+    std::cout << "Adding node to tree[" << std::dec << (int) nodeIndex << "] ..." << std::endl;
+    tree[nodeIndex] = nodeWord;
+    std::cout << "Done." << std::endl;
+}
+
+/////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------
+/////////////////////////////////////////////////////////////////////////
+
+int loadFastEvalTreeFromXMLRecursive(TXMLEngine* xml, XMLNodePointer_t xnode, int nodeIndex, unsigned long long int (&tree)[39])
+{
+    // Get the split information from xml.
+    XMLAttrPointer_t attr = xml->GetFirstAttr(xnode);
+    std::vector<std::string> splitInfo(3);
+    for(unsigned int i=0; i<3; i++)
+    {   
+        splitInfo[i] = xml->GetAttrValue(attr); 
+        attr = xml->GetNextAttr(attr);  
+    }
+
+    // Convert strings into numbers.
+    std::stringstream converter;
+
+    float fitVal;
+    float splitVal;
+    int varIndex;
+    bool isTerminal = 1;
+    int leftLoc = 0;
+    int rightLoc = 0;
+
+    converter << splitInfo[0];
+    converter >> varIndex;
+    converter.str("");
+    converter.clear();
+
+    converter << splitInfo[1];
+    converter >> splitVal;
+    converter.str("");
+    converter.clear();
+
+    converter << splitInfo[2];
+    converter >> fitVal;
+    converter.str("");
+    converter.clear();
+
+    // Get the xml daughters of the current xml node. 
+    XMLNodePointer_t xleft = xml->GetChild(xnode);
+    XMLNodePointer_t xright = xml->GetNext(xleft);
+
+    // If there are no daughters we are done.
+    if(xleft == 0 || xright == 0)
+    {
+        // Create the terminal node and add it to the tree
+        std::cout << std::endl;
+        std::cout << "====== Terminal Node " << std::dec << nodeIndex << std::endl;
+        std::cout << std::endl;
+
+        unsigned long long int nodeWord = makeNode(isTerminal, fitVal, varIndex, leftLoc, rightLoc);
+        addNodeToTree(nodeWord, nodeIndex, tree);
+        std::cout << std::endl;
+        return nodeIndex;
+    }
+
+    // There are daughters. We have an internal node. Link the daughter nodes appropriately.
+    isTerminal = 0;
+    leftLoc = nodeIndex+1;
+
+    // Recursively add all daughter nodes to the tree
+    rightLoc = loadFastEvalTreeFromXMLRecursive(xml, xleft, leftLoc, tree);
+    rightLoc++;
+
+    // Create the internal node and add it to the tree.
+    std::cout << std::endl;
+    std::cout << "====== Internal Node " << std::dec << nodeIndex << std::endl;
+    std::cout << std::endl;
+    unsigned long long int nodeWord = makeNode(isTerminal, splitVal, varIndex, leftLoc, rightLoc);
+    addNodeToTree(nodeWord, nodeIndex, tree);
+
+    std::cout << std::endl;
+    return loadFastEvalTreeFromXMLRecursive(xml, xright, rightLoc, tree);
+}
+
+/////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------
+/////////////////////////////////////////////////////////////////////////
+
+void loadFastEvalTreeFromXML(const char* filename, unsigned long long int (&tree)[39])
+{   
+    // First create the engine.
+    TXMLEngine* xml = new TXMLEngine;
+
+    // Now try to parse xml file.
+    XMLDocPointer_t xmldoc = xml->ParseFile(filename);
+    if (xmldoc==0)
+    {   
+        delete xml;
+        return;  
+    }   
+
+    // Get access to main node of the xml file.
+    XMLNodePointer_t mainnode = xml->DocGetRootElement(xmldoc);
+   
+    // Recursively connect nodes together.
+    loadFastEvalTreeFromXMLRecursive(xml, mainnode, 0, tree);
+   
+    // Release memory before exit
+    xml->FreeDoc(xmldoc);
+    delete xml;
+}
+
+/////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------
+/////////////////////////////////////////////////////////////////////////
+
 void decipherNodeWord(unsigned long long int nodeword)
 {
+// Decode the node word. This function was made to check if the word was created correctly.
+
     std::cout << "Deciphering nodeword..." << std::endl;
     std::cout << "Nodeword: " << std::hex << nodeword << std::endl;
     std::cout << std::endl;
@@ -670,6 +801,99 @@ void decipherNodeWord(unsigned long long int nodeword)
     std::cout << std::endl;
 }
 
+/////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------
+/////////////////////////////////////////////////////////////////////////
+
+void appendCorrection(unsigned long long int (&tree)[39], Event* e)
+{
+// Filter the event down to its terminal node then apply the prediction.
+// The trees are made of up nodes encoded in 64 bit words. Travel from
+// one node to the next based upon the comparison in the node and the
+// links to the left and right daughter nodes.
+
+    // Start at the root node.
+    unsigned char index = 0;
+
+    // Loop until we reach a terminal node.
+    while(true)
+    {
+        unsigned long long int nodeword = tree[index];
+
+        bool isTerminal = (nodeword & 0xFF) == 0x1;
+        nodeword >>= 8;
+
+        unsigned int value = (nodeword & 0xFFFFFFFF);
+        float* valueAddress = (float*) &value;
+        nodeword >>= 32;
+
+        // Found a terminal node. Append the correction and exit the loop.
+        if(isTerminal)
+        {
+            e->predictedValue += *valueAddress;
+            break;
+        }
+
+        // Internal node. Perform the comparison to determine whether to go right or left.
+        else
+        {
+            // The feature variable in the event to compare with.
+            unsigned char varIndex = (nodeword & 0xFF);
+            nodeword >>= 8;
+
+            // The index of the left daughter in the tree array.
+            unsigned char leftLoc = (nodeword & 0xFF);
+            nodeword >>= 8;
+
+            // If the comparison is less then go to the left daughter.
+            if(e->data[varIndex] < *valueAddress)
+            {
+                index = leftLoc; 
+            }
+            // Otherwise go to the right daughter.
+            else
+            {
+                unsigned char rightLoc = (nodeword & 0xFF);
+                index = rightLoc;
+            }
+        }
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------
+/////////////////////////////////////////////////////////////////////////
+
+void loadForest(const char* directory, unsigned long long int (&forest)[64][39])
+{
+    // Run the event through the forest
+    for(unsigned int i=0; i<64; i++) 
+    {   
+        std::stringstream ss; 
+        ss << directory << "/" << i << ".xml";
+
+        unsigned long long int tree[39];
+        loadFastEvalTreeFromXML(ss.str().c_str(), tree);
+
+        for(unsigned int j=0; j<39; j++)
+        {
+            forest[i][j] = tree[j];
+        }
+    }   
+}
+
+/////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------
+/////////////////////////////////////////////////////////////////////////
+
+void appendCorrections(unsigned long long int (&forest)[64][39], Event* e)
+{
+    for(unsigned int i=0; i<64; i++)
+    {
+        appendCorrection(forest[i], e); 
+    }
+}
+
 //////////////////////////////////////////////////////////////////////////
 // ______________________Regression_________ ___________________________//
 /////////////////////////////////////////////////////////////////////////
@@ -677,6 +901,7 @@ void decipherNodeWord(unsigned long long int nodeword)
 void validate()
 {
   Forest* forest = new Forest();
+  unsigned long long int fastForest[64][39];
 
   const char* treedir = "/scratch/osg/acarnes/bdt/studies/csc/trees/";
 
@@ -693,10 +918,9 @@ void validate()
   outputRegressionParameters();
   std::cout << std::endl;
 
-  long long int nodeword = convertNode();
-  decipherNodeWord(nodeword);
+  std::stringstream treefile;
+  loadForest(fulltreedir.str().c_str(), fastForest);
 
-/*
   // Get the save locations in order.
   // The directories that will store the predicted events.
   std::stringstream valDir;
@@ -713,9 +937,9 @@ void validate()
  
   bool onebyone = true;
 
-  TStopwatch timer;
   int numZero = 0;
   std::cout << std::endl << "====== Predicting Events ..." << std::endl;
+  TStopwatch timer;
   timer.Start();
   for(unsigned int i=0; i<testingEvents.size(); i++)
   {
@@ -728,7 +952,8 @@ void validate()
       //preprocessTest(testingEvent, lf, prelimfit, transform);
       //forest->predictEvents(testingEvent, trees);
       preprocessTest(e, lf, prelimfit, transform);
-      forest->predictEvent(e, trees);
+      appendCorrections(fastForest, e);
+      //forest->predictEvent(e, trees);
   }
   timer.Stop();
   std::cout << "====== Done predicting events: " << timer.CpuTime() << std::endl;
@@ -741,7 +966,7 @@ void validate()
      std::cout << "Done predicting event " << i << "..."<< std::endl;
      testingEvents[i]->outputEvent();
  }
-*/
+
 /*
   // Form the savefile names.
   TString savetestto = outfileName(valDir.str().c_str(), trees);
