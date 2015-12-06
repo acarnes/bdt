@@ -35,8 +35,9 @@
 //#include <fstream>
 //#include <utility>
 
+
 //////////////////////////////////////////////////////////////////////////
-// ______________________Fast_Evaluation_System_________________________//
+// ______________________Build_The_Fast_Forest_________________________//
 /////////////////////////////////////////////////////////////////////////
 
 unsigned long makeNode(bool isTerminal, float value, unsigned char varIndex, unsigned char leftLoc, unsigned char rightLoc)
@@ -246,6 +247,13 @@ void decipherNodeWord(unsigned long nodeword)
     std::cout << std::endl;
 }
 
+//////////////////////////////////////////////////////////////////////////
+// ______________________Event_Prediction_Functions____________________//
+/////////////////////////////////////////////////////////////////////////
+
+// Different methods to predict the events. I try different datastructures
+// to see if there are performance gains.
+
 /////////////////////////////////////////////////////////////////////////
 // ---------------------------------------------------------------------
 /////////////////////////////////////////////////////////////////////////
@@ -256,6 +264,8 @@ void appendCorrection(unsigned long (&tree)[39], Event* e)
 // The trees are made of up nodes encoded in 64 bit words. Travel from
 // one node to the next based upon the comparison in the node and the
 // links to the left and right daughter nodes.
+// The event is a custom data structure where e->data contains the 
+// feature variable information and e->predictedValue contains the prediction.
 
     // Start at the root node.
     unsigned char index = 0;
@@ -312,6 +322,9 @@ void appendCorrection(unsigned long (&tree)[39], Event* e)
 void appendCorrections(unsigned long (&forest)[64][39], Event* e)
 {
 // Apply all of the corrections to the event (one correction for each event)
+// The event is a custom data structure where e->data contains the 
+// feature variable information and e->predictedValue contains the prediction.
+
     for(unsigned int i=0; i<64; i++)
     {
         appendCorrection(forest[i], e); 
@@ -328,6 +341,8 @@ void appendCorrection(unsigned long (&tree)[39], float e[])
 // The trees are made of up nodes encoded in 64 bit words. Travel from
 // one node to the next based upon the comparison in the node and the
 // links to the left and right daughter nodes.
+// The event is a c-array with the 0th value the predicted value and the rest the
+// feature variables.
 
     // Start at the root node.
     unsigned long nodeword = tree[0];
@@ -368,6 +383,9 @@ void appendCorrection(unsigned long (&tree)[39], float e[])
 void appendCorrections(unsigned long (&forest)[64][39], float e[])
 {
 // Apply all of the corrections to the event (one correction for each event)
+// Here we use a 2D array 64 trees and 39 total nodes.
+// The event is a c-array with the 0th value the predicted value and the rest the
+// feature variables.
     for(unsigned int i=0; i<64; i++)
     {
         appendCorrection(forest[i], e); 
@@ -380,7 +398,11 @@ void appendCorrections(unsigned long (&forest)[64][39], float e[])
 
 void appendCorrections(unsigned long forest[2496], float e[])
 {
+// This is the fastest method so far.
 // Apply all of the corrections to the event (one correction for each event)
+// Use a 1D forest array forest[64*39] each tree has 39 unsigned long nodes
+// Take in the events as c-arrays where the 0th value will be the predicted value
+// and the rest of the entries are the feature variables.
 
     // Filter the event down to its terminal node then apply the prediction.
     // The trees are made of up nodes encoded in 64 bit words. Travel from
@@ -428,6 +450,70 @@ void appendCorrections(unsigned long forest[2496], float e[])
     }
 }
 
+/////////////////////////////////////////////////////////////////////////
+// ---------------------------------------------------------------------
+/////////////////////////////////////////////////////////////////////////
+
+void appendCorrections(unsigned long forest[2496], Event* e)
+{
+// This is the fastest method so far.
+// Apply all of the corrections to the event (one correction for each event)
+// Use a 1D forest array forest[64*39] each tree has 39 unsigned long nodes
+// Take in the events as objects.
+// Using the Event objects instead of c-arrays doesn't seem to cost any
+// performance time. 
+
+    // Filter the event down to its terminal node then apply the prediction.
+    // The trees are made of up nodes encoded in 64 bit words. Travel from
+    // one node to the next based upon the comparison in the node and the
+    // links to the left and right daughter nodes.
+
+    unsigned long* node = &forest[0];
+    unsigned long* nexttree = &forest[39];
+    // Start at the root node and continue until the end of the forest.
+    while(true)
+    {
+        unsigned long nodeword = *node;
+    
+        // Loop until we reach a terminal node.
+        while(true)
+        {
+    
+            bool isTerminal = (nodeword & 0xFF);
+            nodeword >>= 8;
+    
+            unsigned int value = (nodeword & 0xFFFFFFFF);
+            float* valueAddress = (float*) &value;
+    
+            // Found a terminal node. Append the correction and exit the loop.
+            if(isTerminal)
+            {
+                e->predictedValue += *valueAddress;
+                node = nexttree;
+                nexttree = node + 39;
+                if(nexttree > &forest[2495]) return;
+                break;
+            }
+    
+            // Internal node. Perform the comparison to determine whether to go right or left.
+            // The feature variable in the event to compare with.
+            nodeword >>= 32;
+    
+            // If the comparison is greater then increment an extra byte to go to the right daughter.
+            if(e->data[nodeword & 0xFF] > *valueAddress)
+                nodeword >>= 8;
+    
+            nodeword >>= 8;
+            nodeword = *(node+(nodeword & 0xFF));
+        }
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////
+// ______________________Load_Forest_From_XML_Files____________________//
+/////////////////////////////////////////////////////////////////////////
+
+// Load the forest from XML into different storage representations
 
 /////////////////////////////////////////////////////////////////////////
 // ---------------------------------------------------------------------
@@ -435,7 +521,7 @@ void appendCorrections(unsigned long forest[2496], float e[])
 
 void loadForest(const char* directory, unsigned long (&forest)[64][39])
 {
-    // Load the trees into a 2D forest array.
+// Load the trees into a 2D forest array.
     for(unsigned int i=0; i<64; i++) 
     {   
         std::stringstream ss; 
@@ -457,7 +543,9 @@ void loadForest(const char* directory, unsigned long (&forest)[64][39])
 
 void loadForest(const char* directory, unsigned long (&forest)[2496])
 {
-    // Load the trees into a 1D forest array.
+// Load the trees into a 1D forest array of size 64*39, 64 trees, 39 nodes.
+// The 1D array is about 10% faster than the 2D array in practice.
+
     for(unsigned int i=0; i<64; i++) 
     {   
         std::stringstream ss; 
@@ -473,23 +561,32 @@ void loadForest(const char* directory, unsigned long (&forest)[2496])
     }   
 }
 
+//////////////////////////////////////////////////////////////////////////
+// ___________________Represent_Events_As_C-Arrays______________________//
+/////////////////////////////////////////////////////////////////////////
+
+// Thought a contiguous block of memory might be faster than accessing the
+// Event then accessing the std::vector within the event. This doesn't
+// seem to be the case though. No performace gain seen over the vector of
+// Event*s.
 
 /////////////////////////////////////////////////////////////////////////
 // ---------------------------------------------------------------------
 /////////////////////////////////////////////////////////////////////////
+
 void copyEventsToArray(std::vector<Event*>& events, unsigned int num_vars, float array[])
 {
-// Use a continguous block of memory for the events.
+// Use a continguous block of memory for the events instead of a vector<Event*>.
 
     for(unsigned int i=0; i<events.size(); i++)
     {
         // Use the 0th location for the predictedValue
-        array[i*num_vars] = events[i]->predictedValue;
+        array[i*num_vars] = (float) events[i]->predictedValue;
 
         // Use the rest of the locations for the feature variables
         for(unsigned int j=1; j<events[i]->data.size(); j++)
         {
-            array[i*num_vars+j] = events[i]->data[j];
+            array[i*num_vars+j] = (float) events[i]->data[j];
         }
     }
 }

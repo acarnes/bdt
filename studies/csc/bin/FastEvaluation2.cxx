@@ -597,12 +597,11 @@ void loadSettingsFromXML(const char* directory)
 
 void validate()
 {
-  Forest* forest = new Forest();
+  // 2D array is 8% slower
   //unsigned long fastForest[64][39];
   unsigned long fastForest[2496];
 
   const char* treedir = "/scratch/osg/acarnes/bdt/studies/csc/trees/";
-
   std::stringstream fulltreedir;
   fulltreedir <<  treedir << mode << "/";
 
@@ -610,14 +609,14 @@ void validate()
   // Test 
   ///////////////////////////////////
 
-  forest->loadForestFromXML(fulltreedir.str().c_str(), 64);
+  // load forest from XML into object representation
+  //forest->loadForestFromXML(fulltreedir.str().c_str(), 64);
   loadSettingsFromXML(fulltreedir.str().c_str());
   std::cout << std::endl;
   outputRegressionParameters();
   std::cout << std::endl;
 
-  std::stringstream treefile;
-  //loadForest(fulltreedir.str().c_str(), fastForest);
+  // load the forest into a C-Array
   loadForest(fulltreedir.str().c_str(), fastForest);
 
   std::cout << "size of unsigned long long int: " << sizeof(unsigned long long int) << std::endl;
@@ -632,6 +631,9 @@ void validate()
   // Read In events.
   std::vector<Event*> testingEvents;
   std::vector<Event*> trainingEvents = std::vector<Event*>();
+  
+  // Loading 1M events into the c-array causes a seg-fault when allocating that much memory, 10x less doesn't
+  // cause this problem
   loadEventsExclusive("../14M_csc_singlemu_flat1overPt_reCLCT.root", testingEvents, useCharge, whichVars, mode, 100000);
 
   // use a subset of the testingEvents
@@ -642,8 +644,6 @@ void validate()
   unsigned int num_events = testingEvents.size();
   unsigned int num_vars = testingEvents[0]->data.size();
   unsigned int total = num_events*num_vars;
-
-
   float eventsarray[total];
 
   std::cout << "num_events: " << num_events << std::endl;
@@ -651,42 +651,33 @@ void validate()
   std::cout << "array_size: " << (sizeof(eventsarray)/sizeof(*eventsarray)) << std::endl;
   std::cout << std::endl;
 
-  // This doesn't improve anything over the use of testingEvents itself.
   copyEventsToArray(testingEvents, num_vars, eventsarray);
 
-  int numZero = 0;
+  float* eventsarray_begin = &eventsarray[0];
+  float* eventsarray_end = &eventsarray[total-1];
+
+
+  // Now predict the events and time how long it takes
   std::cout << std::endl << "====== Predicting Events ..." << std::endl;
   TStopwatch timer;
   timer.Start();
   for(unsigned int n=0; n<10; n++)
   {
-      for(unsigned int i=0; i<testingEvents.size(); i++)
+      for(float* i=&eventsarray[0]; i<&eventsarray[total]; i+=num_vars)
       {
-          //std::cout << "Predicting event " << i << "..."<< std::endl;
-          //e->outputEvent();
-
-          //std::vector<Event*> testingEvent = std::vector<Event*>();
-          //testingEvent.push_back(e);
-          //preprocessTest(testingEvent, lf, prelimfit, transform);
-          //forest->predictEvents(testingEvent, trees);
-          //preprocessTest(e, lf, prelimfit, transform);
-          //appendCorrections(fastForest, (&eventsarray[i*num_vars]));
-          appendCorrections(fastForest, testingEvents[i]);
-          //forest->predictEvent(testingEvents[i], trees);
+          appendCorrections(fastForest, i);
       }
   }
   timer.Stop();
   std::cout << "====== Done predicting events: " << timer.CpuTime() << std::endl;
-  std::cout << "====== num predictedValue == 0: " << numZero << std::endl;
 
-
+ // Just make sure that the predictions are correct. Can cross check with known working methods like forest->predictEvent
  std::cout << std::endl << "====== Verify Events ..." << std::endl;
  for(unsigned int i=0; i<5; i++)
  {
      std::cout << "Done predicting event " << i << "..."<< std::endl;
      std::cout << "trueValue = " << 1/testingEvents[i]->trueValue << std::endl;
-     //std::cout << "predictedValue = " << eventsarray[i*num_vars] << std::endl;;
-     std::cout << "predictedValue = " << testingEvents[i]->predictedValue << std::endl;;
+     std::cout << "predictedValue = " << eventsarray[i*num_vars] << std::endl;;
      std::cout << std::endl;
  }
 /*
