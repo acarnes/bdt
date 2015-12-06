@@ -656,14 +656,13 @@ void validate()
   float* eventsarray_begin = &eventsarray[0];
   float* eventsarray_end = &eventsarray[total-1];
 
-
   // Now predict the events and time how long it takes
   std::cout << std::endl << "====== Predicting Events ..." << std::endl;
   TStopwatch timer;
   timer.Start();
-  for(unsigned int n=0; n<10; n++)
+  for(unsigned int n=0; n<10; ++n)
   {
-      for(float* i=&eventsarray[0]; i<&eventsarray[total]; i+=num_vars)
+      for(float* i=eventsarray_begin; i<eventsarray_end; i+=num_vars)
       {
           appendCorrections(fastForest, i);
       }

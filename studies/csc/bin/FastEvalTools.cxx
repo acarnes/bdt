@@ -408,19 +408,19 @@ void appendCorrections(unsigned long forest[2496], float e[])
     // The trees are made of up nodes encoded in 64 bit words. Travel from
     // one node to the next based upon the comparison in the node and the
     // links to the left and right daughter nodes.
-
     unsigned long* node = &forest[0];
     unsigned long* nexttree = &forest[39];
+    unsigned const long* endforest = &forest[2495];
+
     // Start at the root node and continue until the end of the forest.
-    while(true)
+    while(nexttree < endforest)
     {
         unsigned long nodeword = *node;
-    
+
         // Loop until we reach a terminal node.
         while(true)
         {
-    
-            bool isTerminal = (nodeword & 0xFF);
+            unsigned char isTerminal = (nodeword & 0xFF);
             nodeword >>= 8;
     
             unsigned int value = (nodeword & 0xFFFFFFFF);
@@ -432,7 +432,6 @@ void appendCorrections(unsigned long forest[2496], float e[])
                 e[0] += *valueAddress;
                 node = nexttree;
                 nexttree = node + 39;
-                if(nexttree > &forest[2495]) return;
                 break;
             }
     
