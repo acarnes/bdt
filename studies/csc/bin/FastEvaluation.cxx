@@ -16,25 +16,25 @@
 #include "LoadSaveEvents.h"
 #include "FastEvalTools.cxx"
 
-#include "TRandom3.h"
+//#include "TRandom3.h"
 #include "TStopwatch.h"
-#include "TROOT.h"
-#include "TTree.h"
-#include "TNtuple.h"
-#include "TFile.h"
-#include "TH1D.h"
-#include "TGraph.h"
-#include "TCanvas.h"
-#include "TChain.h"
-#include "TMatrixD.h"
-#include "TVectorD.h"
+//#include "TROOT.h"
+//#include "TTree.h"
+//#include "TNtuple.h"
+//#include "TFile.h"
+//#include "TH1D.h"
+//#include "TGraph.h"
+//#include "TCanvas.h"
+//#include "TChain.h"
+//#include "TMatrixD.h"
+//#include "TVectorD.h"
 #include "TXMLEngine.h"
 
 #include <iostream>
 #include <sstream>
-#include <algorithm>
-#include <fstream>
-#include <utility>
+//#include <algorithm>
+//#include <fstream>
+//#include <utility>
 
 //////////////////////////////////////////////////////////////////////////
 // ______________________Regression_Settings ___________________________//
@@ -597,8 +597,9 @@ void loadSettingsFromXML(const char* directory)
 
 void validate()
 {
-  Forest* forest = new Forest();
-  unsigned long long int fastForest[64][39];
+//  Forest* forest = new Forest();
+  //unsigned long fastForest[64][39];
+  unsigned long fastForest[2496];
 
   const char* treedir = "/scratch/osg/acarnes/bdt/studies/csc/trees/";
 
@@ -609,14 +610,19 @@ void validate()
   // Test 
   ///////////////////////////////////
 
-  forest->loadForestFromXML(fulltreedir.str().c_str(), 64);
+  //forest->loadForestFromXML(fulltreedir.str().c_str(), 64);
   loadSettingsFromXML(fulltreedir.str().c_str());
   std::cout << std::endl;
   outputRegressionParameters();
   std::cout << std::endl;
 
   std::stringstream treefile;
+  //loadForest(fulltreedir.str().c_str(), fastForest);
   loadForest(fulltreedir.str().c_str(), fastForest);
+
+  std::cout << "size of unsigned long long int: " << sizeof(unsigned long long int) << std::endl;
+  std::cout << "size of unsigned long  int: " << sizeof(unsigned long int) << std::endl;
+  std::cout << std::endl;
 
   // Get the save locations in order.
   // The directories that will store the predicted events.
@@ -626,31 +632,46 @@ void validate()
   // Read In events.
   std::vector<Event*> testingEvents;
   std::vector<Event*> trainingEvents = std::vector<Event*>();
-  loadEventsExclusive("../14M_csc_singlemu_flat1overPt_reCLCT.root", testingEvents, useCharge, whichVars, mode);
+  loadEventsExclusive("../14M_csc_singlemu_flat1overPt_reCLCT.root", testingEvents, useCharge, whichVars, mode, 100000);
 
   // use a subset of the testingEvents
-  testingEvents = std::vector<Event*>(&testingEvents[0], &testingEvents[1000000]);
+  //testingEvents = std::vector<Event*>(&testingEvents[0], &testingEvents[10]);
   std::cout << "Number of test events: " << testingEvents.size() << std::endl;
- 
-  bool onebyone = true;
+
+  std::cout << "Copying events to 2d array..." << std::endl;
+  unsigned int num_events = testingEvents.size();
+  unsigned int num_vars = testingEvents[0]->data.size();
+  unsigned int total = num_events*num_vars;
+
+
+  float eventsarray[total];
+
+  std::cout << "num_events: " << num_events << std::endl;
+  std::cout << "num_vars: " << num_vars << std::endl;
+  std::cout << "array_size: " << (sizeof(eventsarray)/sizeof(*eventsarray)) << std::endl;
+  std::cout << std::endl;
+
+  copyEventsToArray(testingEvents, num_vars, eventsarray);
 
   int numZero = 0;
   std::cout << std::endl << "====== Predicting Events ..." << std::endl;
   TStopwatch timer;
   timer.Start();
-  for(unsigned int i=0; i<testingEvents.size(); i++)
+  for(unsigned int n=0; n<10; n++)
   {
-      Event* e = testingEvents[i];
-      //std::cout << "Predicting event " << i << "..."<< std::endl;
-      //e->outputEvent();
+      for(unsigned int i=0; i<testingEvents.size(); i++)
+      {
+          //std::cout << "Predicting event " << i << "..."<< std::endl;
+          //e->outputEvent();
 
-      //std::vector<Event*> testingEvent = std::vector<Event*>();
-      //testingEvent.push_back(e);
-      //preprocessTest(testingEvent, lf, prelimfit, transform);
-      //forest->predictEvents(testingEvent, trees);
-      preprocessTest(e, lf, prelimfit, transform);
-      appendCorrections(fastForest, e);
-      //forest->predictEvent(e, trees);
+          //std::vector<Event*> testingEvent = std::vector<Event*>();
+          //testingEvent.push_back(e);
+          //preprocessTest(testingEvent, lf, prelimfit, transform);
+          //forest->predictEvents(testingEvent, trees);
+          //preprocessTest(e, lf, prelimfit, transform);
+          appendCorrections(fastForest, (&eventsarray[i*num_vars]));
+          //forest->predictEvent(e, trees);
+      }
   }
   timer.Stop();
   std::cout << "====== Done predicting events: " << timer.CpuTime() << std::endl;
@@ -661,9 +682,10 @@ void validate()
  for(unsigned int i=0; i<5; i++)
  {
      std::cout << "Done predicting event " << i << "..."<< std::endl;
-     testingEvents[i]->outputEvent();
+     std::cout << "trueValue = " << 1/testingEvents[i]->trueValue << std::endl;
+     std::cout << "predictedValue = " << eventsarray[i*num_vars] << std::endl;;
+     std::cout << std::endl;
  }
-
 /*
   // Form the savefile names.
   TString savetestto = outfileName(valDir.str().c_str(), trees);
