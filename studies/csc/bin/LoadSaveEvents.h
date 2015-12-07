@@ -204,6 +204,30 @@ void preprocessRate(std::vector<Event*>& events, LossFunction* lf, PreliminaryFi
         std::cout << "==== NUM UNDEFINED TRANSFORMATIONS: " << failed << std::endl;
 }
 
+////////////////////////////////////////////////////////////
+//----------------------------------------------------------
+////////////////////////////////////////////////////////////
+
+bool preprocessRate(Event* e, LossFunction* lf, PreliminaryFit* prelimfit, TransformFunction* transform)
+{
+    //std::cout << "Preprocessing test events ... " << std::endl;
+
+    bool transformfailure = false;
+
+    // The rate sample doesn't have a trueValue since it is real data.
+    // Set the trueValue to something that won't screw up the Transformations.
+    e->trueValue = 99999;
+
+    // Apply preliminary fit.
+    if(prelimfit != 0) prelimfit->fit(e);
+    else e->predictedValue = 0;
+
+    // Apply transform to true and predicted values.
+    if(transform != 0) transformfailure = transform->transform(e); 
+
+    return transformfailure;
+}
+
 // ========================================================
 // ================ Postprocess  ==========================
 //=========================================================
@@ -309,9 +333,6 @@ void readInEvents(const char* inputfilename, std::vector<Event*>& events, int mo
 
     ntuple->SetBranchAddress("Mode", &Mode);
     ntuple->SetBranchAddress("SFR", &SFR);
-
-    // Store the events into a vector.
-    std::vector<Event*> v;
 
     // Loop through the events.
     for(unsigned int i=0; i<ntuple->GetEntries(); i++)
@@ -447,12 +468,8 @@ void readInEvents(const char* inputfilename, std::vector<Event*>& events, int mo
         e->CSCPt = TrackPt;
 
         // Store in the vector of events.
-        v.push_back(e);
+        events.push_back(e);
     }
-
-    std::cout << "Using nvars = " << v[0]->data.size()-1 << std::endl;
-    // Copy the events into the specified vector.
-    events = v;
 
     delete ntuple;
     delete f;
@@ -528,9 +545,6 @@ void loadFull(const char* inputfilename, std::vector<Event*>& events)
 
     ntuple->SetBranchAddress("Mode", &Mode);
     ntuple->SetBranchAddress("SFR", &SFR);
-
-    // Store the events into a vector.
-    std::vector<Event*> v;
 
     // Loop through the events.
     for(unsigned int i=0; i<ntuple->GetEntries(); i++)
@@ -631,10 +645,8 @@ void loadFull(const char* inputfilename, std::vector<Event*>& events)
         e->CSCPt = TrackPt;
 
         // Store in the vector of events.
-        v.push_back(e);
+        events.push_back(e);
     }
-    
-    events = v;
 
     delete ntuple;
     delete f;
@@ -711,9 +723,6 @@ void loadEventsInclusive(const char* inputfilename, std::vector<Event*>& events,
     ntuple->SetBranchAddress("Mode", &Mode);
     ntuple->SetBranchAddress("SFR", &SFR);
 
-    // Store the events into a vector.
-    std::vector<Event*> v;
-
     // Loop through the events.
     for(unsigned int i=0; i<ntuple->GetEntries(); i++)
     {
@@ -776,11 +785,9 @@ void loadEventsInclusive(const char* inputfilename, std::vector<Event*>& events,
         e->CSCPt = TrackPt;
 
         // Store in the vector of events.
-        v.push_back(e);
+        events.push_back(e);
     }
     
-    events = v;
-
     delete ntuple;
     delete f;
 }
@@ -857,9 +864,6 @@ void loadEventsExclusive(const char* inputfilename, std::vector<Event*>& events,
     ntuple->SetBranchAddress("Mode", &Mode);
     ntuple->SetBranchAddress("SFR", &SFR);
 
-    // Store the events into a vector.
-    std::vector<Event*> v;
-
     // Loop through the events.
     for(unsigned int i=0; i<ntuple->GetEntries(); i++)
     {
@@ -922,10 +926,8 @@ void loadEventsExclusive(const char* inputfilename, std::vector<Event*>& events,
         e->CSCPt = TrackPt;
 
         // Store in the vector of events.
-        v.push_back(e);
+        events.push_back(e);
     }
-    
-    events = v;
 
     delete ntuple;
     delete f;
@@ -1004,9 +1006,6 @@ void loadEventsExclusiveValidate(const char* inputfilename, std::vector<Event*>&
     ntuple->SetBranchAddress("SFR", &SFR);
     ntuple->SetBranchAddress("EmuPt", &EmuPt);
 
-    // Store the events into a vector.
-    std::vector<Event*> v;
-
     // Loop through the events.
     for(unsigned int i=0; i<ntuple->GetEntries(); i++)
     {
@@ -1070,11 +1069,9 @@ void loadEventsExclusiveValidate(const char* inputfilename, std::vector<Event*>&
         e->emuPt = EmuPt;
 
         // Store in the vector of events.
-        v.push_back(e);
+        events.push_back(e);
     }
     
-    events = v;
-
     delete ntuple;
     delete f;
 }

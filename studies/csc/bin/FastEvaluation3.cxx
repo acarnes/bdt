@@ -597,8 +597,6 @@ void loadSettingsFromXML(const char* directory)
 
 void validate()
 {
-  // 2D array is 8% slower
-  //unsigned long fastForest[64][39];
   unsigned long fastForest[2496];
 
   const char* treedir = "/scratch/osg/acarnes/bdt/studies/csc/trees/";
@@ -609,8 +607,6 @@ void validate()
   // Test 
   ///////////////////////////////////
 
-  // load forest from XML into object representation
-  //forest->loadForestFromXML(fulltreedir.str().c_str(), 64);
   loadSettingsFromXML(fulltreedir.str().c_str());
   std::cout << std::endl;
   outputRegressionParameters();
@@ -618,10 +614,6 @@ void validate()
 
   // load the forest into a C-Array
   loadForest(fulltreedir.str().c_str(), fastForest);
-
-  std::cout << "size of unsigned long long int: " << sizeof(unsigned long long int) << std::endl;
-  std::cout << "size of unsigned long  int: " << sizeof(unsigned long int) << std::endl;
-  std::cout << std::endl;
 
   // Get the save locations in order.
   // The directories that will store the predicted events.
@@ -634,36 +626,27 @@ void validate()
   
   // Loading 1M events into the c-array causes a seg-fault when allocating that much memory, 10x less doesn't
   // cause this problem
-  loadEventsExclusive("../14M_csc_singlemu_flat1overPt_reCLCT.root", testingEvents, useCharge, whichVars, mode, 100000);
+  loadEventsExclusive("../14M_csc_singlemu_flat1overPt_reCLCT.root", testingEvents, useCharge, whichVars, mode, 1000000); // load a certain # of events
+  //loadEventsExclusive("../14M_csc_singlemu_flat1overPt_reCLCT.root", testingEvents, useCharge, whichVars, mode); // load all of the events
+
+  // Preprocess everything beforehand
+  preprocessTest(testingEvents, lf, prelimfit, transform);   // use this one if MC (with pt truth)
+  //preprocessRate(testingEvents, lf, prelimfit, transform); // use this one if data (no pt truth)
 
   // use a subset of the testingEvents
   //testingEvents = std::vector<Event*>(&testingEvents[0], &testingEvents[10]);
   std::cout << "Number of test events: " << testingEvents.size() << std::endl;
 
-  std::cout << "Copying events to 2d array..." << std::endl;
-  unsigned int num_events = testingEvents.size();
-  unsigned int num_vars = testingEvents[0]->data.size();
-  unsigned int total = num_events*num_vars;
-  float eventsarray[total];
-
-  std::cout << "num_events: " << num_events << std::endl;
-  std::cout << "num_vars: " << num_vars << std::endl;
-  std::cout << "array_size: " << (sizeof(eventsarray)/sizeof(*eventsarray)) << std::endl;
-  std::cout << std::endl;
-
-  copyEventsToArray(testingEvents, num_vars, eventsarray);
-
-  float* eventsarray_begin = &eventsarray[0];
-  float* eventsarray_end = &eventsarray[total-1];
-
   // Now predict the events and time how long it takes
   std::cout << std::endl << "====== Predicting Events ..." << std::endl;
   TStopwatch timer;
   timer.Start();
-  for(float* i=eventsarray_begin; i<eventsarray_end; i+=num_vars)
+  for(unsigned int i=0; i<testingEvents.size(); ++i)
   {
-      //preprocessTest(e, lf, prelimfit, transform);
-      appendCorrections(fastForest, i);
+      // Preprocess one at a time
+      //preprocessTest(e, lf, prelimfit, transform); // is MC and has pt truth info
+      //preprocessRate(e, lf, prelimfit, transform); // is data and has no pt truth info
+      appendCorrections(fastForest, testingEvents[i]);
   }
   timer.Stop();
   std::cout << "====== Done predicting events: " << timer.CpuTime() << std::endl;
@@ -673,8 +656,7 @@ void validate()
  for(unsigned int i=0; i<5; i++)
  {
      std::cout << "Done predicting event " << i << "..."<< std::endl;
-     std::cout << "trueValue = " << 1/testingEvents[i]->trueValue << std::endl;
-     std::cout << "predictedValue = " << eventsarray[i*num_vars] << std::endl;;
+     testingEvents[i]->outputEvent();
      std::cout << std::endl;
  }
 /*
