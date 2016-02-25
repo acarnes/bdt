@@ -516,6 +516,8 @@ void Forest::loadForestFromXML(const char* directory, int numTrees)
 // ___________________Stochastic_Sampling_&_Regression__________________//
 //////////////////////////////////////////////////////////////////////////
 
+// OLD CODE Probably doesn't work any more
+
 void Forest::prepareRandomSubsample(Double_t fraction)
 {
 // We use this for Stochastic Gradient Boosting. Basically you
