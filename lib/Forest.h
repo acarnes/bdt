@@ -50,7 +50,6 @@ class Forest
     private:
 
         std::vector< std::vector<Event*> > events;
-        std::vector< std::vector<Event*> > subSample;
         std::vector<Tree*> trees;
 };
 
