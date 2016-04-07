@@ -530,7 +530,7 @@ void buildAndEvaluateForest()
   std::cout << std::endl << "Number of training events: " << trainingEvents.size() << std::endl << std::endl;
 
   // Initialize new forest.
-  Forest* forest = new Forest(trainingEvents, testingEvents);
+  Forest* forest = new Forest(trainingEvents);
 
   // Output the parameters of the current run. 
   std::cout << "=======================================" << std::endl;
