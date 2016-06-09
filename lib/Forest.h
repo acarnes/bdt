@@ -34,16 +34,16 @@ class Forest
         void loadForestFromXML(const char* directory, int numTrees); 
 
         // Perform the regression
-        void fit(Tree *tree, Double_t learningRate, LossFunction* l);
-        void doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRate, LossFunction* l, 
+        void fit(Tree *tree, float learningRate, LossFunction* l);
+        void doRegression(int nodeLimit, int treeLimit, float learningRate, LossFunction* l, 
                           const char* savetreesdirectory, bool saveTrees);
 
         // Predict some events
         void updateEvents(Tree* tree);
-        void appendCorrection(std::vector<Event*>& eventsp, Int_t treenum);
-        void predictEvents(std::vector<Event*>& eventsp, Int_t trees);
-        void appendCorrection(Event* e, Int_t treenum);
-        void predictEvent(Event* e, Int_t trees);
+        void appendCorrection(std::vector<Event*>& eventsp, int treenum);
+        void predictEvents(std::vector<Event*>& eventsp, int trees);
+        void appendCorrection(Event* e, int treenum);
+        void predictEvent(Event* e, int trees);
 
         Tree* getTree(unsigned int i);
 

@@ -37,11 +37,11 @@ void listEvents(std::vector<Event*>& events, unsigned int numtolist)
 // ========================================================
 // ================ Preprocess  ===========================
 //=========================================================
-Int_t transformEvents(std::vector<Event*>& events, TransformFunction* transform)
+int transformEvents(std::vector<Event*>& events, TransformFunction* transform)
 {
     if(transform == 0) return 0;
     //std::cout << "Transforming events ... " << std::endl;
-    Int_t failed = 0;
+    int failed = 0;
 
     for(unsigned int i=0; i<events.size(); i++)
     {
@@ -64,7 +64,7 @@ Int_t transformEvents(std::vector<Event*>& events, TransformFunction* transform)
 void preprocessTrain(std::vector<Event*>& events, LossFunction* lf, PreliminaryFit* prelimfit, TransformFunction* transform)
 {
     std::cout << "Preprocessing training events ... " << std::endl;
-    Int_t failed = 0;
+    int failed = 0;
 
     // Apply the preliminary fit and the transformation for each event.
     for(unsigned int i=0; i<events.size(); i++)
@@ -117,7 +117,7 @@ void preprocessTrain(std::vector<Event*>& events, LossFunction* lf, PreliminaryF
 void preprocessTest(std::vector<Event*>& events, LossFunction* lf, PreliminaryFit* prelimfit, TransformFunction* transform)
 {
     //std::cout << "Preprocessing test events ... " << std::endl;
-    Int_t failed = 0;
+    int failed = 0;
 
     for(unsigned int i=0; i<events.size(); i++)
     {
@@ -172,7 +172,7 @@ bool preprocessTest(Event* e, LossFunction* lf, PreliminaryFit* prelimfit, Trans
 void preprocessRate(std::vector<Event*>& events, LossFunction* lf, PreliminaryFit* prelimfit, TransformFunction* transform)
 {
     std::cout << "Preprocessing rate sample ... " << std::endl;
-    Int_t failed = 0;
+    int failed = 0;
 
     for(unsigned int i=0; i<events.size(); i++)
     {
@@ -298,7 +298,7 @@ void loadEvents(const char* inputfilename, std::vector<Event*>& events)
         ntuple->GetEntry(i);
 
         // Store the variables needed for prediciton.
-        std::vector<Double_t> x;
+        std::vector<float> x;
         x.push_back(GenPt);     // target goes in x[0]
         x.push_back(Eta);       // features go in x[1]->x[N]
         x.push_back(dPhi12);

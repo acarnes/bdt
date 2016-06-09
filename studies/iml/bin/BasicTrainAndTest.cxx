@@ -43,9 +43,9 @@
 // main if you want input from the terminal to determine the settings.
 
 // Fundamental settings for the regression.
-Int_t nodes = 16;
-Int_t trees = 64;
-Double_t lr = 0.3;
+int nodes = 16;
+int trees = 64;
+float lr = 0.3;
 
 // Choose which loss function to use.
 //LossFunction* lf = new LeastSquares();
@@ -170,7 +170,7 @@ void buildAndEvaluateForest()
   forest->doRegression(nodes, trees, lr, lf, treesDirectory, saveTrees);
 
   // Rank the variable importance and output it to the screen.
-  std::vector<Int_t> rank;
+  std::vector<int> rank;
   forest->rankVariables(rank);
 
   // Save the lists of split values for each variable into a file.

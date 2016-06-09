@@ -8,6 +8,7 @@
 #include "Event.h"
 #include <string>
 #include <algorithm>
+#include <cmath>
 
 // ========================================================
 // ================ Define the Interface ==================
@@ -24,11 +25,11 @@ class LossFunction
         // The gradient of the loss function.
         // Each tree is a step in the direction of the gradient
         // towards the minimum of the Loss Function.
-        virtual Double_t target(Event* e) = 0;
+        virtual float target(Event* e) = 0;
 
         // The fit should minimize the loss function in each
         // terminal node at each iteration.
-        virtual Double_t fit(std::vector<Event*>& v) = 0;
+        virtual float fit(std::vector<Event*>& v) = 0;
         virtual std::string name() = 0;
         virtual int id() = 0;
 };
@@ -43,7 +44,7 @@ class LeastSquares : public LossFunction
         LeastSquares(){}
         ~LeastSquares(){}
       
-        Double_t target(Event* e)
+        float target(Event* e)
         {
         // Each tree fits the residuals when using LeastSquares.
         
@@ -61,11 +62,11 @@ class LeastSquares : public LossFunction
             }
         }       
 
-        Double_t fit(std::vector<Event*>& v)
+        float fit(std::vector<Event*>& v)
         {
         // The average of the residuals minmizes the Loss Function for LS.
 
-            Double_t SUM = 0;
+            float SUM = 0;
             for(unsigned int i=0; i<v.size(); i++)
             {
                 Event* e = v[i];
@@ -89,7 +90,7 @@ class AbsoluteDeviation : public LossFunction
         AbsoluteDeviation(){}
         ~AbsoluteDeviation(){}
 
-        Double_t target(Event* e)
+        float target(Event* e)
         {
         // The gradient.
             if ((e->trueValue - e->predictedValue) >= 0)
@@ -109,11 +110,11 @@ class AbsoluteDeviation : public LossFunction
             }
         }       
 
-        Double_t fit(std::vector<Event*>& v)
+        float fit(std::vector<Event*>& v)
         {
         // The median of the residuals minimizes absolute deviation.
             if(v.size()==0) return 0;
-            std::vector<Double_t> residuals(v.size());
+            std::vector<float> residuals(v.size());
        
             // Load the residuals into a vector. 
             for(unsigned int i=0; i<v.size(); i++)
@@ -136,9 +137,9 @@ class AbsoluteDeviation : public LossFunction
             else
             {
                 std::nth_element(residuals.begin(), residuals.begin()+median_loc, residuals.end());
-                Double_t low = residuals[median_loc];
+                float low = residuals[median_loc];
                 std::nth_element(residuals.begin()+median_loc+1, residuals.begin()+median_loc+1, residuals.end());
-                Double_t high = residuals[median_loc+1];
+                float high = residuals[median_loc+1];
                 return (high + low)/2;
             }
         }
@@ -173,11 +174,11 @@ class Huber : public LossFunction
         // The quantile cut that determines the core vs the outliers
         double quantile_cut;
 
-        Double_t target(Event* e)
+        float target(Event* e)
         {
         // The gradient of the loss function.
 
-            if (TMath::Abs(e->trueValue - e->predictedValue) <= quantile)
+            if (std::abs(e->trueValue - e->predictedValue) <= quantile)
                 return (e->trueValue - e->predictedValue);
             else
                 return quantile*(((e->trueValue - e->predictedValue) < 0)?-1.0:1.0);
@@ -198,7 +199,7 @@ class Huber : public LossFunction
             quantile = calculateQuantile(v, quantile_cut, true);
         }       
 
-        Double_t fit(std::vector<Event*>& v)
+        float fit(std::vector<Event*>& v)
         {
         // The constant fit that minimizes Huber in a region.
 
@@ -210,7 +211,7 @@ class Huber : public LossFunction
                 Event* e = v[i];
                 double residual = e->trueValue - e->predictedValue;
                 double diff = residual - residual_median; 
-                x += ((diff < 0)?-1.0:1.0)*TMath::Min(quantile, TMath::Abs(diff));
+                x += ((diff < 0)?-1.0:1.0)*std::min(quantile, std::abs(diff));
             }
 
            return (residual_median + x/v.size());
@@ -225,13 +226,13 @@ class Huber : public LossFunction
         // calculate the quantile for the absolute value of the residuals for the given vector
 
             // Container for the residuals.
-            std::vector<Double_t> residuals(v.size());
+            std::vector<float> residuals(v.size());
        
             // Load the residuals into a vector. 
             for(unsigned int i=0; i<v.size(); i++)
             {
                 Event* e = v[i];
-                if(absValue) residuals[i] = TMath::Abs(e->trueValue - e->predictedValue);
+                if(absValue) residuals[i] = std::abs(e->trueValue - e->predictedValue);
                 else residuals[i] = (e->trueValue - e->predictedValue);
             }
 
@@ -256,10 +257,10 @@ class BinaryClassification : public LossFunction
         double quantile;
         double residual_median;
 
-        Double_t target(Event* e)
+        float target(Event* e)
         {
         // The gradient of the loss function.
-            Double_t targetValue = 2*e->trueValue/(1+TMath::Exp(2*e->trueValue*e->predictedValue));
+            float targetValue = 2*e->trueValue/(1+std::exp(2*e->trueValue*e->predictedValue));
             return targetValue; 
         }
 
@@ -275,39 +276,39 @@ class BinaryClassification : public LossFunction
         }       
 
 
-        Double_t fit(std::vector<Event*>& v)
+        float fit(std::vector<Event*>& v)
         {
         // The constant fit that minimizes the LF in a region.
 
-            Double_t numerator = 0;
-            Double_t denominator = 0;
+            float numerator = 0;
+            float denominator = 0;
 
             for(unsigned int i=0; i<v.size(); i++)
             {
                 Event* e = v[i];
-                double response = 2*e->trueValue/(1+TMath::Exp(2*e->trueValue*e->predictedValue));
+                double response = 2*e->trueValue/(1+std::exp(2*e->trueValue*e->predictedValue));
                 numerator += response;
-                denominator += TMath::Abs(response)*(2-TMath::Abs(response));
+                denominator += std::abs(response)*(2-std::abs(response));
             }
 
            return numerator/denominator;
             
         }
 
-        Double_t initialize(std::vector<Event*>& v)
+        float initialize(std::vector<Event*>& v)
         {
         // This lossfunction requires the predicted values to be initialized during preprocessing. 
         // The predictedValue for all events should be set to the return value from this function.
 
-            Double_t SUM = 0;
+            float SUM = 0;
             for(unsigned int i=0; i<v.size(); i++)
             {
                 Event* e = v[i];
                 SUM += e->trueValue;
             }
     
-            Double_t avg_true = SUM/v.size();
-            return 0.5*TMath::Log(1+avg_true)/TMath::Log(1-avg_true);
+            float avg_true = SUM/v.size();
+            return 0.5*std::log(1+avg_true)/std::log(1-avg_true);
         }
 
         std::string name() { return "BinaryClassification"; }

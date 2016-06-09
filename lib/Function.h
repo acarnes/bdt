@@ -11,7 +11,6 @@
 #ifndef ADD_FUNCTION
 #define ADD_FUNCTION
 
-#include "TMath.h"
 #include "Event.h"
 #include <cmath>
 
@@ -53,7 +52,7 @@ class MetricOfSuccess
 {
 // Judge how well the regression worked.
     public:
-        virtual Double_t calculate(std::vector<Event*>& v) = 0;
+        virtual float calculate(std::vector<Event*>& v) = 0;
 };
 
 #endif

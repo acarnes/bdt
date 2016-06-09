@@ -156,7 +156,7 @@ void Forest::listEvents(std::vector< std::vector<Event*> >& e)
 
 // We have to initialize Event::sortingIndex outside of a function since
 // it is a static member.
-Int_t Event::sortingIndex = 1;
+int Event::sortingIndex = 1;
 
 bool compareEvents(Event* e1, Event* e2)
 {
@@ -204,7 +204,7 @@ void Forest::rankVariables(std::vector<int>& rank)
 
     // Initialize the vector v, which will store the total error reduction
     // for each variable i in v[i].
-    std::vector<Double_t> v(events.size(), 0);
+    std::vector<float> v(events.size(), 0);
 
     std::cout << std::endl << "Ranking Variables by Net Error Reduction... " << std::endl;
 
@@ -213,7 +213,7 @@ void Forest::rankVariables(std::vector<int>& rank)
         trees[j]->rankVariables(v); 
     }
 
-    Double_t max = *std::max_element(v.begin(), v.end());
+    float max = *std::max_element(v.begin(), v.end());
    
     // Scale the importance. Maximum importance = 100.
     for(unsigned int i=0; i < v.size(); i++)
@@ -223,11 +223,11 @@ void Forest::rankVariables(std::vector<int>& rank)
 
     // Change the storage format so that we can keep the index 
     // and the value associated after sorting.
-    std::vector< std::pair<Double_t, Int_t> > w(events.size());
+    std::vector< std::pair<float, int> > w(events.size());
 
     for(unsigned int i=0; i<v.size(); i++)
     {
-        w[i] = std::pair<Double_t, Int_t>(v[i],i);
+        w[i] = std::pair<float, int>(v[i],i);
     }
 
     // Sort so that we can output in order of importance.
@@ -256,7 +256,7 @@ void Forest::saveSplitValues(const char* savefilename)
 
     // Initialize the matrix v, which will store the list of split values
     // for each variable i in v[i].
-    std::vector< std::vector<Double_t> > v(events.size(), std::vector<Double_t>());
+    std::vector< std::vector<float> > v(events.size(), std::vector<float>());
 
     std::cout << std::endl << "Gathering split values... " << std::endl;
 
@@ -295,7 +295,7 @@ void Forest::saveSplitValues(const char* savefilename)
 // ______________________Update_Events_After_Fitting____________________//
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::fit(Tree* tree, Double_t learningRate, LossFunction* l)
+void Forest::fit(Tree* tree, float learningRate, LossFunction* l)
 {
 // Prepare the global vector of events for the next tree.
 // Calculate the fit value for each terminal node. 
@@ -311,7 +311,7 @@ void Forest::fit(Tree* tree, Double_t learningRate, LossFunction* l)
         std::vector<Event*>& v = (*it)->getEvents()[0];
 
         // Fit the events depending on the loss function criteria.
-        Double_t fit = l->fit(v);
+        float fit = l->fit(v);
 
         // Scale the rate at which the algorithm converges.
         fit = learningRate*fit;
@@ -347,7 +347,7 @@ void Forest::updateEvents(Tree* tree)
     for(std::list<Node*>::iterator it=tn.begin(); it!=tn.end(); it++)
     {   
         std::vector<Event*>& v = (*it)->getEvents()[0];
-        Double_t fit = (*it)->getFitValue();
+        float fit = (*it)->getFitValue();
 
         // Loop through each event in the terminal region and update the
         // the global event it maps to.
@@ -366,7 +366,7 @@ void Forest::updateEvents(Tree* tree)
 // ____________________Do/Test_the Regression___________________________//
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRate, LossFunction* l, const char* savetreesdirectory, bool saveTrees)
+void Forest::doRegression(int nodeLimit, int treeLimit, float learningRate, LossFunction* l, const char* savetreesdirectory, bool saveTrees)
 {
 // Build the forest using the training sample.
 
@@ -421,7 +421,7 @@ void Forest::doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRat
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::predictEvents(std::vector<Event*>& eventsp, Int_t numtrees)
+void Forest::predictEvents(std::vector<Event*>& eventsp, int numtrees)
 {
 // Predict values for eventsp by running them through the forest up to numtrees.
 
@@ -444,7 +444,7 @@ void Forest::predictEvents(std::vector<Event*>& eventsp, Int_t numtrees)
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::appendCorrection(std::vector<Event*>& eventsp, Int_t treenum)
+void Forest::appendCorrection(std::vector<Event*>& eventsp, int treenum)
 {
 // Update the prediction by appending the next correction.
 
@@ -459,7 +459,7 @@ void Forest::appendCorrection(std::vector<Event*>& eventsp, Int_t treenum)
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::predictEvent(Event* e, Int_t numtrees)
+void Forest::predictEvent(Event* e, int numtrees)
 {
 // Predict values for eventsp by running them through the forest up to numtrees.
 
@@ -482,7 +482,7 @@ void Forest::predictEvent(Event* e, Int_t numtrees)
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::appendCorrection(Event* e, Int_t treenum)
+void Forest::appendCorrection(Event* e, int treenum)
 {
 // Update the prediction by appending the next correction.
 
@@ -490,7 +490,7 @@ void Forest::appendCorrection(Event* e, Int_t treenum)
     Node* terminalNode = tree->filterEvent(e); 
 
     // Update the event with its new prediction.
-    Double_t fit = terminalNode->getFitValue();
+    float fit = terminalNode->getFitValue();
     e->predictedValue += fit;
 }
 /////////////////////////////////////////////////////////////////////////////////////

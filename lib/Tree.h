@@ -22,9 +22,9 @@ class Tree
         void setTerminalNodes(std::list<Node*>& sTNodes);
         std::list<Node*>& getTerminalNodes();
 
-        Int_t getNumTerminalNodes();
+        int getNumTerminalNodes();
 
-        void buildTree(Int_t nodeLimit);
+        void buildTree(int nodeLimit);
         void calcError();
         void filterEvents(std::vector<Event*>& tEvents);
         void filterEventsRecursive(Node* node);
@@ -38,17 +38,17 @@ class Tree
         void loadFromXML(const char* filename);
         void loadFromXMLRecursive(TXMLEngine* xml, XMLNodePointer_t node, Node* tnode);
 
-        void rankVariables(std::vector<Double_t>& v);
-        void rankVariablesRecursive(Node* node, std::vector<Double_t>& v);
+        void rankVariables(std::vector<float>& v);
+        void rankVariablesRecursive(Node* node, std::vector<float>& v);
 
-        void getSplitValues(std::vector< std::vector<Double_t> >& v);
-        void getSplitValuesRecursive(Node* node, std::vector< std::vector<Double_t> >& v);
+        void getSplitValues(std::vector< std::vector<float> >& v);
+        void getSplitValuesRecursive(Node* node, std::vector< std::vector<float> >& v);
 
     private:
         Node *rootNode;
         std::list<Node*> terminalNodes;
-        Int_t numTerminalNodes;
-        Double_t rmsError;
+        int numTerminalNodes;
+        float rmsError;
 };
 
 #endif

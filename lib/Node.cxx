@@ -17,8 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////
 
 #include "Node.h"
-#include "TRandom3.h"
-#include "TStopwatch.h"
 #include <iostream>
 #include <fstream>
 
@@ -79,12 +77,12 @@ std::string Node::getName()
 
 // ----------------------------------------------------------------------
 
-void Node::setErrorReduction(Double_t sErrorReduction)
+void Node::setErrorReduction(float sErrorReduction)
 {
     errorReduction = sErrorReduction;
 }
 
-Double_t Node::getErrorReduction()
+float Node::getErrorReduction()
 {
     return errorReduction;
 }
@@ -125,68 +123,68 @@ Node * Node::getParent()
 
 // ----------------------------------------------------------------------
 
-void Node::setSplitValue(Double_t sSplitValue)
+void Node::setSplitValue(float sSplitValue)
 {
     splitValue = sSplitValue;
 }
 
-Double_t Node::getSplitValue()
+float Node::getSplitValue()
 {
     return splitValue;
 }
 
-void Node::setSplitVariable(Int_t sSplitVar)
+void Node::setSplitVariable(int sSplitVar)
 {
     splitVariable = sSplitVar;
 }
 
-Int_t Node::getSplitVariable()
+int Node::getSplitVariable()
 {
     return splitVariable;
 }
 
 // ----------------------------------------------------------------------
 
-void Node::setFitValue(Double_t sFitValue)
+void Node::setFitValue(float sFitValue)
 {
     fitValue = sFitValue;
 }
 
-Double_t Node::getFitValue()
+float Node::getFitValue()
 {
     return fitValue;
 }
 
 // ----------------------------------------------------------------------
 
-void Node::setTotalError(Double_t sTotalError)
+void Node::setTotalError(float sTotalError)
 {
     totalError = sTotalError;
 }
 
-Double_t Node::getTotalError()
+float Node::getTotalError()
 {
     return totalError;
 }
 
-void Node::setAvgError(Double_t sAvgError)
+void Node::setAvgError(float sAvgError)
 {
     avgError = sAvgError;
 }
 
-Double_t Node::getAvgError()
+float Node::getAvgError()
 {
     return avgError;
 }
 
 // ----------------------------------------------------------------------
 
-void Node::setNumEvents(Int_t sNumEvents)
+void Node::setNumEvents(int sNumEvents)
 {
     numEvents = sNumEvents;
 }
 
-Int_t Node::getNumEvents()
+int Node::getNumEvents()
 {
     return numEvents;
 }
@@ -215,21 +213,21 @@ void Node::calcOptimumSplit()
 // Check out the reference for a more in depth outline. This part is chapter 3.
 
     // Intialize some variables.
-    Double_t bestSplitValue = 0;
-    Int_t bestSplitVariable = -1; 
-    Double_t bestErrorReduction = -1;
+    float bestSplitValue = 0;
+    int bestSplitVariable = -1; 
+    float bestErrorReduction = -1;
 
-    Double_t SUM = 0;
-    Double_t SSUM = 0;
+    float SUM = 0;
+    float SSUM = 0;
     numEvents = events[0].size();
 
-    Double_t candidateErrorReduction = -1;
+    float candidateErrorReduction = -1;
 
     // Calculate the sum of the target variables and the sum of
     // the target variables squared. We use these later.
     for(unsigned int i=0; i<events[0].size(); i++)
     {   
-        Double_t target = events[0][i]->data[0];
+        float target = events[0][i]->data[0];
         SUM += target;
         SSUM += target*target;
     }  
@@ -241,14 +239,14 @@ void Node::calcOptimumSplit()
     { 
 
         // The sum of the target variables in the left, right nodes
-        Double_t SUMleft = 0;
-        Double_t SUMright = SUM;
+        float SUMleft = 0;
+        float SUMright = SUM;
 
         // The number of events in the left, right nodes
-        Int_t nleft = 1;
-        Int_t nright = events[variableToCheck].size()-1;
+        int nleft = 1;
+        int nright = events[variableToCheck].size()-1;
 
-        Int_t candidateSplitVariable = variableToCheck;
+        int candidateSplitVariable = variableToCheck;
 
         std::vector<Event*>& v = events[variableToCheck];
 
@@ -358,8 +356,8 @@ void Node::filterEventsToDaughters()
 // node depending on whether it is < or > the split point
 // for the given split variable. 
 
-    Int_t sv = splitVariable;
-    Double_t sp = splitValue;
+    int sv = splitVariable;
+    float sp = splitValue;
 
     Node* left = leftDaughter;
     Node* right = rightDaughter;
@@ -396,8 +394,8 @@ Node* Node::filterEventToDaughter(Event* e)
 // node depending on whether it is < or > the split point
 // for the given split variable. 
 
-    Int_t sv = splitVariable;
-    Double_t sp = splitValue;
+    int sv = splitVariable;
+    float sp = splitValue;
 
     Node* left = leftDaughter;
     Node* right = rightDaughter;
