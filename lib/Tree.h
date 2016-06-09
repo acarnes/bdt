@@ -41,8 +41,8 @@ class Tree
         void rankVariables(std::vector<Double_t>& v);
         void rankVariablesRecursive(Node* node, std::vector<Double_t>& v);
 
-        void getSplitValues(std::vector<std::vector<Double_t>>& v);
-        void getSplitValuesRecursive(Node* node, std::vector<std::vector<Double_t>>& v);
+        void getSplitValues(std::vector< std::vector<Double_t> >& v);
+        void getSplitValuesRecursive(Node* node, std::vector< std::vector<Double_t> >& v);
 
     private:
         Node *rootNode;

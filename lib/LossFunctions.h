@@ -18,6 +18,9 @@ class LossFunction
 {
     public:
 
+        // set the targets for the tree and set any parameters for the loss function if needed
+        virtual void setTargets(std::vector<Event*>& v) = 0;
+
         // The gradient of the loss function.
         // Each tree is a step in the direction of the gradient
         // towards the minimum of the Loss Function.
@@ -39,12 +42,24 @@ class LeastSquares : public LossFunction
     public:
         LeastSquares(){}
         ~LeastSquares(){}
-
+      
         Double_t target(Event* e)
         {
         // Each tree fits the residuals when using LeastSquares.
-        return e->trueValue - e->predictedValue;
+        
+            return e->trueValue - e->predictedValue;
         }
+
+        void setTargets(std::vector<Event*>& v)
+        {
+        // set the targets for tree based upon the previous predictions
+        
+            for(unsigned int j=0; j<v.size(); j++)
+            {
+                Event* e = v[j];
+                e->data[0] = target(e);
+            }
+        }       
 
         Double_t fit(std::vector<Event*>& v)
         {
@@ -82,6 +97,17 @@ class AbsoluteDeviation : public LossFunction
             else
                 return -1;
         }
+
+        void setTargets(std::vector<Event*>& v)
+        {
+        // set the targets for tree based upon the previous predictions
+        
+            for(unsigned int j=0; j<v.size(); j++)
+            {
+                Event* e = v[j];
+                e->data[0] = target(e);
+            }
+        }       
 
         Double_t fit(std::vector<Event*>& v)
         {
@@ -127,11 +153,25 @@ class AbsoluteDeviation : public LossFunction
 class Huber : public LossFunction
 {
     public:
-        Huber(){}
+        Huber()
+        { 
+            // consider the last 30% of the residuals to be the outliers
+            this->quantile_cut = 0.7; 
+        }
+
+        Huber(double quantile_cut)
+        { 
+            // quantile_cut determines the fraction of the residuals that make up the core 
+            // of the distribution. The rest are the outliers.
+            this->quantile_cut = quantile_cut; 
+        }
         ~Huber(){}
  
         double quantile;
         double residual_median;
+
+        // The quantile cut that determines the core vs the outliers
+        double quantile_cut;
 
         Double_t target(Event* e)
         {
@@ -140,14 +180,28 @@ class Huber : public LossFunction
             if (TMath::Abs(e->trueValue - e->predictedValue) <= quantile)
                 return (e->trueValue - e->predictedValue);
             else
-                return quantile*(((e->trueValue - e->predictedValue) > 0)?1.0:-1.0);
+                return quantile*(((e->trueValue - e->predictedValue) < 0)?-1.0:1.0);
         }
+
+        void setTargets(std::vector<Event*>& v)
+        {
+        // set the targets for tree based upon the previous predictions
+        
+            for(unsigned int j=0; j<v.size(); j++)
+            {
+                Event* e = v[j];
+                e->data[0] = target(e);
+            }
+            // calculate the quantile for all of the events once at the beginning.
+            // each terminal node will then use the quantile for all of the events when determining 
+            // which event is an outlier rather than the quantile within the terminal node
+            quantile = calculateQuantile(v, quantile_cut, true);
+        }       
 
         Double_t fit(std::vector<Event*>& v)
         {
         // The constant fit that minimizes Huber in a region.
 
-            quantile = calculateQuantile(v, 0.7, true);
             residual_median = calculateQuantile(v, 0.5, false); 
 
             double x = 0;
@@ -156,7 +210,7 @@ class Huber : public LossFunction
                 Event* e = v[i];
                 double residual = e->trueValue - e->predictedValue;
                 double diff = residual - residual_median; 
-                x += ((diff > 0)?1.0:-1.0)*std::min(quantile, TMath::Abs(diff));
+                x += ((diff < 0)?-1.0:1.0)*TMath::Min(quantile, TMath::Abs(diff));
             }
 
            return (residual_median + x/v.size());
@@ -168,6 +222,8 @@ class Huber : public LossFunction
 
         double calculateQuantile(std::vector<Event*>& v, double whichQuantile, bool absValue)
         {
+        // calculate the quantile for the absolute value of the residuals for the given vector
+
             // Container for the residuals.
             std::vector<Double_t> residuals(v.size());
        
@@ -186,48 +242,13 @@ class Huber : public LossFunction
 };
 
 // ========================================================
-// ============== Percent Error ===========================
-// ========================================================
-
-class PercentErrorSquared : public LossFunction
-{
-    public:
-        PercentErrorSquared(){}
-        ~PercentErrorSquared(){}
-
-        Double_t target(Event* e)
-        {   
-        // The gradient of the squared percent error.
-            return (e->trueValue - e->predictedValue)/(e->trueValue * e->trueValue);
-        }   
-
-        Double_t fit(std::vector<Event*>& v)
-        {   
-        // The average of the weighted residuals minimizes the squared percent error.
-        // Weight(i) = 1/true(i)^2. 
-    
-            Double_t SUMtop = 0;
-            Double_t SUMbottom = 0;
-    
-            for(unsigned int i=0; i<v.size(); i++)
-            {   
-                Event* e = v[i];
-                SUMtop += (e->trueValue - e->predictedValue)/(e->trueValue*e->trueValue); 
-                SUMbottom += 1/(e->trueValue*e->trueValue);
-            }   
-    
-            return SUMtop/SUMbottom;
-        }   
-        std::string name() { return "Percent_Error"; }
-        int id(){ return 4; }
-};
-
-// ========================================================
 // ============== BinaryClassification=====================
 // ========================================================
 
 class BinaryClassification : public LossFunction
 {
+// Untested and a work in progress. Should perform some tests to see if it works or not and debug.
+
     public:
         BinaryClassification(){}
         ~BinaryClassification(){}
@@ -241,6 +262,18 @@ class BinaryClassification : public LossFunction
             Double_t targetValue = 2*e->trueValue/(1+TMath::Exp(2*e->trueValue*e->predictedValue));
             return targetValue; 
         }
+
+        void setTargets(std::vector<Event*>& v)
+        {
+        // set the targets for tree based upon the previous predictions
+        
+            for(unsigned int j=0; j<v.size(); j++)
+            {
+                Event* e = v[j];
+                e->data[0] = target(e);
+            }
+        }       
+
 
         Double_t fit(std::vector<Event*>& v)
         {

@@ -34,7 +34,7 @@ class Forest
         void loadForestFromXML(const char* directory, int numTrees); 
 
         // Perform the regression
-        void updateRegTargets(Tree *tree, Double_t learningRate, LossFunction* l);
+        void fit(Tree *tree, Double_t learningRate, LossFunction* l);
         void doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRate, LossFunction* l, 
                           const char* savetreesdirectory, bool saveTrees);
 

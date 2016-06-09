@@ -268,7 +268,7 @@ void Tree::rankVariables(std::vector<Double_t>& v)
 // ----------------------------------------------------------------------
 
 
-void Tree::getSplitValuesRecursive(Node* node, std::vector<std::vector<Double_t>>& v)
+void Tree::getSplitValuesRecursive(Node* node, std::vector< std::vector<Double_t> >& v)
 {
 // We recursively go through all of the nodes in the tree and find the
 // split points used for each split variable.
@@ -298,7 +298,7 @@ void Tree::getSplitValuesRecursive(Node* node, std::vector<std::vector<Double_t>
 
 // ----------------------------------------------------------------------
 
-void Tree::getSplitValues(std::vector<std::vector<Double_t>>& v)
+void Tree::getSplitValues(std::vector< std::vector<Double_t> >& v)
 {
     getSplitValuesRecursive(rootNode, v);
 }

@@ -256,7 +256,7 @@ void Forest::saveSplitValues(const char* savefilename)
 
     // Initialize the matrix v, which will store the list of split values
     // for each variable i in v[i].
-    std::vector<std::vector<Double_t>> v(events.size(), std::vector<Double_t>());
+    std::vector< std::vector<Double_t> > v(events.size(), std::vector<Double_t>());
 
     std::cout << std::endl << "Gathering split values... " << std::endl;
 
@@ -295,11 +295,11 @@ void Forest::saveSplitValues(const char* savefilename)
 // ______________________Update_Events_After_Fitting____________________//
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::updateRegTargets(Tree* tree, Double_t learningRate, LossFunction* l)
+void Forest::fit(Tree* tree, Double_t learningRate, LossFunction* l)
 {
 // Prepare the global vector of events for the next tree.
-// Update the fit for each event and set the new target value
-// for the next tree.
+// Calculate the fit value for each terminal node. 
+// Update the predicted value for each event based upon the terminal node it fell into. 
 
     // Get the list of terminal nodes for this tree.
     std::list<Node*>& tn = tree->getTerminalNodes();
@@ -325,7 +325,6 @@ void Forest::updateRegTargets(Tree* tree, Double_t learningRate, LossFunction* l
         {
             Event* e = v[j];
             e->predictedValue += fit;
-            e->data[0] = l->target(e);
         }
 
         // Release memory.
@@ -389,12 +388,20 @@ void Forest::doRegression(Int_t nodeLimit, Int_t treeLimit, Double_t learningRat
     for(unsigned int i=0; i< (unsigned) treeLimit; i++)
     {
         std::cout << "++Building Tree " << i << "... " << std::endl;
+
+        // Initialize the new tree
         Tree* tree = new Tree(events);
+
+        // Set the targets for the tree based upon the predictions from the last tree
+        l->setTargets(events[0]);
+
+        // Add the tree to the forest and build it
         trees.push_back(tree);    
         tree->buildTree(nodeLimit);
 
-        // Update the targets for the next tree to fit.
-        updateRegTargets(tree, learningRate, l);
+        // Fit the terminal nodes with the correct predictions
+        // Update the predicted values for the events
+        fit(tree, learningRate, l);
 
         // Save trees to xml in some directory.
         std::ostringstream ss; 
