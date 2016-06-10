@@ -79,9 +79,9 @@ void saveSettingsToXML(const char* directory)
     TXMLEngine* xml = new TXMLEngine();
     XMLNodePointer_t root = xml->NewChild(0,0,"root");
     XMLNodePointer_t settings = xml->NewChild(root,0,"settings");
-    xml->NewAttr(settings, 0, "nodes", numToStr(nodes).c_str());
-    xml->NewAttr(settings, 0, "trees", numToStr(trees).c_str());
-    xml->NewAttr(settings, 0, "learning_rate", numToStr(lr).c_str());
+    xml->NewAttr(settings, 0, "nodes", Utilities::numToStr<int>(nodes).c_str());
+    xml->NewAttr(settings, 0, "trees", Utilities::numToStr<int>(trees).c_str());
+    xml->NewAttr(settings, 0, "learning_rate", Utilities::numToStr<float>(lr).c_str());
     xml->NewAttr(settings, 0, "loss_function", lf->name().c_str());
     xml->NewAttr(settings, 0, "transform", ((transform!=0)?transform->name():none));
 

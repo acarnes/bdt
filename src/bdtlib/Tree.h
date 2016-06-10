@@ -31,15 +31,11 @@ class Tree
         Node* filterEventRecursive(Node* node, Event* e);
 
         void saveToXML(const char* filename);
-        void saveToXMLRecursive(TXMLEngine* xml, Node* node, XMLNodePointer_t np);
-        void addXMLAttributes(TXMLEngine* xml, Node* node, XMLNodePointer_t np);
-
-        void tsaveToXML(const char* filename);
-        void tsaveToXMLRecursive(tinyxml2::XMLDocument* xmlDoc, Node* node, tinyxml2::XMLElement* np);
-        void taddXMLAttributes(Node* node, tinyxml2::XMLElement* np);
+        void saveToXMLRecursive(tinyxml2::XMLDocument* xmlDoc, Node* node, tinyxml2::XMLElement* np);
+        void addXMLAttributes(Node* node, tinyxml2::XMLElement* np);
 
         void loadFromXML(const char* filename);
-        void loadFromXMLRecursive(TXMLEngine* xml, XMLNodePointer_t node, Node* tnode);
+        void loadFromXMLRecursive(tinyxml2::XMLElement* xmlnode, Node* tnode);
 
         void rankVariables(std::vector<float>& v);
         void rankVariablesRecursive(Node* node, std::vector<float>& v);

@@ -321,18 +321,7 @@ std::string numToStr( T num )
 
 // ----------------------------------------------------------------------
 
-void Tree::addXMLAttributes(TXMLEngine* xml, Node* node, XMLNodePointer_t np)
-{
-    // Convert Node members into XML attributes    
-    // and add them to the XMLEngine.
-    xml->NewAttr(np, 0, "splitVar", numToStr(node->getSplitVariable()).c_str());
-    xml->NewAttr(np, 0, "splitVal", numToStr(node->getSplitValue()).c_str());
-    xml->NewAttr(np, 0, "fitVal", numToStr(node->getFitValue()).c_str());
-}
-
-// ----------------------------------------------------------------------
-
-void Tree::taddXMLAttributes(Node* node, tinyxml2::XMLElement* np)
+void Tree::addXMLAttributes(Node* node, tinyxml2::XMLElement* np)
 {
     // Convert Node members into XML attributes    
     // and add them to the XMLEngine.
@@ -343,76 +332,27 @@ void Tree::taddXMLAttributes(Node* node, tinyxml2::XMLElement* np)
 
 // ----------------------------------------------------------------------
 
-void Tree::tsaveToXML(const char* c)
+void Tree::saveToXML(const char* c)
 {
     tinyxml2::XMLDocument* xmlDoc = new tinyxml2::XMLDocument();
 
     // Add the root node.
     tinyxml2::XMLElement* xmlroot = xmlDoc->NewElement(rootNode->getName().c_str());
-    taddXMLAttributes(rootNode, xmlroot);
+    addXMLAttributes(rootNode, xmlroot);
     xmlDoc->InsertFirstChild(xmlroot);
 
     // Recursively write the tree to XML.
-    tsaveToXMLRecursive(xmlDoc, rootNode, xmlroot);
+    saveToXMLRecursive(xmlDoc, rootNode, xmlroot);
 
     // Make the XML Document.
     tinyxml2::XMLError eResult = xmlDoc->SaveFile(c);
-    //tinyxml2::XMLCheckResult(eResult);
 
     delete xmlDoc;
 }
 
 // ----------------------------------------------------------------------
 
-void Tree::saveToXML(const char* c)
-{
-
-    TXMLEngine* xml = new TXMLEngine();
-
-    // Add the root node.
-    XMLNodePointer_t root = xml->NewChild(0, 0, rootNode->getName().c_str());
-    addXMLAttributes(xml, rootNode, root);
-
-    // Recursively write the tree to XML.
-    saveToXMLRecursive(xml, rootNode, root);
-
-    // Make the XML Document.
-    XMLDocPointer_t xmldoc = xml->NewDoc();
-    xml->DocSetRootElement(xmldoc, root);
-
-    // Save to file.
-    xml->SaveDoc(xmldoc, c);
-
-    // Clean up.
-    xml->FreeDoc(xmldoc);
-    delete xml;
-}
-
-// ----------------------------------------------------------------------
-
-void Tree::saveToXMLRecursive(TXMLEngine* xml, Node* node, XMLNodePointer_t np)
-{
-    Node* l = node->getLeftDaughter();
-    Node* r = node->getRightDaughter();
-
-    if(l==0 || r==0) return;
-
-    // Add children to the XMLEngine. 
-    XMLNodePointer_t left = xml->NewChild(np, 0, "left");
-    XMLNodePointer_t right = xml->NewChild(np, 0, "right");
-
-    // Add attributes to the children.
-    addXMLAttributes(xml, l, left);
-    addXMLAttributes(xml, r, right);
-
-    // Recurse.
-    saveToXMLRecursive(xml, l, left);
-    saveToXMLRecursive(xml, r, right);
-}
-
-// ----------------------------------------------------------------------
-
-void Tree::tsaveToXMLRecursive(tinyxml2::XMLDocument* xmlDoc, Node* node, tinyxml2::XMLElement* np)
+void Tree::saveToXMLRecursive(tinyxml2::XMLDocument* xmlDoc, Node* node, tinyxml2::XMLElement* np)
 {
     Node* l = node->getLeftDaughter();
     Node* r = node->getRightDaughter();
@@ -424,16 +364,16 @@ void Tree::tsaveToXMLRecursive(tinyxml2::XMLDocument* xmlDoc, Node* node, tinyxm
     tinyxml2::XMLElement* right = xmlDoc->NewElement("right");
 
     // Add attributes to the children.
-    taddXMLAttributes(l, left);
-    taddXMLAttributes(r, right);
+    addXMLAttributes(l, left);
+    addXMLAttributes(r, right);
 
     // need to link the children to the parent
     np->InsertEndChild(left);
     np->InsertEndChild(right);
 
     // Recurse.
-    tsaveToXMLRecursive(xmlDoc, l, left);
-    tsaveToXMLRecursive(xmlDoc, r, right);
+    saveToXMLRecursive(xmlDoc, l, left);
+    saveToXMLRecursive(xmlDoc, r, right);
 }
 
 // ----------------------------------------------------------------------
@@ -441,73 +381,52 @@ void Tree::tsaveToXMLRecursive(tinyxml2::XMLDocument* xmlDoc, Node* node, tinyxm
 void Tree::loadFromXML(const char* filename)
 {   
     // First create the engine.
-    TXMLEngine* xml = new TXMLEngine;
+    tinyxml2::XMLDocument* xmlDoc = new tinyxml2::XMLDocument();
 
     // Now try to parse xml file.
-    XMLDocPointer_t xmldoc = xml->ParseFile(filename);
-    if (xmldoc==0)
-    {
-        delete xml;
-        return;  
-    }
+    tinyxml2::XMLError eResult = xmlDoc->LoadFile(filename);
 
     // Get access to main node of the xml file.
-    XMLNodePointer_t mainnode = xml->DocGetRootElement(xmldoc);
+    tinyxml2::XMLElement* xmlroot = xmlDoc->FirstChildElement();
+    if(xmlroot == nullptr)
+    {
+        std::cout << std::endl;
+        std::cout << "Error reading xml file. Quitting." << std::endl;
+        std::cout << std::endl;
+    }
    
     // Recursively connect nodes together.
-    loadFromXMLRecursive(xml, mainnode, rootNode);
+    loadFromXMLRecursive(xmlroot, rootNode);
    
-    // Release memory before exit
-    xml->FreeDoc(xmldoc);
-    delete xml;
+    delete xmlDoc;
 }
 
 // ----------------------------------------------------------------------
 
-void Tree::loadFromXMLRecursive(TXMLEngine* xml, XMLNodePointer_t xnode, Node* tnode) 
+void Tree::loadFromXMLRecursive(tinyxml2::XMLElement* xnode, Node* tnode) 
 {
 
     // Get the split information from xml.
-    XMLAttrPointer_t attr = xml->GetFirstAttr(xnode);
-    std::vector<std::string> splitInfo(3);
-    for(unsigned int i=0; i<3; i++)
-    {
-        splitInfo[i] = xml->GetAttrValue(attr); 
-        attr = xml->GetNextAttr(attr);  
-    }
-
-    // Convert strings into numbers.
-    std::stringstream converter;
     int splitVar;
     float splitVal;
     float fitVal;  
 
-    converter << splitInfo[0];
-    converter >> splitVar;
-    converter.str("");
-    converter.clear();
-
-    converter << splitInfo[1];
-    converter >> splitVal;
-    converter.str("");
-    converter.clear();
-
-    converter << splitInfo[2];
-    converter >> fitVal;
-    converter.str("");
-    converter.clear();
+    // can check eResult after to see if it loaded well, but nah
+    tinyxml2::XMLError eResult = xnode->QueryIntAttribute("splitVar", &splitVar);
+    eResult = xnode->QueryFloatAttribute("splitVal", &splitVal);
+    eResult = xnode->QueryFloatAttribute("fitVal",   &fitVal);
 
     // Store gathered splitInfo into the node object.
     tnode->setSplitVariable(splitVar);
     tnode->setSplitValue(splitVal);
     tnode->setFitValue(fitVal);
 
-    // Get the xml daughters of the current xml node. 
-    XMLNodePointer_t xleft = xml->GetChild(xnode);
-    XMLNodePointer_t xright = xml->GetNext(xleft);
-
     // If there are no daughters we are done.
-    if(xleft == 0 || xright == 0) return;
+    if(xnode->NoChildren()) return;
+
+    // Get the xml daughters of the current xml node. 
+    tinyxml2::XMLElement* xleft = xnode->FirstChildElement();
+    tinyxml2::XMLElement* xright = xleft->NextSiblingElement();
 
     // If there are daughters link the node objects appropriately.
     tnode->theMiracleOfChildBirth();
@@ -520,7 +439,7 @@ void Tree::loadFromXMLRecursive(TXMLEngine* xml, XMLNodePointer_t xnode, Node* t
     terminalNodes.push_back(tright);
     numTerminalNodes++;
 
-    loadFromXMLRecursive(xml, xleft, tleft);
-    loadFromXMLRecursive(xml, xright, tright);
+    loadFromXMLRecursive(xleft, tleft);
+    loadFromXMLRecursive(xright, tright);
 }
 
