@@ -409,7 +409,7 @@ void Forest::doRegression(int nodeLimit, int treeLimit, float learningRate, Loss
         std::string s = ss.str();
         const char* c = s.c_str();
 
-        if(saveTrees) tree->saveToXML(c);
+        if(saveTrees) tree->tsaveToXML(c);
     }
     std::cout << std::endl;
     std::cout << std::endl << "Done." << std::endl << std::endl;

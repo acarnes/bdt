@@ -6,8 +6,7 @@
 #include <list>
 #include "Node.h"
 #include "TXMLEngine.h"
-
-//class Node;
+#include "tinyxml2.h"
 
 class Tree
 {
@@ -34,6 +33,10 @@ class Tree
         void saveToXML(const char* filename);
         void saveToXMLRecursive(TXMLEngine* xml, Node* node, XMLNodePointer_t np);
         void addXMLAttributes(TXMLEngine* xml, Node* node, XMLNodePointer_t np);
+
+        void tsaveToXML(const char* filename);
+        void tsaveToXMLRecursive(tinyxml2::XMLDocument* xmlDoc, Node* node, tinyxml2::XMLElement* np);
+        void taddXMLAttributes(Node* node, tinyxml2::XMLElement* np);
 
         void loadFromXML(const char* filename);
         void loadFromXMLRecursive(TXMLEngine* xml, XMLNodePointer_t node, Node* tnode);

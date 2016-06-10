@@ -62,7 +62,7 @@ TransformFunction* transform = 0;
 bool saveTrees = true;
 
 // Where to save the trees.
-TString treesDirectory("../trees/");
+TString treesDirectory("../tinytrees/");
 
 /////////////////////////////////////////////////////////////////////////
 // ---------------------------------------------------------------------
@@ -182,8 +182,8 @@ void buildAndEvaluateForest()
 
   // The forest built from the training above is already in memory. There is no need to load from xml.
   // If you wish to test from a forest that was saved to xml you would do the following.
-  // forest->loadForestFromXML(treesDirectory);
-  // displaySettingsFromXML(treesDirectory); 
+  forest->loadForestFromXML(treesDirectory, trees);
+  displaySettingsFromXML(treesDirectory); 
 
   // Read In events.
   trainingEvents = std::vector<Event*>(); // clear memory of training events

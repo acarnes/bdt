@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////
 
 #include "Tree.h"
+#include "tinyxml2.h"
 #include <iostream>
 #include <sstream>
 #include <cmath>
@@ -331,6 +332,38 @@ void Tree::addXMLAttributes(TXMLEngine* xml, Node* node, XMLNodePointer_t np)
 
 // ----------------------------------------------------------------------
 
+void Tree::taddXMLAttributes(Node* node, tinyxml2::XMLElement* np)
+{
+    // Convert Node members into XML attributes    
+    // and add them to the XMLEngine.
+    np->SetAttribute("splitVar", node->getSplitVariable());
+    np->SetAttribute("splitVal", node->getSplitValue());
+    np->SetAttribute("fitVal", node->getFitValue());
+}
+
+// ----------------------------------------------------------------------
+
+void Tree::tsaveToXML(const char* c)
+{
+    tinyxml2::XMLDocument* xmlDoc = new tinyxml2::XMLDocument();
+
+    // Add the root node.
+    tinyxml2::XMLElement* xmlroot = xmlDoc->NewElement(rootNode->getName().c_str());
+    taddXMLAttributes(rootNode, xmlroot);
+    xmlDoc->InsertFirstChild(xmlroot);
+
+    // Recursively write the tree to XML.
+    tsaveToXMLRecursive(xmlDoc, rootNode, xmlroot);
+
+    // Make the XML Document.
+    tinyxml2::XMLError eResult = xmlDoc->SaveFile(c);
+    //tinyxml2::XMLCheckResult(eResult);
+
+    delete xmlDoc;
+}
+
+// ----------------------------------------------------------------------
+
 void Tree::saveToXML(const char* c)
 {
 
@@ -375,6 +408,32 @@ void Tree::saveToXMLRecursive(TXMLEngine* xml, Node* node, XMLNodePointer_t np)
     // Recurse.
     saveToXMLRecursive(xml, l, left);
     saveToXMLRecursive(xml, r, right);
+}
+
+// ----------------------------------------------------------------------
+
+void Tree::tsaveToXMLRecursive(tinyxml2::XMLDocument* xmlDoc, Node* node, tinyxml2::XMLElement* np)
+{
+    Node* l = node->getLeftDaughter();
+    Node* r = node->getRightDaughter();
+
+    if(l==0 || r==0) return;
+
+    // Add children to the XMLDoc 
+    tinyxml2::XMLElement* left = xmlDoc->NewElement("left");
+    tinyxml2::XMLElement* right = xmlDoc->NewElement("right");
+
+    // Add attributes to the children.
+    taddXMLAttributes(l, left);
+    taddXMLAttributes(r, right);
+
+    // need to link the children to the parent
+    np->InsertEndChild(left);
+    np->InsertEndChild(right);
+
+    // Recurse.
+    tsaveToXMLRecursive(xmlDoc, l, left);
+    tsaveToXMLRecursive(xmlDoc, r, right);
 }
 
 // ----------------------------------------------------------------------
