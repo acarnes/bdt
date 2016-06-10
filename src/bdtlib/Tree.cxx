@@ -17,7 +17,6 @@
 ///////////////////////////////////////////////////////////////////////////
 
 #include "Tree.h"
-#include "tinyxml2.h"
 #include <iostream>
 #include <sstream>
 #include <cmath>
@@ -388,7 +387,7 @@ void Tree::loadFromXML(const char* filename)
 
     // Get access to main node of the xml file.
     tinyxml2::XMLElement* xmlroot = xmlDoc->FirstChildElement();
-    if(xmlroot == nullptr)
+    if(xmlroot == 0)
     {
         std::cout << std::endl;
         std::cout << "Error reading xml file. Quitting." << std::endl;

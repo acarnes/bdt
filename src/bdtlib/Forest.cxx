@@ -19,17 +19,6 @@
 #include "Forest.h"
 #include "Utilities.h"
 
-#include "TRandom3.h"
-#include "TStopwatch.h"
-#include "TROOT.h"
-#include "TTree.h"
-#include "TNtuple.h"
-#include "TFile.h"
-#include "TH1D.h"
-#include "TGraph.h"
-#include "TCanvas.h"
-#include "TChain.h"
-
 #include <iostream>
 #include <sstream>
 #include <algorithm>
@@ -277,7 +266,7 @@ void Forest::saveSplitValues(const char* savefilename)
     // The 0th variable is special and is not used for splitting, so we start at 1.
     for(unsigned int i=1; i<v.size(); i++)
     {
-      TString splitValues;
+      std::string splitValues;
       for(unsigned int j=0; j<v[i].size(); j++)
       {
         std::stringstream ss;
@@ -287,7 +276,7 @@ void Forest::saveSplitValues(const char* savefilename)
         splitValues+=ss.str().c_str();
       }
 
-      splitValues=splitValues(1,splitValues.Length());
+      splitValues=splitValues.substr(1,splitValues.size());
       splitvaluefile << splitValues << std::endl << std::endl;;
     }
 }
@@ -381,10 +370,6 @@ void Forest::doRegression(int nodeLimit, int treeLimit, float learningRate, Loss
     std::cout << "Sorting event vectors..." << std::endl;
     sortEventVectors(events);
 
-    // See how long the regression takes.
-    TStopwatch timer;
-    timer.Start(kTRUE);
-
     for(unsigned int i=0; i< (unsigned) treeLimit; i++)
     {
         std::cout << "++Building Tree " << i << "... " << std::endl;
@@ -414,7 +399,6 @@ void Forest::doRegression(int nodeLimit, int treeLimit, float learningRate, Loss
     std::cout << std::endl;
     std::cout << std::endl << "Done." << std::endl << std::endl;
 
-//    std::cout << std::endl << "Total calculation time: " << timer.RealTime() << std::endl;
 }
 
 //////////////////////////////////////////////////////////////////////////
