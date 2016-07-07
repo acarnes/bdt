@@ -19,10 +19,23 @@ struct Event
     Double_t predictedValue;
 
     // Extra variables added for my own studies
-    Double_t DTPt;
     Double_t CSCPt;
+    Double_t dPhi12;
+    Double_t dPhi23;
+    Double_t dPhi34;
+    Double_t dEta12;
+    Double_t dEta23;
+    Double_t dEta34;
+    Double_t CLCT1;
+    Double_t CLCT2;
+    Double_t CLCT3;
+    Double_t CLCT4;
+    Double_t TrackEta;
+    Double_t GenEta;
+    Double_t LegacyPt;
+  
     Double_t tmvaPt;
-    Double_t tmvaPt1;
+    Double_t tmvaPt1; 
     Double_t emuPt;
     Int_t Mode;
     Int_t Quality;
