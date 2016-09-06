@@ -247,7 +247,7 @@ void Forest::saveSplitValues(const char* savefilename)
     // for each variable i in v[i].
     std::vector< std::vector<float> > v(events.size(), std::vector<float>());
 
-    std::cout << std::endl << "Gathering split values... " << std::endl;
+    std::cout << std::endl << "Gathering split values and outputting to file... " << std::endl;
 
     // Gather the split values from each tree in the forest.
     for(unsigned int j=0; j<trees.size(); j++)
@@ -276,8 +276,11 @@ void Forest::saveSplitValues(const char* savefilename)
         splitValues+=ss.str().c_str();
       }
 
-      splitValues=splitValues.substr(1,splitValues.size());
-      splitvaluefile << splitValues << std::endl << std::endl;;
+      if(splitValues.size() > 1)
+        splitValues=splitValues.substr(1,splitValues.size());
+      else splitValues = "";
+
+      splitvaluefile << "var " << i << ": " << splitValues << std::endl;
     }
 }
 //////////////////////////////////////////////////////////////////////////

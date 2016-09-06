@@ -178,7 +178,7 @@ void buildAndEvaluateForest()
   forest->rankVariables(rank);
 
   // Save the lists of split values for each variable into a file.
-  //forest->saveSplitValues("./splitvalues.dat");
+  forest->saveSplitValues("./splitvalues.dat");
 
   ///////////////////////////////////
   // Test 
