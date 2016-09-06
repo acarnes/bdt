@@ -54,15 +54,10 @@ class LeastSquares : public LossFunction
         void setTargets(std::vector<Event*>& v)
         {
         // set the targets for tree based upon the previous predictions
-            std::cout << "LeastSquaresLossFunctionBDT::SetTargets" << std::endl;
-            std::cout << "=======================================================" << std::endl << std::endl;
-         
-            std::cout << "i: trueValue, predictedValue, target, weight" << std::endl;
             for(unsigned int j=0; j<v.size(); j++)
             {
                 Event* e = v[j];
                 e->data[0] = target(e);
-                std::cout << j << ": " << e->trueValue << ", " << e->predictedValue << ", " << e->data[0] << std::endl;
             }
         }       
 
