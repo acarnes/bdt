@@ -225,12 +225,21 @@ void Node::calcOptimumSplit()
 
     // Calculate the sum of the target variables and the sum of
     // the target variables squared. We use these later.
+    std::cout << "list events in node..." << std::endl;
+    std::cout << "    i: target" << std::endl;
     for(unsigned int i=0; i<events[0].size(); i++)
     {   
         float target = events[0][i]->data[0];
         SUM += target;
         SSUM += target*target;
+        std::cout << "    " << i << ": " << target << std::endl;
     }  
+
+    listEvents();
+
+    // n*[ <y^2>-k^2 ]
+    totalError = SSUM - SUM*SUM/numEvents;
+//    std::cout << "totalError= " << totalError << std::endl;
 
     unsigned int numVars = events.size();
 
@@ -266,7 +275,7 @@ void Node::calcOptimumSplit()
                 // the following statement.
                 candidateErrorReduction = SUMleft*SUMleft/nleft + SUMright*SUMright/nright - SUM*SUM/numEvents;
 //                std::cout << "candidateErrorReduction= " << candidateErrorReduction << std::endl << std::endl;
-                
+            
                 // if the new candidate is better than the current best, then we have a new overall best.
                 if(candidateErrorReduction > bestErrorReduction)
                 {
@@ -279,6 +288,8 @@ void Node::calcOptimumSplit()
             nright = nright-1;
             nleft = nleft+1;
         }
+        std::cout << std::endl << "depth: sepGain, var, cutValue" << std::endl;
+        std::cout << this->getName().c_str() << ": " << bestErrorReduction/totalError << ", " << bestSplitVariable << ", " << bestSplitValue << std::endl;
     }
  
     // Store the information gained from our computations.
@@ -287,9 +298,6 @@ void Node::calcOptimumSplit()
     fitValue = SUM/numEvents;
 //    std::cout << "fitValue= " << fitValue << std::endl;
 
-    // n*[ <y^2>-k^2 ]
-    totalError = SSUM - SUM*SUM/numEvents;
-//    std::cout << "totalError= " << totalError << std::endl;
 
     // [ <y^2>-k^2 ]
     avgError = totalError/numEvents;
@@ -303,6 +311,10 @@ void Node::calcOptimumSplit()
 //    std::cout << "splitVariable= " << splitVariable << std::endl;
 
     splitValue = bestSplitValue;
+    std::cout << std::endl << "depth: best separationGain, best var, best varval" << std::endl;
+    std::cout << this->getName().c_str() << ": " << bestErrorReduction/totalError << ", " << bestSplitVariable << ", " << bestSplitValue << std::endl << std::endl;
+    std::cout << std::endl;
+
 //    std::cout << "splitValue= " << splitValue << std::endl;
 
     //if(bestSplitVariable == -1) std::cout << "splitVar = -1. numEvents = " << numEvents << ". errRed = " << errorReduction << std::endl;

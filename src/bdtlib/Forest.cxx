@@ -289,10 +289,14 @@ void Forest::fit(Tree* tree, float learningRate, LossFunction* l)
 // Prepare the global vector of events for the next tree.
 // Calculate the fit value for each terminal node. 
 // Update the predicted value for each event based upon the terminal node it fell into. 
+    std::cout << std::endl << "!!! GradBoostRegression: Tree - " << trees.size() << std::endl;
+    std::cout << "=======================================================" << std::endl << std::endl;
 
     // Get the list of terminal nodes for this tree.
     std::list<Node*>& tn = tree->getTerminalNodes();
 
+    std::cout << "ileave: fit, evs.size()" << std::endl;
+    unsigned int i = 0;
     // Loop through the terminal nodes.
     for(std::list<Node*>::iterator it=tn.begin(); it!=tn.end(); it++)
     {   
@@ -301,23 +305,32 @@ void Forest::fit(Tree* tree, float learningRate, LossFunction* l)
 
         // Fit the events depending on the loss function criteria.
         float fit = l->fit(v);
+        std::cout << i << ": " << fit << ", " << v.size() << std::endl;
 
         // Scale the rate at which the algorithm converges.
         fit = learningRate*fit;
 
         // Store the official fit value in the terminal node.
-        (*it)->setFitValue(fit);
+        // If this is the first tree in the forest, there was an initial constant prediction applied to every event
+        // so we account for this by adding the constant prediction to every terminal node.
+        // In this way when evaluating on another set of events those will also get the initial prediction
+        if(trees.size() == 1) (*it)->setFitValue(fit + v[0]->predictedValue); // all events were shifted the same so we grab the value from the 0th event
+        else (*it)->setFitValue(fit);
+
 
         // Loop through each event in the terminal region and update the
-        // the target for the next tree.
+        // the predicted value so that we can form the targets for the next tree.
+        std::cout << "i: trueValue, predictedValue, residual" << std::endl;
         for(unsigned int j=0; j<v.size(); j++)
         {
             Event* e = v[j];
+            std::cout << "   " << j << ": " << e->trueValue << ", " << e->predictedValue << ", " << e->trueValue - e->predictedValue << std::endl;
             e->predictedValue += fit;
         }
 
         // Release memory.
         (*it)->getEvents() = std::vector< std::vector<Event*> >();
+        i++;
     }
 }
 
@@ -377,16 +390,61 @@ void Forest::doRegression(int nodeLimit, int treeLimit, float learningRate, Loss
         // Initialize the new tree
         Tree* tree = new Tree(events);
 
+        // Add the tree to the forest
+        trees.push_back(tree);    
+
+        // We need to initialize the events for the loss function if this is the first tree.
+        // LeastSquares: predictedValue += mean(trueValue-predictedValue)
+        // Huber: update predictedValue += median(trueValue-predictedValue)
+        // AbsoluteDeviation: predictedValue += median(trueValue-predictedValue)
+        if(i == 0)
+        {
+            std::cout << std::endl << "!!! InitGradBoost: Tree - "  << i << std::endl;
+            std::cout << "=======================================================" << std::endl << std::endl;
+
+            std::cout << "i: init trueValue, predictedValue, residual" << std::endl;
+            for(unsigned int j=0; j<events[0].size(); j++)
+            {
+                std::cout << j << ": " << events[0][j]->trueValue << ", " << events[0][j]->predictedValue << ", " << events[0][j]->trueValue - events[0][j]->predictedValue << std::endl;
+            }
+
+            float initialFit = l->fit(events[0]);
+            std::cout << "weightedMean" << std::endl;
+            std::cout << initialFit << std::endl;
+
+            for(unsigned int j=0; j<events[0].size(); j++)
+                events[0][j]->predictedValue += initialFit;
+
+            std::cout << "LeastSquaresLossFunctionBDT::Init" << std::endl;
+            std::cout << "=======================================================" << std::endl << std::endl;
+
+            std::cout << "i: post init trueValue, predictedValue, residual" << std::endl;
+            for(unsigned int j=0; j<events[0].size(); j++)
+            {
+                std::cout << j << ": " << events[0][j]->trueValue << ", " << events[0][j]->predictedValue << ", " << events[0][j]->trueValue - events[0][j]->predictedValue << std::endl;
+            }
+
+        }
+
         // Set the targets for the tree based upon the predictions from the last tree
+        std::cout << std::endl << "!!! UpdateTargetsRegression: Tree - " << i << std::endl;
+        std::cout << "=======================================================" << std::endl << std::endl;
+
+        std::cout << "Updating targets..." << std::endl;
         l->setTargets(events[0]);
 
-        // Add the tree to the forest and build it
-        trees.push_back(tree);    
         tree->buildTree(nodeLimit);
 
         // Fit the terminal nodes with the correct predictions
         // Update the predicted values for the events
         fit(tree, learningRate, l);
+        std::cout << "NOT FIRST. Updating predicted values" << std::endl;             
+        std::cout << "i: trueValue, predictedValue, residual" << std::endl;
+        for(unsigned int j=0; j<events[0].size(); j++)
+        {
+            std::cout << j << ": " << events[0][j]->trueValue << ", " << events[0][j]->predictedValue << ", " << events[0][j]->trueValue - events[0][j]->predictedValue << std::endl;
+        }
+
 
         // Save trees to xml in some directory.
         std::ostringstream ss; 

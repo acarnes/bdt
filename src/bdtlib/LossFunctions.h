@@ -54,18 +54,21 @@ class LeastSquares : public LossFunction
         void setTargets(std::vector<Event*>& v)
         {
         // set the targets for tree based upon the previous predictions
-        
+            std::cout << "LeastSquaresLossFunctionBDT::SetTargets" << std::endl;
+            std::cout << "=======================================================" << std::endl << std::endl;
+         
+            std::cout << "i: trueValue, predictedValue, target, weight" << std::endl;
             for(unsigned int j=0; j<v.size(); j++)
             {
                 Event* e = v[j];
                 e->data[0] = target(e);
+                std::cout << j << ": " << e->trueValue << ", " << e->predictedValue << ", " << e->data[0] << std::endl;
             }
         }       
 
         float fit(std::vector<Event*>& v)
         {
         // The average of the residuals minmizes the Loss Function for LS.
-
             float SUM = 0;
             for(unsigned int i=0; i<v.size(); i++)
             {
@@ -158,6 +161,8 @@ class Huber : public LossFunction
         { 
             // consider the last 30% of the residuals to be the outliers
             this->quantile_cut = 0.7; 
+            this->quantile = 0;          // setTargets will override this when called
+            this->residual_median = 0;   // fit will override this when called
         }
 
         Huber(double quantile_cut)
@@ -165,6 +170,8 @@ class Huber : public LossFunction
             // quantile_cut determines the fraction of the residuals that make up the core 
             // of the distribution. The rest are the outliers.
             this->quantile_cut = quantile_cut; 
+            this->quantile = 0;          // setTargets will override this when called, set to zero intially so that the initial fit yields the median
+            this->residual_median = 0;   // fit will override this when called
         }
         ~Huber(){}
  
@@ -188,15 +195,16 @@ class Huber : public LossFunction
         {
         // set the targets for tree based upon the previous predictions
         
+            // calculate the quantile for all of the events once at the beginning.
+            // each terminal node will then use the quantile for all of the events when determining 
+            // which event is an outlier rather than the quantile within the terminal node
+            quantile = calculateQuantile(v, quantile_cut, true);
+
             for(unsigned int j=0; j<v.size(); j++)
             {
                 Event* e = v[j];
                 e->data[0] = target(e);
             }
-            // calculate the quantile for all of the events once at the beginning.
-            // each terminal node will then use the quantile for all of the events when determining 
-            // which event is an outlier rather than the quantile within the terminal node
-            quantile = calculateQuantile(v, quantile_cut, true);
         }       
 
         float fit(std::vector<Event*>& v)

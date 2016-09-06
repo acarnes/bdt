@@ -94,18 +94,6 @@ void preprocessTrain(std::vector<Event*>& events, LossFunction* lf, PreliminaryF
         }
     }
 
-    // Huber needs the residual quantile and the residual median before assigning the target.
-    // These are set and calculated in the fit function.
-    if(lf->name().compare("Huber")==0) lf->fit(events);
-
-    // Set the initial regression target for each event.
-    for(unsigned int i=0; i<events.size(); i++)
-    {
-       Event* e = events[i];
-       if(prelimfit!=0) e->data[0] = lf->target(e);
-       else e->data[0] = e->trueValue;
-    }
-
     if(failed > 0)
         std::cout << "==== NUM REMOVED EVENTS: " << failed << std::endl;
 }
@@ -321,6 +309,89 @@ void loadEvents(const char* inputfilename, std::vector<Event*>& events)
     delete f;
 }
 
+////////////////////////////////////////////////////////////
+//----------------------------------------------------------
+////////////////////////////////////////////////////////////
+
+void loadEventsCalo(const char* inputfilename, std::vector<Event*>& events)
+{
+// for the tmva baseline comparison we only work with mode 3 <--> hits in stations 1 and 2 
+    std::cout << "Reading in events from " << inputfilename << " ..." << std::endl;
+
+    // Get the ntuple.
+    TFile* f = new TFile(inputfilename);
+    TNtuple* ntuple = (TNtuple*)f->Get("TreeR");
+
+    // The variables in the ntuple.
+    Float_t etruth;
+    Float_t e0, e1, e2, e3, e4, e5, e6, e7, e8, e9, e10, e11, e12, esum;
+    Float_t phi, eta;
+    Float_t phi0, eta0;
+
+    // Let the ntuple know about our variables above.
+    ntuple->SetBranchAddress("etruth", &etruth);
+    ntuple->SetBranchAddress("e0", &e0);
+    ntuple->SetBranchAddress("e1", &e1);
+    ntuple->SetBranchAddress("e2", &e2);
+    ntuple->SetBranchAddress("e3", &e3);
+    ntuple->SetBranchAddress("e4", &e4);
+    ntuple->SetBranchAddress("e5", &e5);
+    ntuple->SetBranchAddress("e6", &e6);
+    ntuple->SetBranchAddress("e7", &e7);
+    ntuple->SetBranchAddress("e8", &e8);
+    ntuple->SetBranchAddress("e9", &e9);
+    ntuple->SetBranchAddress("e10", &e10);
+    ntuple->SetBranchAddress("e11", &e11);
+    ntuple->SetBranchAddress("e12", &e12);
+    ntuple->SetBranchAddress("esum", &esum);
+    ntuple->SetBranchAddress("phi", &phi);
+    ntuple->SetBranchAddress("eta", &eta);
+    ntuple->SetBranchAddress("phi0", &phi0);
+    ntuple->SetBranchAddress("eta0", &eta0);
+
+    // Loop through the events.
+    for(unsigned int i=0; i<ntuple->GetEntries(); i++)
+    {
+        // Put the info from the ntuple entry into the vars above.
+        ntuple->GetEntry(i);
+
+        // Store the variables needed for prediciton.
+        std::vector<float> x;
+        x.push_back(etruth);    // target goes in x[0]
+        x.push_back(e0);       // features go in x[1]->x[N]
+        x.push_back(e1);       
+        x.push_back(e2);       
+        x.push_back(e3);       
+        x.push_back(e4);       
+        x.push_back(e5);       
+        x.push_back(e6);       
+        x.push_back(e7);       
+        x.push_back(e8);       
+        x.push_back(e9);       
+        x.push_back(e10);       
+        x.push_back(e11);       
+        x.push_back(e12);       
+        x.push_back(esum);       
+        x.push_back(phi);       
+        x.push_back(eta);       
+        x.push_back(phi0);       
+        x.push_back(eta0);       
+
+        // Load info into the event data structure.
+        Event* e = new Event();
+        e->trueValue = etruth;
+        e->predictedValue = 0;
+        e->data = x;           // vector with features plus target from above
+        e->id = i;
+
+        // Store in the vector of events.
+        events.push_back(e);
+    }
+    
+    delete ntuple;
+    delete f;
+}
+
 //////////////////////////////////////////////////////////////////////////
 // ______________________Save Events____________________________________//
 //////////////////////////////////////////////////////////////////////////
@@ -370,5 +441,53 @@ void saveEvents(const char* savefilename, std::vector<Event*>& events)
     delete f;
 }
 
+////////////////////////////////////////////////////////////
+//----------------------------------------------------------
+////////////////////////////////////////////////////////////
+
+void saveEventsCalo(const char* savefilename, std::vector<Event*>& events)
+{
+// After using the forest to predict values for a collection of events, save them along with their predicted values into an ntuple.
+
+    std::cout << "Saving events into " << savefilename << "..." << std::endl;
+
+    // Will detail all of the variables used in the regression. They will be saved into the ntuple.
+    TString ntupleVars("etruth:eBDT:e0:e1:e2:e3:e4:e5:e6:e7:e8:e9:e10:e11:e12:esum:phi:eta:phi0:eta0");
+
+    // Make a new ntuple.
+    TNtuple* n = new TNtuple("BDTresults", "BDTresults", ntupleVars); 
+
+    // Add events to the ntuple.
+    for(unsigned int i=0; i<events.size(); i++) 
+    {    
+        Event* e = events[i];
+
+        Float_t predictedValue = e->predictedValue;
+        Float_t trueValue = e->trueValue;
+
+        // values to be saved in the ntuple
+        // order defined in ntupleVars string
+        std::vector<Float_t> y;
+
+        // save true and predicted values
+        y.push_back(TMath::Abs(trueValue));
+        y.push_back(TMath::Abs(predictedValue));
+
+        // add feature values
+        for(unsigned int j=1; j<e->data.size(); j++)
+            y.push_back((Float_t) e->data[j]);
+
+        // save into ntuple
+        n->Fill(&y[0]);
+    }
+
+    // Save the ntuple.
+    TFile* f = new TFile(savefilename, "RECREATE");
+    f->cd();
+    n->Write();
+    f->Close();
+    //delete n;
+    delete f;
+}
 #endif
 

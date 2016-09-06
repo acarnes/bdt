@@ -43,15 +43,15 @@
 // main if you want input from the terminal to determine the settings.
 
 // Fundamental settings for the regression.
-int nodes = 16;
-int trees = 64;
+int nodes = 4;
+int trees = 2;
 float lr = 0.3;
 
 // Choose which loss function to use.
-//LossFunction* lf = new LeastSquares();
+LossFunction* lf = new LeastSquares();
 //LossFunction* lf = new AbsoluteDeviation();
-LossFunction* lf = new Huber();                 // Default Huber, tails are the largest 30% of the residuals
-//LossFunction* lf = new Huber(0.5);            // Huber considering the largest 50% of the residuals to be outliers
+//LossFunction* lf = new Huber();                 // Default Huber, tails are the largest 30% of the residuals
+//LossFunction* lf = new Huber(0.5);              // Huber considering the largest 50% of the residuals to be outliers
 
 // Choose which transform to use.
 TransformFunction* transform = 0;
@@ -138,7 +138,11 @@ void buildAndEvaluateForest()
   std::vector<Event*> testingEvents;
 
   // Load training events from an ntuple into the training vector.
-  loadEvents("/afs/cern.ch/user/a/acarnes/public/iml/ptrootfiles/Output_Trimmed_97p5_Mode3_100k.root", trainingEvents);
+  loadEvents("/afs/cern.ch/user/a/acarnes/public/iml/ptrootfiles/ex/Output_Trimmed_97p5_Mode3_20.root", trainingEvents);
+  loadEvents("/afs/cern.ch/user/a/acarnes/public/iml/ptrootfiles/ex/Output_Trimmed_97p5_TEST_Mode3_100k.root", testingEvents);
+  //loadEventsCalo("/afs/cern.ch/user/a/acarnes/public/iml/ptrootfiles/testDataReg.root", trainingEvents);
+  //trainingEvents = std::vector<Event*>(trainingEvents.begin(), trainingEvents.begin()+20);
+  //testingEvents = std::vector<Event*>(trainingEvents.begin()+25000, trainingEvents.end());
 
   // Preprocess datasets: apply the transformations and preliminary fits.
   preprocessTrain(trainingEvents, lf, 0, transform);
@@ -174,7 +178,7 @@ void buildAndEvaluateForest()
   forest->rankVariables(rank);
 
   // Save the lists of split values for each variable into a file.
-  forest->saveSplitValues("./splitvalues.dat");
+  //forest->saveSplitValues("./splitvalues.dat");
 
   ///////////////////////////////////
   // Test 
@@ -187,7 +191,6 @@ void buildAndEvaluateForest()
 
   // Read In events.
   trainingEvents = std::vector<Event*>(); // clear memory of training events
-  loadEvents("/afs/cern.ch/user/a/acarnes/public/iml/ptrootfiles/Output_Trimmed_97p5_TEST_Mode3_100k.root", testingEvents);
   
   // Preprocess datasets.
   preprocessTest(testingEvents, lf, 0, transform);
