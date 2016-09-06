@@ -323,7 +323,6 @@ void Forest::fit(Tree* tree, float learningRate, LossFunction* l)
 
         // Release memory.
         (*it)->getEvents() = std::vector< std::vector<Event*> >();
-        i++;
     }
 }
 
