@@ -232,8 +232,6 @@ void Node::calcOptimumSplit()
         SSUM += target*target;
     }  
 
-    listEvents();
-
     // n*[ <y^2>-k^2 ]
     totalError = SSUM - SUM*SUM/numEvents;
 //    std::cout << "totalError= " << totalError << std::endl;
