@@ -341,11 +341,11 @@ void readInEvents(const char* inputfilename, std::vector<Event*>& events, int mo
         ntuple->GetEntry(i);
 
         // Initialize some things.
-        Double_t dPhiAB = -999999, dThetaAB = -999999, dEtaAB= -999999;
-        Double_t CLCTA = -999999, CLCTB = -999999;
-        Double_t cscidA = -999999, cscidB = -999999;
-        Double_t frA = -999999, frB = -999999;
-        std::vector<Double_t> x;
+        float dPhiAB = -999999, dThetaAB = -999999, dEtaAB= -999999;
+        float CLCTA = -999999, CLCTB = -999999;
+        float cscidA = -999999, cscidB = -999999;
+        float frA = -999999, frB = -999999;
+        std::vector<float> x;
 
         // For exclusive we only want to consider Mode == mode.
         if((int)Mode != mode && exclusive) continue;
@@ -594,7 +594,7 @@ void loadFull(const char* inputfilename, std::vector<Event*>& events)
         else if(CLCT4 == 2)  CLCT4 = -4;
 
         // Store the variables needed for prediciton.
-        std::vector<Double_t> x(39);
+        std::vector<float> x(39);
         x[0] = GenPt;
         x[1] = GenEta;
         x[2] = GenPhi;
@@ -733,7 +733,7 @@ void loadEventsInclusive(const char* inputfilename, std::vector<Event*>& events,
         if(((int)Mode & mode) != mode) continue;
 
         // Store the variables needed for prediciton.
-        std::vector<Double_t> x;
+        std::vector<float> x;
         x.push_back(GenPt);
         //x.push_back(GenEta);
         //x.push_back(GenPhi);
@@ -874,7 +874,7 @@ void loadEventsExclusive(const char* inputfilename, std::vector<Event*>& events,
         if((int)Mode != mode) continue;
 
         // Store the variables needed for prediciton.
-        std::vector<Double_t> x;
+        std::vector<float> x;
         x.push_back(GenPt);
         //x.push_back(GenEta);
         //x.push_back(GenPhi);
@@ -1016,7 +1016,7 @@ void loadEventsExclusiveValidate(const char* inputfilename, std::vector<Event*>&
         if((int)Mode != mode) continue;
 
         // Store the variables needed for prediciton.
-        std::vector<Double_t> x;
+        std::vector<float> x;
         x.push_back(GenPt);
         //x.push_back(GenEta);
         //x.push_back(GenPhi);
@@ -1160,7 +1160,7 @@ void loadEventsExclusive(const char* inputfilename, std::vector<Event*>& events,
         if((int)Mode != mode) continue;
 
         // Store the variables needed for prediciton.
-        std::vector<Double_t> x;
+        std::vector<float> x;
         x.push_back(GenPt);
         //x.push_back(GenEta);
         //x.push_back(GenPhi);
@@ -1413,7 +1413,7 @@ void randomizeAndSplit(const char* inputfilename)
     loadFull(inputfilename, allEvents);
 
     // Randomize the ordering of the events.
-    shuffle(allEvents.begin(), allEvents.end(), allEvents.size());
+    Utilities::shuffle(allEvents.begin(), allEvents.end(), allEvents.size());
 
     // Store some for training.
     std::vector<Event*>trainingEvents = std::vector<Event*>(allEvents.begin(), allEvents.end()-0.1*allEvents.size());

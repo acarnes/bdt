@@ -16,6 +16,7 @@ struct Event
 {
     float trueValue;
     float predictedValue;
+    float weight;
 
     // Extra variables added for my own studies
     float DTPt;

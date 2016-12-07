@@ -24,7 +24,7 @@
 // Fundamental settings for the regression.
 Int_t nodes = 20;
 Int_t trees = 64;
-Double_t lr = 0.3;
+float lr = 0.3;
 
 // Choose which loss function to use.
 LossFunction* lf = new LeastSquares();
@@ -50,14 +50,14 @@ void loadTrainingEvents(std::vector<Event*>& events, int numEvents)
     {
         // True value y = 1*x1 + 2*x2
         TRandom3 r(0);
-        double x1 = r.Gaus(0,1);
-        double x2 = r.Gaus(0,1); 
-        double y = 1*x1 + 2*x2;
+        float x1 = r.Gaus(0,1);
+        float x2 = r.Gaus(0,1); 
+        float y = 1*x1 + 2*x2;
         
         Event* e = new Event(); // The data structure the BDT system uses for training and evaluation
         e->id = i;              // uniquely identify the event if you want to                
 
-        e->data = std::vector<Double_t>(3); // data vector should be N_features + 1
+        e->data = std::vector<float>(3); // data vector should be N_features + 1
 
         e->predictedValue = 0; // Make sure to set initial predicted value to 0 
         e->trueValue = y;      // load true value into the data structure
@@ -80,14 +80,14 @@ void loadTestingEvents(std::vector<Event*>& events, int numEvents)
     {
         // True value y = 1*x1 + 2*x2
         TRandom3 r(0);
-        double x1 = r.Gaus(0,1);
-        double x2 = r.Gaus(0,1); 
-        double y = 1*x1 + 2*x2;
+        float x1 = r.Gaus(0,1);
+        float x2 = r.Gaus(0,1); 
+        float y = 1*x1 + 2*x2;
         
         Event* e = new Event(); // The data structure the BDT system uses for training and evaluation
         e->id = i;              // uniquely identify the event if you want to                
 
-        e->data = std::vector<Double_t>(3); // data vector should be N_features + 1
+        e->data = std::vector<float>(3); // data vector should be N_features + 1
 
         e->predictedValue = 0; // Make sure to set initial predicted value to 0 
         e->trueValue = y;      // load true value into the data structure if known

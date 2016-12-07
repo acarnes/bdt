@@ -26,23 +26,23 @@ class RMS : public MetricOfSuccess
         RMS(){}
         ~RMS(){}
         
-        Double_t calculate(std::vector<Event*>& v, bool CSCPt)
+        float calculate(std::vector<Event*>& v, bool CSCPt)
         {
-            Double_t squared_err;
+            float squared_err;
             for(unsigned int i=0; i<v.size(); i++)
             {
                 Event* e = v[i];
                 // Don't include infinite values in the calculation.
                 if(e->trueValue == -1.0/0.0 || e->trueValue == 1.0/0.0) continue;
-                Double_t tval = TMath::Abs(e->trueValue);
-                Double_t pval = TMath::Abs(e->predictedValue);
+                float tval = TMath::Abs(e->trueValue);
+                float pval = TMath::Abs(e->predictedValue);
                 if(CSCPt) pval = TMath::Abs(e->CSCPt);
-                Double_t err = pval - tval;
+                float err = pval - tval;
                 squared_err += err*err;
             }
             return sqrt(squared_err/v.size());
         }
-        Double_t calculate(std::vector<Event*>& v)
+        float calculate(std::vector<Event*>& v)
         {
             calculate(v, false);
         }
@@ -58,17 +58,17 @@ class AbsError : public MetricOfSuccess
         AbsError(){}
         ~AbsError(){}
         
-        Double_t calculate(std::vector<Event*>& v)
+        float calculate(std::vector<Event*>& v)
         {
-            Double_t abs_err;
+            float abs_err;
             for(unsigned int i=0; i<v.size(); i++)
             {
                 Event* e = v[i];
                 // Don't include infinite values in the calculation.
                 if(e->trueValue == -1.0/0.0 || e->trueValue == 1.0/0.0) continue;
-                Double_t tval = e->trueValue;
-                Double_t pval = e->predictedValue;
-                Double_t err = pval - tval;
+                float tval = e->trueValue;
+                float pval = e->predictedValue;
+                float err = pval - tval;
                 abs_err += TMath::Abs(err);
             }
             return abs_err/v.size();
@@ -88,19 +88,19 @@ class AbsResolution : public MetricOfSuccess
 
     public:
         AbsResolution(){}
-        AbsResolution(std::vector<Double_t> bins){ this->bins = bins; }
+        AbsResolution(std::vector<float> bins){ this->bins = bins; }
         ~AbsResolution(){}
  
-        Double_t calculate(std::vector<Event*>& v)
+        float calculate(std::vector<Event*>& v)
         {
             // The vector bins defines the intervals for the calculation.
             // There are bins.size()-1 total intervals.
             unsigned int nbins = bins.size()-1;
         
             // Keep track of the number, sum of true values, and sum of errors for each interval.
-            std::vector<Double_t> N(nbins,0);
-            std::vector<Double_t> sum_true(nbins,0);
-            std::vector<Double_t> sum_errors(nbins,0);
+            std::vector<float> N(nbins,0);
+            std::vector<float> sum_true(nbins,0);
+            std::vector<float> sum_errors(nbins,0);
         
             for(unsigned int i=0; i<v.size(); i++)
             {   
@@ -108,14 +108,14 @@ class AbsResolution : public MetricOfSuccess
                 Event* e = v[i];
                 // Don't include infinite values in the calculation.
                 if(e->trueValue == -1.0/0.0 || e->trueValue == 1.0/0.0) continue;
-                Double_t tval = TMath::Abs(e->trueValue);
-                Double_t pval = TMath::Abs(e->predictedValue);
+                float tval = TMath::Abs(e->trueValue);
+                float pval = TMath::Abs(e->predictedValue);
 
                 // Loop through the intervals to see which one the event belongs to.
                 for(unsigned int t=0; t<nbins; t++)
                 {   
-                    Double_t mint = bins[t];
-                    Double_t maxt = bins[t+1];
+                    float mint = bins[t];
+                    float maxt = bins[t+1];
         
                     // The event belongs to the current interval.
                     // Increment the number of events, the sum of true values,
@@ -130,13 +130,13 @@ class AbsResolution : public MetricOfSuccess
                 }
             }
         
-            Double_t metric_of_success = 0;
+            float metric_of_success = 0;
         
             // Loop through the intervals.
             for(unsigned int t=0; t<nbins; t++)
             {
                 // Watch out for zero values.
-                Double_t interval_avg = (N[t]!=0)?sum_true[t]/N[t]:0;
+                float interval_avg = (N[t]!=0)?sum_true[t]/N[t]:0;
                 if(N[t]!=0) metric_of_success += sum_errors[t]/interval_avg;
             }
         
@@ -145,7 +145,7 @@ class AbsResolution : public MetricOfSuccess
 
         }
         private:
-            std::vector<Double_t> bins;
+            std::vector<float> bins;
 };
 
 //////////////////////////////////////////////////////////////////////////
@@ -161,19 +161,19 @@ class RMSResolution : public MetricOfSuccess
 
     public:
         RMSResolution(){}
-        RMSResolution(std::vector<Double_t> bins){ this->bins = bins; }
+        RMSResolution(std::vector<float> bins){ this->bins = bins; }
         ~RMSResolution(){}
  
-        Double_t calculate(std::vector<Event*>& v, bool CSCPt)
+        float calculate(std::vector<Event*>& v, bool CSCPt)
         {
             // The vector bins defines the intervals for the calculation.
             // There are bins.size()-1 total intervals.
             unsigned int nbins = bins.size()-1;
         
             // Keep track of the number, sum of true values, and sum of errors for each interval.
-            std::vector<Double_t> N(nbins,0);
-            std::vector<Double_t> sum_true(nbins,0);
-            std::vector<Double_t> sum_errors(nbins,0);
+            std::vector<float> N(nbins,0);
+            std::vector<float> sum_true(nbins,0);
+            std::vector<float> sum_errors(nbins,0);
         
             for(unsigned int i=0; i<v.size(); i++)
             {   
@@ -181,15 +181,15 @@ class RMSResolution : public MetricOfSuccess
                 Event* e = v[i];
                 // Don't include infinite values in the calculation.
                 if(e->trueValue == -1.0/0.0 || e->trueValue == 1.0/0.0) continue;
-                Double_t tval = TMath::Abs(e->trueValue);
-                Double_t pval = TMath::Abs(e->predictedValue);
+                float tval = TMath::Abs(e->trueValue);
+                float pval = TMath::Abs(e->predictedValue);
                 if(CSCPt) pval = TMath::Abs(e->CSCPt);
 
                 // Loop through the intervals to see which one the event belongs to.
                 for(unsigned int t=0; t<nbins; t++)
                 {   
-                    Double_t mint = bins[t];
-                    Double_t maxt = bins[t+1];
+                    float mint = bins[t];
+                    float maxt = bins[t+1];
         
                     // The event belongs to the current interval.
                     // Increment the number of events, the sum of true values,
@@ -204,13 +204,13 @@ class RMSResolution : public MetricOfSuccess
                 }
             }
         
-            Double_t metric_of_success = 0;
+            float metric_of_success = 0;
         
             // Loop through the intervals.
             for(unsigned int t=0; t<nbins; t++)
             {
                 // Watch out for zero values.
-                Double_t interval_avg = (N[t]!=0)?sum_true[t]/N[t]:0;
+                float interval_avg = (N[t]!=0)?sum_true[t]/N[t]:0;
                 if(N[t]!=0) metric_of_success += sum_errors[t]/(interval_avg*interval_avg);
             }
         
@@ -219,13 +219,13 @@ class RMSResolution : public MetricOfSuccess
 
         }
 
-        Double_t calculate(std::vector<Event*>& v)
+        float calculate(std::vector<Event*>& v)
         {
             calculate(v, false);
         }
 
         private:
-            std::vector<Double_t> bins;
+            std::vector<float> bins;
 };
 //////////////////////////////////////////////////////////////////////////
 // ----------------------------------------------------------------------
@@ -328,7 +328,7 @@ class CSCFit : public PreliminaryFit
 
         bool fit(Event* e)
         { 
-            Double_t CSCPt = e->CSCPt;
+            float CSCPt = e->CSCPt;
             e->predictedValue = CSCPt;
             return true; 
             
