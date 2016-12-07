@@ -17,8 +17,8 @@ class Node
         std::string getName();
         void setName(std::string sName);
 
-        float getErrorReduction();
-        void setErrorReduction(float sErrorReduction);
+        double getSignificanceGain();
+        void setSignificanceGain(double sSignificanceGain);
 
         Node * getLeftDaughter();
         void setLeftDaughter(Node *sLeftDaughter);
@@ -29,20 +29,14 @@ class Node
         Node * getParent();
         void setParent(Node *sParent);
 
-        float getSplitValue();
-        void setSplitValue(float sSplitValue);
+        double getSplitValue();
+        void setSplitValue(double sSplitValue);
 
         int getSplitVariable();
         void setSplitVariable(int sSplitVar);
 
-        float getFitValue();
-        void setFitValue(float sFitValue);
-
-        float getTotalError();
-        void setTotalError(float sTotalError);
-
-        float getAvgError();
-        void setAvgError(float sAvgError);
+        double getSignificanceSquared();
+        void setSignificanceSquared(double sSignificanceSquared);
 
         int getNumEvents();
         void setNumEvents(int sNumEvents);
@@ -63,14 +57,12 @@ class Node
         Node *rightDaughter;
         Node *parent;
 
-        float splitValue;
+        double splitValue;
         int splitVariable;
 
-        float errorReduction;
-        float totalError;
-        float avgError;
+        double significanceGain;
+        double significanceSquared;
 
-        float fitValue;
         int numEvents;
 
         std::vector< std::vector<Event*> > events;

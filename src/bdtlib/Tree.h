@@ -11,8 +11,11 @@ class Tree
 {
     public:
         Tree();
-        Tree(std::vector< std::vector<Event*> >& cEvents);
+        Tree(std::vector<Event*>& cEvents);
         ~Tree();
+
+        void setTrainingEvents(std::vector<Event*>& trainingEvents);
+        std::vector<Event*> getTrainingEvents();
 
         void setRootNode(Node *sRootNode);
         Node* getRootNode();
@@ -23,7 +26,7 @@ class Tree
         int getNumTerminalNodes();
 
         void buildTree(int nodeLimit);
-        void calcError();
+        void calcSignificance();
         void filterEvents(std::vector<Event*>& tEvents);
         void filterEventsRecursive(Node* node);
         Node* filterEvent(Event* e);
@@ -36,17 +39,22 @@ class Tree
         void loadFromXML(const char* filename);
         void loadFromXMLRecursive(tinyxml2::XMLElement* xmlnode, Node* tnode);
 
-        void rankVariables(std::vector<float>& v);
-        void rankVariablesRecursive(Node* node, std::vector<float>& v);
+        void rankVariables(std::vector<double>& v);
+        void rankVariablesRecursive(Node* node, std::vector<double>& v);
 
-        void getSplitValues(std::vector< std::vector<float> >& v);
-        void getSplitValuesRecursive(Node* node, std::vector< std::vector<float> >& v);
+        void getSplitValues(std::vector< std::vector<double> >& v);
+        void getSplitValuesRecursive(Node* node, std::vector< std::vector<double> >& v);
+
+        void sortEventVectors(std::vector< std::vector<Event*> >& e);
+        void saveSplitValues(const char* savefilename);
+        void listEvents(std::vector< std::vector<Event*> >& e);
 
     private:
+        std::vector< std::vector<Event*> > events;
         Node *rootNode;
         std::list<Node*> terminalNodes;
         int numTerminalNodes;
-        float rmsError;
+        double significance;
 };
 
 #endif

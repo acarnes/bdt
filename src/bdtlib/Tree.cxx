@@ -20,6 +20,7 @@
 #include <iostream>
 #include <sstream>
 #include <cmath>
+#include <algorithm>
 
 //////////////////////////////////////////////////////////////////////////
 // _______________________Constructor(s)________________________________//
@@ -33,10 +34,12 @@ Tree::Tree()
     numTerminalNodes = 1;
 }
 
-Tree::Tree(std::vector< std::vector<Event*> >& cEvents)
+Tree::Tree(std::vector<Event*>& cEvents)
 {
+    setTrainingEvents(cEvents);
+    sortEventVectors(events);
     rootNode = new Node("root");
-    rootNode->setEvents(cEvents);
+    rootNode->setEvents(events);
 
     terminalNodes.push_back(rootNode);
     numTerminalNodes = 1;
@@ -56,6 +59,28 @@ Tree::~Tree()
 //////////////////////////////////////////////////////////////////////////
 // ______________________Get/Set________________________________________//
 //////////////////////////////////////////////////////////////////////////
+
+void Tree::setTrainingEvents(std::vector<Event*>& trainingEvents)
+{
+    Event* e = trainingEvents[0];
+    unsigned int numrows = e->data.size();
+
+    // Reset the events matrix. 
+    events = std::vector< std::vector<Event*> >();
+
+    for(unsigned int i=0; i<e->data.size(); i++)
+    {
+        events.push_back(trainingEvents);
+    }
+
+}
+
+// return a copy of the training events
+std::vector<Event*> Tree::getTrainingEvents(){ return events[0]; }
+
+// ----------------------------------------------------------------------
+
+// ----------------------------------------------------------------------
 
 void Tree::setRootNode(Node *sRootNode)
 {
@@ -87,21 +112,74 @@ int Tree::getNumTerminalNodes()
 }
 
 //////////////////////////////////////////////////////////////////////////
+// ______________________List_and_Sort__________________________________//
+//////////////////////////////////////////////////////////////////////////
+
+void Tree::listEvents(std::vector< std::vector<Event*> >& e)
+{
+// Simply list the events in each event vector. We have multiple copies
+// of the events vector. Each copy is sorted according to a different
+// determining variable.
+    std::cout << std::endl << "Listing Events... " << std::endl;
+
+    for(unsigned int i=0; i < e.size(); i++)
+    {
+        std::cout << std::endl << "Variable " << i << " vector contents: " << std::endl;
+        for(unsigned int j=0; j<e[i].size(); j++)
+        {
+            e[i][j]->outputEvent();
+        }
+       std::cout << std::endl;
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////
+
+// We have to initialize Event::sortingIndex outside of a function since
+// it is a static member.
+int Event::sortingIndex = 1;
+
+bool compareEvents(Event* e1, Event* e2)
+{
+// Sort the events according to the variable given by the sortingIndex.
+    return e1->data[Event::sortingIndex] < e2->data[Event::sortingIndex];
+}
+
+//////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////
+
+void Tree::sortEventVectors(std::vector< std::vector<Event*> >& e)
+{
+// When a node chooses the optimum split point and split variable it needs
+// the events to be sorted according to the variable it is considering.
+
+    for(unsigned int i=0; i<e.size(); i++)
+    {
+        Event::sortingIndex = i;
+        std::sort(e[i].begin(), e[i].end(), compareEvents);
+    }
+}
+
+
+//////////////////////////////////////////////////////////////////////////
 // ______________________Performace_____________________________________//
 //////////////////////////////////////////////////////////////////////////
 
-void Tree::calcError() 
+void Tree::calcSignificance() 
 { 
 // Loop through the separate predictive regions (terminal nodes) and 
 // add up the errors to get the error of the entire space.  
  
-    float totalSquaredError = 0; 
+    double totalSignificanceSquared = 0; 
  
     for(std::list<Node*>::iterator it=terminalNodes.begin(); it!=terminalNodes.end(); it++) 
     { 
-        totalSquaredError += (*it)->getTotalError();  
+        totalSignificanceSquared += (*it)->getSignificanceSquared();  
     } 
-    rmsError = std::sqrt( totalSquaredError/rootNode->getNumEvents() ); 
+    significance = std::sqrt(totalSignificanceSquared); 
 } 
 
 // ----------------------------------------------------------------------
@@ -109,21 +187,21 @@ void Tree::calcError()
 void Tree::buildTree(int nodeLimit)
 {
     // We greedily pick the best terminal node to split.
-    float bestNodeErrorReduction = -1;
+    double bestNodeSignificanceGain = -1;
     Node* nodeToSplit = 0;
 
     if(numTerminalNodes == 1)
     {   
         rootNode->calcOptimumSplit();
-        calcError();
-//        std::cout << std::endl << "  " << numTerminalNodes << " Nodes : " << rmsError << std::endl;
+        calcSignificance();
+        std::cout << std::endl << "  " << numTerminalNodes << " Nodes : " << significance << std::endl;
     }
 
     for(std::list<Node*>::iterator it=terminalNodes.begin(); it!=terminalNodes.end(); it++)
     {   
-       if( (*it)->getErrorReduction() > bestNodeErrorReduction ) 
+       if( (*it)->getSignificanceGain() > bestNodeSignificanceGain ) 
        {   
-           bestNodeErrorReduction = (*it)->getErrorReduction();
+           bestNodeSignificanceGain = (*it)->getSignificanceGain();
            nodeToSplit = (*it);
        }    
     }   
@@ -154,11 +232,11 @@ void Tree::buildTree(int nodeLimit)
     right->calcOptimumSplit();
 
     // See if the error reduces as we add more nodes.
-    calcError();
+    calcSignificance();
  
     if(numTerminalNodes % 1 == 0)
     {
-//        std::cout << "  " << numTerminalNodes << " Nodes : " << rmsError << std::endl;
+        std::cout << "  " << numTerminalNodes << " Nodes : " << significance << std::endl;
     }
 
     // Repeat until done.
@@ -228,7 +306,7 @@ Node* Tree::filterEventRecursive(Node* node, Event* e)
 // ----------------------------------------------------------------------
 
 
-void Tree::rankVariablesRecursive(Node* node, std::vector<float>& v)
+void Tree::rankVariablesRecursive(Node* node, std::vector<double>& v)
 {
 // We recursively go through all of the nodes in the tree and find the
 // total error reduction for each variable. The one with the most
@@ -241,7 +319,7 @@ void Tree::rankVariablesRecursive(Node* node, std::vector<float>& v)
     if(left==0 || right==0) return;
 
     int sv =  node->getSplitVariable();
-    float er = node->getErrorReduction();
+    double er = node->getSignificanceGain();
 
     if(sv == -1)
     {
@@ -261,7 +339,7 @@ void Tree::rankVariablesRecursive(Node* node, std::vector<float>& v)
 
 // ----------------------------------------------------------------------
 
-void Tree::rankVariables(std::vector<float>& v)
+void Tree::rankVariables(std::vector<double>& v)
 {
     rankVariablesRecursive(rootNode, v);
 }
@@ -269,7 +347,7 @@ void Tree::rankVariables(std::vector<float>& v)
 // ----------------------------------------------------------------------
 
 
-void Tree::getSplitValuesRecursive(Node* node, std::vector< std::vector<float> >& v)
+void Tree::getSplitValuesRecursive(Node* node, std::vector< std::vector<double> >& v)
 {
 // We recursively go through all of the nodes in the tree and find the
 // split points used for each split variable.
@@ -281,7 +359,7 @@ void Tree::getSplitValuesRecursive(Node* node, std::vector< std::vector<float> >
     if(left==0 || right==0) return;
 
     int sv =  node->getSplitVariable();
-    float sp = node->getSplitValue();
+    double sp = node->getSplitValue();
 
     if(sv == -1)
     {
@@ -299,7 +377,7 @@ void Tree::getSplitValuesRecursive(Node* node, std::vector< std::vector<float> >
 
 // ----------------------------------------------------------------------
 
-void Tree::getSplitValues(std::vector< std::vector<float> >& v)
+void Tree::getSplitValues(std::vector< std::vector<double> >& v)
 {
     getSplitValuesRecursive(rootNode, v);
 }
@@ -326,7 +404,7 @@ void Tree::addXMLAttributes(Node* node, tinyxml2::XMLElement* np)
     // and add them to the XMLEngine.
     np->SetAttribute("splitVar", node->getSplitVariable());
     np->SetAttribute("splitVal", node->getSplitValue());
-    np->SetAttribute("fitVal", node->getFitValue());
+    np->SetAttribute("significanceSquared", node->getSignificanceSquared());
 }
 
 // ----------------------------------------------------------------------
@@ -408,17 +486,17 @@ void Tree::loadFromXMLRecursive(tinyxml2::XMLElement* xnode, Node* tnode)
     // Get the split information from xml.
     int splitVar;
     float splitVal;
-    float fitVal;  
+    float significanceSquared;  
 
     // can check eResult after to see if it loaded well, but nah
     tinyxml2::XMLError eResult = xnode->QueryIntAttribute("splitVar", &splitVar);
     eResult = xnode->QueryFloatAttribute("splitVal", &splitVal);
-    eResult = xnode->QueryFloatAttribute("fitVal",   &fitVal);
+    eResult = xnode->QueryFloatAttribute("significanceSquared",   &significanceSquared);
 
     // Store gathered splitInfo into the node object.
     tnode->setSplitVariable(splitVar);
     tnode->setSplitValue(splitVal);
-    tnode->setFitValue(fitVal);
+    tnode->setSignificanceSquared(significanceSquared);
 
     // If there are no daughters we are done.
     if(xnode->NoChildren()) return;

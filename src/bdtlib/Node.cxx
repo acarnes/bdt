@@ -32,9 +32,8 @@ Node::Node()
     parent = 0;
     splitValue = -99;
     splitVariable = -1;
-    avgError = -1;
-    totalError = -1;
-    errorReduction = -1;
+    significanceSquared = -1;
+    significanceGain = -1;
 }
 
 Node::Node(std::string cName)
@@ -45,9 +44,8 @@ Node::Node(std::string cName)
     parent = 0;
     splitValue = -99;
     splitVariable = -1;
-    avgError = -1;
-    totalError = -1;
-    errorReduction = -1;
+    significanceSquared = -1;
+    significanceGain = -1;
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -77,14 +75,14 @@ std::string Node::getName()
 
 // ----------------------------------------------------------------------
 
-void Node::setErrorReduction(float sErrorReduction)
+void Node::setSignificanceGain(double sSignificanceGain)
 {
-    errorReduction = sErrorReduction;
+    significanceGain = sSignificanceGain;
 }
 
-float Node::getErrorReduction()
+double Node::getSignificanceGain()
 {
-    return errorReduction;
+    return significanceGain;
 }
 
 // ----------------------------------------------------------------------
@@ -123,12 +121,12 @@ Node * Node::getParent()
 
 // ----------------------------------------------------------------------
 
-void Node::setSplitValue(float sSplitValue)
+void Node::setSplitValue(double sSplitValue)
 {
     splitValue = sSplitValue;
 }
 
-float Node::getSplitValue()
+double Node::getSplitValue()
 {
     return splitValue;
 }
@@ -145,36 +143,14 @@ int Node::getSplitVariable()
 
 // ----------------------------------------------------------------------
 
-void Node::setFitValue(float sFitValue)
+void Node::setSignificanceSquared(double sSignificanceSquared)
 {
-    fitValue = sFitValue;
+    significanceSquared = sSignificanceSquared;
 }
 
-float Node::getFitValue()
+double Node::getSignificanceSquared()
 {
-    return fitValue;
-}
-
-// ----------------------------------------------------------------------
-
-void Node::setTotalError(float sTotalError)
-{
-    totalError = sTotalError;
-}
-
-float Node::getTotalError()
-{
-    return totalError;
-}
-
-void Node::setAvgError(float sAvgError)
-{
-    avgError = sAvgError;
-}
-
-float Node::getAvgError()
-{
-    return avgError;
+    return significanceSquared;
 }
 
 // ----------------------------------------------------------------------
@@ -208,33 +184,31 @@ void Node::setEvents(std::vector< std::vector<Event*> >& sEvents)
 
 void Node::calcOptimumSplit()
 {
-// Determines the split variable and split point which would most reduce the error for the given node (region).
-// In the process we calculate the fitValue and Error. The general aglorithm is based upon  Luis Torgo's thesis.
-// Check out the reference for a more in depth outline. This part is chapter 3.
+// We want to build a tree that maximises S/sqrt(S+B) -> S^2/(S+B)
 
     // Intialize some variables.
-    float bestSplitValue = 0;
+    double bestSplitValue = 0;
     int bestSplitVariable = -1; 
-    float bestErrorReduction = -1;
+    double bestSignificanceGain = -1;
 
-    float SUM = 0;
-    float SSUM = 0;
+    double netS = 0;
+    double netB = 0;
     numEvents = events[0].size();
 
-    float candidateErrorReduction = -1;
+    double candidateSignificanceGain = -1;
 
     // Calculate the sum of the target variables and the sum of
     // the target variables squared. We use these later.
     for(unsigned int i=0; i<events[0].size(); i++)
     {   
-        float target = events[0][i]->data[0];
-        SUM += target;
-        SSUM += target*target;
+        double tvalue = events[0][i]->trueValue;
+        if(tvalue > 0) netS += events[0][i]->weight; // signal
+        else netB += events[0][i]->weight;           // background
     }  
 
-    // n*[ <y^2>-k^2 ]
-    totalError = SSUM - SUM*SUM/numEvents;
-//    std::cout << "totalError= " << totalError << std::endl;
+    // actually total significance^2 in this case
+    significanceSquared = netS*netS/(netS + netB);
+    //std::cout << "totalSignificance= " << significanceSquared << std::endl << std::endl;
 
     unsigned int numVars = events.size();
 
@@ -243,8 +217,11 @@ void Node::calcOptimumSplit()
     { 
 
         // The sum of the target variables in the left, right nodes
-        float SUMleft = 0;
-        float SUMright = SUM;
+        double SUMleftB = 0;
+        double SUMrightB = netB;
+
+        double SUMleftS = 0;
+        double SUMrightS = netS;
 
         // The number of events in the left, right nodes
         int nleft = 1;
@@ -260,21 +237,28 @@ void Node::calcOptimumSplit()
             // As the candidate split point interates, the number of events in the 
             // left/right node increases/decreases and SUMleft/right increases/decreases.
 
-            SUMleft = SUMleft + v[i-1]->data[0];
-            SUMright = SUMright - v[i-1]->data[0];
+           if(v[i-1]->trueValue > 0)
+           {
+               SUMleftS = SUMleftS + v[i-1]->weight;
+               SUMrightS = SUMrightS- v[i-1]->weight;
+           }
+           else
+           {
+               SUMleftB = SUMleftB + v[i-1]->weight;
+               SUMrightB = SUMrightB - v[i-1]->weight;
+           }
              
             // No need to check the split point if x on both sides is equal
             if(v[i-1]->data[candidateSplitVariable] < v[i]->data[candidateSplitVariable])
             {
-                // Finding the maximum error reduction for Least Squares boils down to maximizing
-                // the following statement.
-                candidateErrorReduction = SUMleft*SUMleft/nleft + SUMright*SUMright/nright - SUM*SUM/numEvents;
-//                std::cout << "candidateErrorReduction= " << candidateErrorReduction << std::endl << std::endl;
+                // instead of error reduction we are finding the increase in significance
+                candidateSignificanceGain = SUMleftS*SUMleftS/(SUMleftS + SUMleftB) + SUMrightS*SUMrightS/(SUMrightS + SUMrightB) - netS*netS/(netS + netB);
+//                std::cout << "candidateSignificanceGain= " << candidateSignificanceGain << std::endl << std::endl;
             
                 // if the new candidate is better than the current best, then we have a new overall best.
-                if(candidateErrorReduction > bestErrorReduction)
+                if(candidateSignificanceGain > bestSignificanceGain)
                 {
-                    bestErrorReduction = candidateErrorReduction;
+                    bestSignificanceGain = candidateSignificanceGain;
                     bestSplitValue = (v[i-1]->data[candidateSplitVariable] + v[i]->data[candidateSplitVariable])/2;
                     bestSplitVariable = candidateSplitVariable;
                 }
@@ -287,26 +271,20 @@ void Node::calcOptimumSplit()
  
     // Store the information gained from our computations.
 
-    // The fit value is the average for least squares.
-    fitValue = SUM/numEvents;
+    // the significance for the node
+    significanceSquared = netS*netS/(netS + netB);
 //    std::cout << "fitValue= " << fitValue << std::endl;
 
-
-    // [ <y^2>-k^2 ]
-    avgError = totalError/numEvents;
-//    std::cout << "avgError= " << avgError << std::endl;
-    
-
-    errorReduction = bestErrorReduction;
-//    std::cout << "errorReduction= " << errorReduction << std::endl;
+    significanceGain = bestSignificanceGain;
+    //std::cout << "Significance Increase = " << significanceGain << std::endl;
 
     splitVariable = bestSplitVariable;
-//    std::cout << "splitVariable= " << splitVariable << std::endl;
+    //std::cout << "splitVariable = " << splitVariable << std::endl;
 
     splitValue = bestSplitValue;
-//    std::cout << "splitValue= " << splitValue << std::endl;
+    //std::cout << "splitValue = " << splitValue << std::endl;
 
-    //if(bestSplitVariable == -1) std::cout << "splitVar = -1. numEvents = " << numEvents << ". errRed = " << errorReduction << std::endl;
+    //if(bestSplitVariable == -1) std::cout << "splitVar = -1. numEvents = " << numEvents << ". errRed = " << significanceGain << std::endl;
 }
 
 // ----------------------------------------------------------------------
@@ -358,7 +336,7 @@ void Node::filterEventsToDaughters()
 // for the given split variable. 
 
     int sv = splitVariable;
-    float sp = splitValue;
+    double sp = splitValue;
 
     Node* left = leftDaughter;
     Node* right = rightDaughter;
@@ -396,7 +374,7 @@ Node* Node::filterEventToDaughter(Event* e)
 // for the given split variable. 
 
     int sv = splitVariable;
-    float sp = splitValue;
+    double sp = splitValue;
 
     Node* left = leftDaughter;
     Node* right = rightDaughter;

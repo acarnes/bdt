@@ -52,7 +52,7 @@ class MetricOfSuccess
 {
 // Judge how well the regression worked.
     public:
-        virtual float calculate(std::vector<Event*>& v) = 0;
+        virtual double calculate(std::vector<Event*>& v) = 0;
 };
 
 #endif

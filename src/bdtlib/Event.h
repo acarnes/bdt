@@ -14,16 +14,16 @@
 
 struct Event
 {
-    float trueValue;
-    float predictedValue;
-    float weight;
+    double trueValue;
+    double predictedValue;
+    double weight;
 
     // Extra variables added for my own studies
-    float DTPt;
-    float CSCPt;
-    float tmvaPt;
-    float tmvaPt1;
-    float emuPt;
+    double DTPt;
+    double CSCPt;
+    double tmvaPt;
+    double tmvaPt1;
+    double emuPt;
     int Mode;
     int Quality;
     // ---------------------------------------
@@ -37,7 +37,7 @@ struct Event
 
     // data[0] is a special value, the target. Load this with the true value for most purposes.
     // data[1] -> data[N] are the feature variables, load the feature vars into these slots
-    std::vector<float> data;         
+    std::vector<double> data;         
 
     // Sort the events based upon the sortingIndex
     bool operator< (const Event &rhs) const

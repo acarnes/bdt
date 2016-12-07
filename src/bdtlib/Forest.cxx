@@ -193,7 +193,7 @@ void Forest::rankVariables(std::vector<int>& rank)
 
     // Initialize the vector v, which will store the total error reduction
     // for each variable i in v[i].
-    std::vector<float> v(events.size(), 0);
+    std::vector<double> v(events.size(), 0);
 
     std::cout << std::endl << "Ranking Variables by Net Error Reduction... " << std::endl;
 
@@ -202,7 +202,7 @@ void Forest::rankVariables(std::vector<int>& rank)
         trees[j]->rankVariables(v); 
     }
 
-    float max = *std::max_element(v.begin(), v.end());
+    double max = *std::max_element(v.begin(), v.end());
    
     // Scale the importance. Maximum importance = 100.
     for(unsigned int i=0; i < v.size(); i++)
@@ -212,11 +212,11 @@ void Forest::rankVariables(std::vector<int>& rank)
 
     // Change the storage format so that we can keep the index 
     // and the value associated after sorting.
-    std::vector< std::pair<float, int> > w(events.size());
+    std::vector< std::pair<double, int> > w(events.size());
 
     for(unsigned int i=0; i<v.size(); i++)
     {
-        w[i] = std::pair<float, int>(v[i],i);
+        w[i] = std::pair<double, int>(v[i],i);
     }
 
     // Sort so that we can output in order of importance.
@@ -245,7 +245,7 @@ void Forest::saveSplitValues(const char* savefilename)
 
     // Initialize the matrix v, which will store the list of split values
     // for each variable i in v[i].
-    std::vector< std::vector<float> > v(events.size(), std::vector<float>());
+    std::vector< std::vector<double> > v(events.size(), std::vector<double>());
 
     std::cout << std::endl << "Gathering split values and outputting to file... " << std::endl;
 
@@ -287,7 +287,7 @@ void Forest::saveSplitValues(const char* savefilename)
 // ______________________Update_Events_After_Fitting____________________//
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::fit(Tree* tree, float learningRate, LossFunction* l)
+void Forest::fit(Tree* tree, double learningRate, LossFunction* l)
 {
 // Prepare the global vector of events for the next tree.
 // Calculate the fit value for each terminal node. 
@@ -303,7 +303,7 @@ void Forest::fit(Tree* tree, float learningRate, LossFunction* l)
         std::vector<Event*>& v = (*it)->getEvents()[0];
 
         // Fit the events depending on the loss function criteria.
-        float fit = l->fit(v);
+        double fit = l->fit(v);
 
         // Scale the rate at which the algorithm converges.
         fit = learningRate*fit;
@@ -344,7 +344,7 @@ void Forest::updateEvents(Tree* tree)
     for(std::list<Node*>::iterator it=tn.begin(); it!=tn.end(); it++)
     {   
         std::vector<Event*>& v = (*it)->getEvents()[0];
-        float fit = (*it)->getFitValue();
+        double fit = (*it)->getFitValue();
 
         // Loop through each event in the terminal region and update the
         // the global event it maps to.
@@ -363,7 +363,7 @@ void Forest::updateEvents(Tree* tree)
 // ____________________Do/Test_the Regression___________________________//
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::doRegression(int nodeLimit, int treeLimit, float learningRate, LossFunction* l, const char* savetreesdirectory, bool saveTrees)
+void Forest::doRegression(int nodeLimit, int treeLimit, double learningRate, LossFunction* l, const char* savetreesdirectory, bool saveTrees)
 {
 // Build the forest using the training sample.
 
@@ -394,7 +394,7 @@ void Forest::doRegression(int nodeLimit, int treeLimit, float learningRate, Loss
         // AbsoluteDeviation: predictedValue += median(trueValue-predictedValue)
         if(i == 0)
         {
-            float initialFit = l->fit(events[0]);
+            double initialFit = l->fit(events[0]);
             for(unsigned int j=0; j<events[0].size(); j++)
                 events[0][j]->predictedValue += initialFit;
         }
@@ -494,7 +494,7 @@ void Forest::appendCorrection(Event* e, int treenum)
     Node* terminalNode = tree->filterEvent(e); 
 
     // Update the event with its new prediction.
-    float fit = terminalNode->getFitValue();
+    double fit = terminalNode->getFitValue();
     e->predictedValue += fit;
 }
 /////////////////////////////////////////////////////////////////////////////////////
