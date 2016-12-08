@@ -23,7 +23,7 @@
 // main if you want input from the terminal to determine the settings.
 
 // Fundamental settings for the regression.
-Int_t nodes = 8;
+Int_t nodes = 3;
 
 // Choose which significance function to use.
 SignificanceMetric* sf = new Poisson(0);
@@ -48,9 +48,9 @@ void loadTrainingEvents(std::vector<Event*>& events, int numEvents)
     {
         // True value y = 1*x1 + 2*x2
         TRandom3 r(0);
-        double x1 = r.Gaus(0,1);
-        double x2 = r.Gaus(0,1); 
-        double y = 1*x1 + 2*x2;
+        double x1 = r.Gaus(0,6);
+        double x2 = r.Gaus(0,6); 
+        double y = (x1 > 0 && x2 > 0)?1:0;
         
         Event* e = new Event(); // The data structure the BDT system uses for training and evaluation
         e->id = i;              // uniquely identify the event if you want to                
@@ -78,9 +78,9 @@ void loadTestingEvents(std::vector<Event*>& events, int numEvents)
     {
         // True value y = 1*x1 + 2*x2
         TRandom3 r(0);
-        double x1 = r.Gaus(0,1);
-        double x2 = r.Gaus(0,1); 
-        double y = 1*x1 + 2*x2;
+        double x1 = r.Gaus(0,6);
+        double x2 = r.Gaus(0,6); 
+        double y = (x1 > 0 && x2 > 0)?1:0;
         
         Event* e = new Event(); // The data structure the BDT system uses for training and evaluation
         e->id = i;              // uniquely identify the event if you want to                
@@ -136,6 +136,7 @@ void buildCategorizationTree()
   if(saveTree)
   {
       std::cout << "save tree to: " << treeDirectory+savename << std::endl;
+      tree->saveToXML(treeDirectory+savename);
   }
 
 
