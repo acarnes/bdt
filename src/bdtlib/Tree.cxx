@@ -17,6 +17,7 @@
 ///////////////////////////////////////////////////////////////////////////
 
 #include "Tree.h"
+#include "Utilities.h"
 #include <iostream>
 #include <sstream>
 #include <cmath>
@@ -43,6 +44,13 @@ Tree::Tree(std::vector<Event*>& cEvents)
 
     terminalNodes.push_back(rootNode);
     numTerminalNodes = 1;
+
+    std::vector<std::string> featureVarNames;
+    for(unsigned int i=1; i<events.size(); i++)
+    {
+        featureVarNames.push_back("x"+Utilities::numToStr<int>(i));
+    }
+    setFeatureNames(featureVarNames);
 }
 //////////////////////////////////////////////////////////////////////////
 // _______________________Destructor____________________________________//
@@ -79,6 +87,20 @@ void Tree::setTrainingEvents(std::vector<Event*>& trainingEvents)
 std::vector<Event*> Tree::getTrainingEvents(){ return events[0]; }
 
 // ----------------------------------------------------------------------
+std::vector<std::string> Tree::getFeatureNames()
+{
+    return featureNames;
+}
+
+void Tree::setFeatureNames(std::vector<std::string>& cFeatureNames)
+{
+    featureNames.clear();
+    featureNames.push_back("target");
+    for(unsigned int i=0; i<cFeatureNames.size(); i++)
+    {
+        featureNames.push_back(cFeatureNames[i]);
+    }
+}
 
 // ----------------------------------------------------------------------
 
@@ -184,7 +206,7 @@ void Tree::calcSignificance()
 
 // ----------------------------------------------------------------------
 
-void Tree::buildTree(int nodeLimit)
+void Tree::buildTree(int nodeLimit, SignificanceMetric* smetric)
 {
     // We greedily pick the best terminal node to split.
     double bestNodeSignificanceGain = -1;
@@ -192,9 +214,12 @@ void Tree::buildTree(int nodeLimit)
 
     if(numTerminalNodes == 1)
     {   
-        rootNode->calcOptimumSplit();
+        rootNode->calcOptimumSplit(smetric);
         calcSignificance();
         std::cout << std::endl << "  " << numTerminalNodes << " Nodes : " << significance << std::endl;
+        std::cout << "        +" << rootNode->getName() << ": " << std::sqrt(rootNode->getSignificanceSquared()) << ", " << rootNode->getNumEvents() << ", " 
+                  << rootNode->getNumSignal() << ", " << rootNode->getNumBackground() << ", " << rootNode->getTotalSignal() 
+                  << ", " << rootNode->getTotalBackground() << std::endl;
     }
 
     for(std::list<Node*>::iterator it=terminalNodes.begin(); it!=terminalNodes.end(); it++)
@@ -228,8 +253,8 @@ void Tree::buildTree(int nodeLimit)
     nodeToSplit->filterEventsToDaughters();  
 
     // Calculate the best splits for the new nodes.
-    left->calcOptimumSplit();
-    right->calcOptimumSplit();
+    left->calcOptimumSplit(smetric);
+    right->calcOptimumSplit(smetric);
 
     // See if the error reduces as we add more nodes.
     calcSignificance();
@@ -239,8 +264,14 @@ void Tree::buildTree(int nodeLimit)
         std::cout << "  " << numTerminalNodes << " Nodes : " << significance << std::endl;
     }
 
+    for(std::list<Node*>::iterator it=terminalNodes.begin(); it!=terminalNodes.end(); it++)
+    {   
+       std::cout << "        +" << (*it)->getName() << ": " << std::sqrt((*it)->getSignificanceSquared()) << ", " << (*it)->getNumEvents() 
+                 << ", " << (*it)->getNumSignal() << ", " << (*it)->getNumBackground() << ", " << (*it)->getTotalSignal() << ", " << (*it)->getTotalBackground() << std::endl;
+    }   
+
     // Repeat until done.
-    if(numTerminalNodes <  nodeLimit) buildTree(nodeLimit);
+    if(numTerminalNodes <  nodeLimit) buildTree(nodeLimit, smetric);
 }
 
 // ----------------------------------------------------------------------
@@ -346,6 +377,47 @@ void Tree::rankVariables(std::vector<double>& v)
 
 // ----------------------------------------------------------------------
 
+void Tree::outputVariableRanking(std::vector<std::string>& rank)
+{
+    // Initialize the vector v, which will store the total error reduction
+    // for each variable i in v[i].
+    std::vector<double> v(events.size(), 0);
+
+    std::cout << std::endl << "Ranking Variables by Net Error Reduction... " << std::endl;
+
+    rankVariables(v);
+
+    double max = *std::max_element(v.begin(), v.end());
+
+    // Scale the importance. Maximum importance = 100.
+    for(unsigned int i=0; i < v.size(); i++)
+    {
+        v[i] = 100*v[i]/max;
+    }
+
+    // Change the storage format so that we can keep the index 
+    // and the value associated after sorting.
+    std::vector< std::pair<double, int> > w(events.size());
+
+    for(unsigned int i=0; i<v.size(); i++)
+    {
+        w[i] = std::pair<double, int>(v[i],i);
+    }
+
+    // Sort so that we can output in order of importance.
+    std::sort(w.begin(),w.end());
+
+    // Output the results.
+    for(int i=(v.size()-1); i>=0; i--)
+    {
+        rank.push_back(featureNames[w[i].second]);
+        std::cout << "x" << w[i].second << ", " << featureNames[w[i].second] << ": " << w[i].first  << std::endl;
+    }
+
+    std::cout << std::endl << "Done." << std::endl << std::endl;
+}
+
+// ----------------------------------------------------------------------
 
 void Tree::getSplitValuesRecursive(Node* node, std::vector< std::vector<double> >& v)
 {

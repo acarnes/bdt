@@ -167,6 +167,54 @@ int Node::getNumEvents()
 
 // ----------------------------------------------------------------------
 
+void Node::setTotalSignal(int sTotalSignal)
+{
+    totalSignal = sTotalSignal;
+}
+
+double Node::getTotalSignal()
+{
+    return totalSignal;
+}
+
+// ----------------------------------------------------------------------
+
+void Node::setTotalBackground(int sTotalBackground)
+{
+    totalBackground = sTotalBackground;
+}
+
+double Node::getTotalBackground()
+{
+    return totalBackground;
+}
+
+// ----------------------------------------------------------------------
+
+void Node::setNumSignal(int sNumSignal)
+{
+    numSignal = sNumSignal;
+}
+
+long long int Node::getNumSignal()
+{
+    return numSignal;
+}
+
+// ----------------------------------------------------------------------
+
+void Node::setNumBackground(int sNumBackground)
+{
+    numBackground = sNumBackground;
+}
+
+long long int Node::getNumBackground()
+{
+    return numBackground;
+}
+
+// ----------------------------------------------------------------------
+
 std::vector< std::vector<Event*> >& Node::getEvents()
 {
     return events;
@@ -182,7 +230,7 @@ void Node::setEvents(std::vector< std::vector<Event*> >& sEvents)
 // ______________________Performace_Functions___________________________//
 //////////////////////////////////////////////////////////////////////////
 
-void Node::calcOptimumSplit()
+void Node::calcOptimumSplit(SignificanceMetric* smetric)
 {
 // We want to build a tree that maximises S/sqrt(S+B) -> S^2/(S+B)
 
@@ -191,6 +239,11 @@ void Node::calcOptimumSplit()
     int bestSplitVariable = -1; 
     double bestSignificanceGain = -1;
 
+    // sum of number of signal/bkg events used for training
+    long long int numS = 0;
+    long long int numB = 0;
+
+    // sum of weights of signal/bkg events
     double netS = 0;
     double netB = 0;
     numEvents = events[0].size();
@@ -204,10 +257,14 @@ void Node::calcOptimumSplit()
         double tvalue = events[0][i]->trueValue;
         if(tvalue > 0) netS += events[0][i]->weight; // signal
         else netB += events[0][i]->weight;           // background
+
+        if(tvalue > 0) numS++; // signal
+        else numB++;           // background
     }  
 
     // actually total significance^2 in this case
-    significanceSquared = netS*netS/(netS + netB);
+    //significanceSquared = netS*netS/(netS + netB);
+    significanceSquared = smetric->significance2(netS, netB);
     //std::cout << "totalSignificance= " << significanceSquared << std::endl << std::endl;
 
     unsigned int numVars = events.size();
@@ -222,6 +279,12 @@ void Node::calcOptimumSplit()
 
         double SUMleftS = 0;
         double SUMrightS = netS;
+
+        long long int numLeftS = 0;
+        long long int numRightS = numS;
+
+        long long int numLeftB = 0;
+        long long int numRightB = numB;
 
         // The number of events in the left, right nodes
         int nleft = 1;
@@ -241,18 +304,28 @@ void Node::calcOptimumSplit()
            {
                SUMleftS = SUMleftS + v[i-1]->weight;
                SUMrightS = SUMrightS- v[i-1]->weight;
+
+               numLeftS+=1;
+               numRightS-=1;
            }
            else
            {
                SUMleftB = SUMleftB + v[i-1]->weight;
                SUMrightB = SUMrightB - v[i-1]->weight;
+
+               numLeftB+=1;
+               numRightB-=1;
            }
              
             // No need to check the split point if x on both sides is equal
             if(v[i-1]->data[candidateSplitVariable] < v[i]->data[candidateSplitVariable])
             {
                 // instead of error reduction we are finding the increase in significance
-                candidateSignificanceGain = SUMleftS*SUMleftS/(SUMleftS + SUMleftB) + SUMrightS*SUMrightS/(SUMrightS + SUMrightB) - netS*netS/(netS + netB);
+                //candidateSignificanceGain = SUMleftS*SUMleftS/(SUMleftS + SUMleftB) + SUMrightS*SUMrightS/(SUMrightS + SUMrightB) - netS*netS/(netS + netB);
+                //candidateSignificanceGain = smetric->significance2(SUMleftS, SUMleftB) + smetric->significance2(SUMrightS, SUMrightB) - smetric->significance2(netS, netB);
+                candidateSignificanceGain = smetric->significance2(SUMleftS, SUMleftB, numLeftS, numLeftB) 
+                                            + smetric->significance2(SUMrightS, SUMrightB, numRightS, numRightB) 
+                                            - smetric->significance2(netS, netB, numS, numB);
 //                std::cout << "candidateSignificanceGain= " << candidateSignificanceGain << std::endl << std::endl;
             
                 // if the new candidate is better than the current best, then we have a new overall best.
@@ -271,10 +344,19 @@ void Node::calcOptimumSplit()
  
     // Store the information gained from our computations.
 
-    // the significance for the node
-    significanceSquared = netS*netS/(netS + netB);
+    // the significance for the node, already figured this out above
+    // significanceSquared = smetric->significance(netS, netB);
 //    std::cout << "fitValue= " << fitValue << std::endl;
-
+    
+    // the sum of weights for signal and background
+    // expected number in reality for some lumi
+    totalSignal = netS;
+    totalBackground = netB;
+    
+    // the number of signal/bkg events used in training
+    numSignal = numS;
+    numBackground = numB;
+    
     significanceGain = bestSignificanceGain;
     //std::cout << "Significance Increase = " << significanceGain << std::endl;
 

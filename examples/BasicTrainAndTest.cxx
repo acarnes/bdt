@@ -129,7 +129,7 @@ void buildCategorizationTree()
   std::cout << "=======================================" << std::endl;
   
   // Do the regression and save the trees.
-  tree->buildTree(nodes);
+  tree->buildTree(nodes, sf);
 
   // Output the save directory to the screen.
   TString savename = "tree.xml";
@@ -141,8 +141,8 @@ void buildCategorizationTree()
 
 
   // Rank the variable importance and output it to the screen.
-  //std::vector<Int_t> rank;
-  //tree->rankVariables(rank);
+  std::vector<std::string> rank;
+  tree->outputVariableRanking(rank);
 
   /////////////////////////////////////
   //// Test 

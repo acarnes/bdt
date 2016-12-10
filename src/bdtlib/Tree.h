@@ -25,7 +25,10 @@ class Tree
 
         int getNumTerminalNodes();
 
-        void buildTree(int nodeLimit);
+        std::vector<std::string> getFeatureNames();
+        void setFeatureNames(std::vector<std::string>& featureNames);
+
+        void buildTree(int nodeLimit, SignificanceMetric* smetric);
         void calcSignificance();
         void filterEvents(std::vector<Event*>& tEvents);
         void filterEventsRecursive(Node* node);
@@ -41,6 +44,7 @@ class Tree
 
         void rankVariables(std::vector<double>& v);
         void rankVariablesRecursive(Node* node, std::vector<double>& v);
+        void outputVariableRanking(std::vector<std::string>& rank);
 
         void getSplitValues(std::vector< std::vector<double> >& v);
         void getSplitValuesRecursive(Node* node, std::vector< std::vector<double> >& v);
@@ -49,7 +53,9 @@ class Tree
         void saveSplitValues(const char* savefilename);
         void listEvents(std::vector< std::vector<Event*> >& e);
 
+
     private:
+        std::vector<std::string> featureNames;
         std::vector< std::vector<Event*> > events;
         Node *rootNode;
         std::list<Node*> terminalNodes;

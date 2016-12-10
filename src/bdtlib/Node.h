@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include "Event.h"
+#include "SignificanceMetrics.h"
 
 class Node
 {
@@ -41,10 +42,22 @@ class Node
         int getNumEvents();
         void setNumEvents(int sNumEvents);
 
+        double getTotalSignal();
+        void setTotalSignal(int sTotalSignal);
+
+        double getTotalBackground();
+        void setTotalBackground(int sTotalBackground);
+
+        long long int getNumSignal();
+        void setNumSignal(int sTotalSignal);
+
+        long long int getNumBackground();
+        void setNumBackground(int sTotalBackground);
+
         std::vector< std::vector<Event*> >& getEvents();
         void setEvents(std::vector< std::vector<Event*> >& sEvents);
 
-        void calcOptimumSplit();
+        void calcOptimumSplit(SignificanceMetric* smetric);
         void filterEventsToDaughters();
         Node* filterEventToDaughter(Event* e);
         void listEvents();
@@ -62,6 +75,14 @@ class Node
 
         double significanceGain;
         double significanceSquared;
+
+        // sum of weights
+        double totalSignal;     
+        double totalBackground;
+
+        // sum of signal/background training events used
+        long long int numSignal;
+        long long int numBackground;
 
         int numEvents;
 

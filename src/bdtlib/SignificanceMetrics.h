@@ -38,6 +38,17 @@ class SignificanceMetric
 
         // the significance is different depending on the metric, so make this abstract
         virtual double significance(double signal, double background) = 0;
+        virtual double significance(double signal, double background, long long int nsignal, long long int nbackground) = 0;
+        double significance2(double signal, double background)
+        {
+            double s = significance(signal, background);
+            return s*s;
+        }
+        double significance2(double signal, double background, long long int nsignal, long long int nbackground)
+        {
+            double s = significance(signal, background, nsignal, nbackground);
+            return s*s;
+        }
 
 };
 
@@ -54,18 +65,32 @@ class Asimov : public SignificanceMetric
 
         double significance(double signal, double background)
         {
+            //if(background < 0) background = 0;
+            if(background < 0) return 0;
+            //if(signal < 0) signal = 0;
+            if(signal < 1) return 0;
+
             setUncertainty(background);
+
             if(unc == 0 && background == 0) return 0;
-            if(background == 0 && signal == 0) return 0;
-            
+            if((background <= 0 && signal <= 0) || (background + signal <= 0)) return 0;
+    
             double varb = background*unc*background*unc; 
             double tot = signal + background;
-        
+    
+            double noerr = std::sqrt(2*(tot*std::log(1+signal/background) - signal)); 
+            double werr = std::sqrt(2*(tot*std::log((tot*(varb+background))/((background*background)+tot*varb))-
+                                    (1/unc/unc)*std::log(1.+(varb*signal)/(background*(background+varb))))); 
+
             // return the simple case for zero uncertainty
-            if(unc == 0) return std::sqrt(2*(tot*std::log(1+signal/background) - signal));
+            if(unc == 0) return std::isfinite(noerr)?noerr:0;
 
             // return the full calculation when there is an uncertainty
-            return std::sqrt(2*(tot*std::log((tot*(varb+background))/((background*background)+tot*varb))-(1/unc/unc)*std::log(1.+(varb*signal)/(background*(background+varb)))));
+            return std::isfinite(werr)?werr:0;
+        }
+        double significance(double signal, double background, long long int nsignal, long long int nbackground)
+        {
+            return significance(signal, background);
         }
 };
 
@@ -82,9 +107,22 @@ class Poisson : public SignificanceMetric
 
         double significance(double signal, double background)
         {
+            //if(background < 0) background = 0;
+            if(background < 0) return 0;
+            //if(signal < 0) signal = 0;
+            if(signal < 1) return 0;
+
+
             setUncertainty(background);
-            if(background == 0 && signal == 0 && unc == 0) return 0;
-            return signal/std::sqrt(signal + background + unc*unc*background*background);
+
+            double val = signal/std::sqrt(signal + background + unc*unc*background*background);
+            return std::isfinite(val)?val:0;
+        }
+
+        double significance(double signal, double background, long long int nsignal, long long int nbackground)
+        {
+            if(nbackground < 10) return 0;
+            return significance(signal, background);
         }
 };
 
