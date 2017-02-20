@@ -246,8 +246,8 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins)
     std::vector<long long int> numB(nbins, 0);
 
     // sum of weights of signal/bkg events
-    std::vector<double> netS(nbins, 0);
-    std::vector<double> netB(nbins, 0);
+    std::vector<double> netS(nbins, 0.0);
+    std::vector<double> netB(nbins, 0.0);
 
     numEvents = events[0].size();
 
@@ -282,10 +282,10 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins)
     { 
 
         // The sum of the weights for sig and bkg in the proposed left, right nodes
-        std::vector<double> SUMleftB(nbins, 0);
+        std::vector<double> SUMleftB(nbins, 0.0);
         std::vector<double> SUMrightB = netB;
 
-        std::vector<double> SUMleftS(nbins, 0);
+        std::vector<double> SUMleftS(nbins, 0.0);
         std::vector<double> SUMrightS = netS;
 
         // The number of sig and bkg in the proposed left, right nodes
@@ -312,6 +312,8 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins)
             
            Event* el = v[i-1]; // nearest event on left of split
            Event* er = v[i];   // nearest event on right of split
+
+           if(el->bin < 0) continue;
 
            if(el->trueValue > 0)
            {
@@ -381,10 +383,10 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins)
     // the sum of weights for signal and background
     // expected number in reality for some lumi
     totalSignalVec = netS;
-    totalSignal = std::accumulate(netS.begin(), netS.end(), 0);
+    totalSignal = std::accumulate(netS.begin(), netS.end(), 0.0);
 
     totalBackgroundVec = netB;
-    totalBackground = std::accumulate(netB.begin(), netB.end(), 0);
+    totalBackground = std::accumulate(netB.begin(), netB.end(), 0.0);
     
     // the number of signal/bkg events used in training
     numSignalVec = numS;

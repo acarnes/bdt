@@ -87,7 +87,7 @@ class Asimov : public SignificanceMetric
             //if(background < 0) background = 0;
             if(background < 0) return 0;
             //if(signal < 0) signal = 0;
-            if(signal < 1) return 0;
+            //if(signal < 1) return 0;
 
             setUncertainty(background);
 
@@ -129,7 +129,7 @@ class Poisson : public SignificanceMetric
             //if(background < 0) background = 0;
             if(background < 0) return 0;
             //if(signal < 0) signal = 0;
-            if(signal < 1) return 0;
+            //if(signal < 1) return 0;
 
 
             setUncertainty(background);

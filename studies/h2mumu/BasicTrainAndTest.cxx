@@ -26,7 +26,7 @@
 
 // Fundamental settings for the regression.
 Int_t nodes = 8;
-int nbins = 1;
+int nbins = 20;
 
 // Choose which significance function to use.
 SignificanceMetric* sf = new Poisson(0);
@@ -37,7 +37,15 @@ bool saveTree = true;
 
 // Where to save the trees.
 TString treeDirectory("./trees/");
-TString infilename("data/categorization_training.csv");
+//TString infilename("data/categorization_training.csv");
+TString infiledir("data/samples/");
+std::vector<TString> infilenames = {TString("H2Mu_VBF_bdt_training.csv"), 
+                                    TString("H2Mu_gg_bdt_training.csv"), 
+                                    TString("H2Mu_WH_neg_bdt_training.csv"), 
+                                    TString("H2Mu_WH_pos_bdt_training.csv"), 
+                                    TString("H2Mu_ZH_bdt_training.csv"), 
+                                    TString("ZJets_AMC_bdt_training.csv"),
+                                    TString("tt_ll_AMC_bdt_training.csv")};
 
 // decide which variables to use for the training
 std::vector<std::string> useWhichVars;
@@ -92,7 +100,8 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
     //useWhichVars.push_back("dPhi");                  
     //useWhichVars.push_back("phi_star");              
 
-    // not features, target and weight
+    // not features: bin, target, and weight
+    // "bin"
     //"is_signal"      
     //"weight"                
 }
@@ -107,15 +116,14 @@ void loadTrainingEvents(std::vector<Event*>& events, std::vector<std::string>& u
     std::ifstream infile;
     infile.open(infilename);
 
-    // Store events we are interested in.
-    std::vector<Event*> v;
+    std::cout << "Loading training events from: " << infilename << std::endl;
 
     // read info into these vectors
     std::vector<std::string> keys;
     std::map<std::string,double> datamap;
 
     // number of fields in the CSV
-    int N_FIELDS = 38;
+    int N_FIELDS = 39;
 
     // Make sure the file reads.
     if(infile.fail())
@@ -127,7 +135,6 @@ void loadTrainingEvents(std::vector<Event*>& events, std::vector<std::string>& u
     // Keep track of the line we are reading.
     int value_number = 0;
     int line_number = 0;
-    std::cout << std::endl << "Reading in Training Events... " << std::endl;
 
     std::string value;
     while(infile.good() && line_number <= numEvents)
@@ -141,7 +148,7 @@ void loadTrainingEvents(std::vector<Event*>& events, std::vector<std::string>& u
              std::getline(infile, value, ','); 
 
          // do something with the information gathered
-         // std::cout << line_number << ", " << value_number << ": " << value << std::endl;
+         //std::cout << line_number << ", " << value_number << ": " << value << std::endl;
 
          // the keys are on the first line
          if(line_number == 0) 
@@ -167,12 +174,16 @@ void loadTrainingEvents(std::vector<Event*>& events, std::vector<std::string>& u
                  if(datamap["weight"] > -5)
                  {
                      Event* e = new Event();
-                     e->bin = 0;
+                     e->bin = datamap["bin"];
                      e->data = std::vector<double>();
                      e->data.push_back(0);        // the 0th location is the target, reserved, the rest are for the features
                      e->trueValue = datamap["is_signal"];
                      e->weight = datamap["weight"];
                      e->id = line_number;
+
+                     //std::cout << "bin   : " << e->bin << std::endl;
+                     //std::cout << "weight: " << e->weight << std::endl;
+                     //std::cout << "target: " << e->trueValue << std::endl;
 
                      // push feature values into the vector
                      for(unsigned int i=0; i<useWhichVars.size(); i++)
@@ -184,11 +195,15 @@ void loadTrainingEvents(std::vector<Event*>& events, std::vector<std::string>& u
                      events.push_back(e);
                  }
 
-                 // output info
+                 //std::cout << std::endl;
+
+                 //// output info
                  //for(std::map<std::string,double>::iterator i=datamap.begin(); i!=datamap.end(); ++i)
                  //{
                  //    std::cout << line_number << ", " << i->first << ": " << i->second << std::endl;
                  //}
+
+                 //std::cout << "----------" << std::endl << std::endl;
              }
 
              line_number++;
@@ -217,7 +232,8 @@ void buildCategorizationTree()
   std::vector<Event*> trainingEvents = std::vector<Event*>();
 
   initWhichVars(useWhichVars);
-  loadTrainingEvents(trainingEvents, useWhichVars, infilename, 300231);
+  for(auto& infilename: infilenames)
+      loadTrainingEvents(trainingEvents, useWhichVars, infiledir+infilename, 1000000);
 
   std::cout << std::endl << "Number of training events: " << trainingEvents.size() << std::endl << std::endl;
 
@@ -246,7 +262,6 @@ void buildCategorizationTree()
   // Rank the variable importance and output it to the screen.
   std::vector<std::string> rank;
   tree->outputVariableRanking(rank);
-
   /////////////////////////////////////
   //// Test 
   /////////////////////////////////////
@@ -280,6 +295,7 @@ void buildCategorizationTree()
 
   // ----------------------------------------------------
   ///////////////////////////////////////////////////////
+
 }
 
 
