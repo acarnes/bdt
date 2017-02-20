@@ -19,6 +19,7 @@
 #include "Node.h"
 #include <iostream>
 #include <fstream>
+#include <numeric>
 
 //////////////////////////////////////////////////////////////////////////
 // _______________________Constructor(s)________________________________//
@@ -230,22 +231,24 @@ void Node::setEvents(std::vector< std::vector<Event*> >& sEvents)
 // ______________________Performace_Functions___________________________//
 //////////////////////////////////////////////////////////////////////////
 
-void Node::calcOptimumSplit(SignificanceMetric* smetric)
+void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins)
 {
 // We want to build a tree that maximises S/sqrt(S+B) -> S^2/(S+B)
+// or some other significance metric
 
-    // Intialize some variables.
+    // Initialize some variables.
     double bestSplitValue = 0;
     int bestSplitVariable = -1; 
     double bestSignificanceGain = -1;
 
     // sum of number of signal/bkg events used for training
-    long long int numS = 0;
-    long long int numB = 0;
+    std::vector<long long int> numS(nbins, 0);
+    std::vector<long long int> numB(nbins, 0);
 
     // sum of weights of signal/bkg events
-    double netS = 0;
-    double netB = 0;
+    std::vector<double> netS(nbins, 0);
+    std::vector<double> netB(nbins, 0);
+
     numEvents = events[0].size();
 
     double candidateSignificanceGain = -1;
@@ -254,16 +257,21 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric)
     // the target variables squared. We use these later.
     for(unsigned int i=0; i<events[0].size(); i++)
     {   
-        double tvalue = events[0][i]->trueValue;
-        if(tvalue > 0) netS += events[0][i]->weight; // signal
-        else netB += events[0][i]->weight;           // background
+        Event* e = events[0][i];
+        if(e->bin < 0) continue;  // bin < 0 is outside our window
+                                  // used only to calculate unc in B
 
-        if(tvalue > 0) numS++; // signal
-        else numB++;           // background
+        // get # signal and bkg, and sum of weights for signal and bkg
+        // in our signal window. Keep track for each bin in the window.
+        double tvalue = e->trueValue;
+        if(tvalue > 0) netS[e->bin] += e->weight; // signal
+        else netB[e->bin] += e->weight;           // background
+
+        if(tvalue > 0) numS[e->bin]++; // signal
+        else numB[e->bin]++;           // background
     }  
 
-    // actually total significance^2 in this case
-    //significanceSquared = netS*netS/(netS + netB);
+    // calculate net significance for this node
     significanceSquared = smetric->significance2(netS, netB);
     //std::cout << "totalSignificance= " << significanceSquared << std::endl << std::endl;
 
@@ -273,72 +281,94 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric)
     for(unsigned int variableToCheck = 1; variableToCheck < numVars; variableToCheck++)
     { 
 
-        // The sum of the target variables in the left, right nodes
-        double SUMleftB = 0;
-        double SUMrightB = netB;
+        // The sum of the weights for sig and bkg in the proposed left, right nodes
+        std::vector<double> SUMleftB(nbins, 0);
+        std::vector<double> SUMrightB = netB;
 
-        double SUMleftS = 0;
-        double SUMrightS = netS;
+        std::vector<double> SUMleftS(nbins, 0);
+        std::vector<double> SUMrightS = netS;
 
-        long long int numLeftS = 0;
-        long long int numRightS = numS;
+        // The number of sig and bkg in the proposed left, right nodes
+        std::vector<long long int> numLeftS(nbins,0);
+        std::vector<long long int> numRightS = numS;
 
-        long long int numLeftB = 0;
-        long long int numRightB = numB;
-
-        // The number of events in the left, right nodes
-        int nleft = 1;
-        int nright = events[variableToCheck].size()-1;
+        std::vector<long long int> numLeftB(nbins, 0);
+        std::vector<long long int> numRightB = numB;
 
         int candidateSplitVariable = variableToCheck;
 
         std::vector<Event*>& v = events[variableToCheck];
+
+        // if we encounter a series of equal x-values
+        // multiple mass bins may be affected and we need to calculate the
+        // significance difference for all bins rather than just one
+        bool last_equal = false;
 
         // Find the best split point for this variable 
         for(unsigned int i=1; i<v.size(); i++)
         {
             // As the candidate split point interates, the number of events in the 
             // left/right node increases/decreases and SUMleft/right increases/decreases.
+            
+           Event* el = v[i-1]; // nearest event on left of split
+           Event* er = v[i];   // nearest event on right of split
 
-           if(v[i-1]->trueValue > 0)
+           if(el->trueValue > 0)
            {
-               SUMleftS = SUMleftS + v[i-1]->weight;
-               SUMrightS = SUMrightS- v[i-1]->weight;
+               SUMleftS[el->bin] = SUMleftS[el->bin] + el->weight;
+               SUMrightS[el->bin] = SUMrightS[el->bin] - el->weight;
 
-               numLeftS+=1;
-               numRightS-=1;
+               numLeftS[el->bin]+=1;
+               numRightS[el->bin]-=1;
            }
            else
            {
-               SUMleftB = SUMleftB + v[i-1]->weight;
-               SUMrightB = SUMrightB - v[i-1]->weight;
+               SUMleftB[el->bin] = SUMleftB[el->bin] + el->weight;
+               SUMrightB[el->bin] = SUMrightB[el->bin] - el->weight;
 
-               numLeftB+=1;
-               numRightB-=1;
+               numLeftB[el->bin]+=1;
+               numRightB[el->bin]-=1;
            }
              
-            // No need to check the split point if x on both sides is equal
-            if(v[i-1]->data[candidateSplitVariable] < v[i]->data[candidateSplitVariable])
+            // x on both sides is unequal, calculate the candidate significance gain
+            if(el->data[candidateSplitVariable] < er->data[candidateSplitVariable])
             {
-                // instead of error reduction we are finding the increase in significance
-                //candidateSignificanceGain = SUMleftS*SUMleftS/(SUMleftS + SUMleftB) + SUMrightS*SUMrightS/(SUMrightS + SUMrightB) - netS*netS/(netS + netB);
-                //candidateSignificanceGain = smetric->significance2(SUMleftS, SUMleftB) + smetric->significance2(SUMrightS, SUMrightB) - smetric->significance2(netS, netB);
-                candidateSignificanceGain = smetric->significance2(SUMleftS, SUMleftB, numLeftS, numLeftB) 
-                                            + smetric->significance2(SUMrightS, SUMrightB, numRightS, numRightB) 
-                                            - smetric->significance2(netS, netB, numS, numB);
+                // if the last x values were not equal then we are only checking one event
+                // and hence only the same mass bin can change on both sides
+                if(!last_equal) 
+                    candidateSignificanceGain = 
+                      smetric->significance2(SUMleftS[el->bin], SUMleftB[el->bin], numLeftS[el->bin], numLeftB[el->bin]) 
+                      + smetric->significance2(SUMrightS[el->bin], SUMrightB[el->bin], numRightS[el->bin], numRightB[el->bin]) 
+                      - smetric->significance2(netS[el->bin], netB[el->bin], numS[el->bin], numB[el->bin]);
+
+                // if the last x values were equal we now have to account for multiple events.
+                // multiple mass bins may have changed
+                else 
+                    candidateSignificanceGain = 
+                      smetric->significance2(SUMleftS, SUMleftB, numLeftS, numLeftB) 
+                      + smetric->significance2(SUMrightS, SUMrightB, numRightS, numRightB) 
+                      - smetric->significance2(netS, netB, numS, numB);
 //                std::cout << "candidateSignificanceGain= " << candidateSignificanceGain << std::endl << std::endl;
             
                 // if the new candidate is better than the current best, then we have a new overall best.
                 if(candidateSignificanceGain > bestSignificanceGain)
                 {
                     bestSignificanceGain = candidateSignificanceGain;
-                    bestSplitValue = (v[i-1]->data[candidateSplitVariable] + v[i]->data[candidateSplitVariable])/2;
+                    bestSplitValue = (el->data[candidateSplitVariable] + er->data[candidateSplitVariable])/2;
                     bestSplitVariable = candidateSplitVariable;
                 }
-            }
 
-            nright = nright-1;
-            nleft = nleft+1;
+                // the last adjustment of the sig/bkg weights and counts was for a split with unequal x values
+                // on both sides of the split
+                last_equal = false;
+            }
+            // x on both sides is equal, flag so that we know multiple mass bins may have been adjusted
+            else
+            {
+                // the last adjustment of the sig/bkg weights and counts was for a split with equal x values
+                // on both sides of the split
+                last_equal = true;
+            }
         }
     }
  
@@ -350,12 +380,18 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric)
     
     // the sum of weights for signal and background
     // expected number in reality for some lumi
-    totalSignal = netS;
-    totalBackground = netB;
+    totalSignalVec = netS;
+    totalSignal = std::accumulate(netS.begin(), netS.end(), 0);
+
+    totalBackgroundVec = netB;
+    totalBackground = std::accumulate(netB.begin(), netB.end(), 0);
     
     // the number of signal/bkg events used in training
-    numSignal = numS;
-    numBackground = numB;
+    numSignalVec = numS;
+    numSignal = std::accumulate(numS.begin(), numS.end(), 0);
+
+    numBackgroundVec = numB;
+    numBackground = std::accumulate(numB.begin(), numB.end(), 0);
     
     significanceGain = bestSignificanceGain;
     //std::cout << "Significance Increase = " << significanceGain << std::endl;

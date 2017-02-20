@@ -26,6 +26,7 @@
 
 // Fundamental settings for the regression.
 Int_t nodes = 8;
+int nbins = 1;
 
 // Choose which significance function to use.
 SignificanceMetric* sf = new Poisson(0);
@@ -166,6 +167,7 @@ void loadTrainingEvents(std::vector<Event*>& events, std::vector<std::string>& u
                  if(datamap["weight"] > -5)
                  {
                      Event* e = new Event();
+                     e->bin = 0;
                      e->data = std::vector<double>();
                      e->data.push_back(0);        // the 0th location is the target, reserved, the rest are for the features
                      e->trueValue = datamap["is_signal"];
@@ -220,7 +222,7 @@ void buildCategorizationTree()
   std::cout << std::endl << "Number of training events: " << trainingEvents.size() << std::endl << std::endl;
 
   // Initialize new forest.
-  Tree* tree = new Tree(trainingEvents);
+  Tree* tree = new Tree(trainingEvents, nbins);
   tree->setFeatureNames(useWhichVars);
 
   // Output the parameters of the current run. 

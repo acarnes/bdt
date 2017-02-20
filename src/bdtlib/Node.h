@@ -57,7 +57,7 @@ class Node
         std::vector< std::vector<Event*> >& getEvents();
         void setEvents(std::vector< std::vector<Event*> >& sEvents);
 
-        void calcOptimumSplit(SignificanceMetric* smetric);
+        void calcOptimumSplit(SignificanceMetric* smetric, int nbins);
         void filterEventsToDaughters();
         Node* filterEventToDaughter(Event* e);
         void listEvents();
@@ -77,11 +77,17 @@ class Node
         double significanceSquared;
 
         // sum of weights
-        double totalSignal;     
+        std::vector<double> totalSignalVec;     
+        double totalSignal;
+
+        std::vector<double> totalBackgroundVec;
         double totalBackground;
 
         // sum of signal/background training events used
+        std::vector<long long int> numSignalVec;
         long long int numSignal;
+
+        std::vector<long long int> numBackgroundVec;
         long long int numBackground;
 
         int numEvents;

@@ -33,6 +33,7 @@ Tree::Tree()
 
     terminalNodes.push_back(rootNode);
     numTerminalNodes = 1;
+    nbins = 1;
 }
 
 Tree::Tree(std::vector<Event*>& cEvents)
@@ -41,6 +42,7 @@ Tree::Tree(std::vector<Event*>& cEvents)
     sortEventVectors(events);
     rootNode = new Node("root");
     rootNode->setEvents(events);
+    nbins = 1;
 
     terminalNodes.push_back(rootNode);
     numTerminalNodes = 1;
@@ -52,6 +54,26 @@ Tree::Tree(std::vector<Event*>& cEvents)
     }
     setFeatureNames(featureVarNames);
 }
+
+Tree::Tree(std::vector<Event*>& cEvents, int cnbins)
+{
+    setTrainingEvents(cEvents);
+    sortEventVectors(events);
+    rootNode = new Node("root");
+    rootNode->setEvents(events);
+    nbins = cnbins;
+
+    terminalNodes.push_back(rootNode);
+    numTerminalNodes = 1;
+
+    std::vector<std::string> featureVarNames;
+    for(unsigned int i=1; i<events.size(); i++)
+    {
+        featureVarNames.push_back("x"+Utilities::numToStr<int>(i));
+    }
+    setFeatureNames(featureVarNames);
+}
+
 //////////////////////////////////////////////////////////////////////////
 // _______________________Destructor____________________________________//
 //////////////////////////////////////////////////////////////////////////
@@ -214,7 +236,7 @@ void Tree::buildTree(int nodeLimit, SignificanceMetric* smetric)
 
     if(numTerminalNodes == 1)
     {   
-        rootNode->calcOptimumSplit(smetric);
+        rootNode->calcOptimumSplit(smetric, nbins);
         calcSignificance();
         std::cout << std::endl << "  " << numTerminalNodes << " Nodes : " << significance << std::endl;
         std::cout << "        +" << rootNode->getName() << ": " << std::sqrt(rootNode->getSignificanceSquared()) << ", " << rootNode->getNumEvents() << ", " 
@@ -253,8 +275,8 @@ void Tree::buildTree(int nodeLimit, SignificanceMetric* smetric)
     nodeToSplit->filterEventsToDaughters();  
 
     // Calculate the best splits for the new nodes.
-    left->calcOptimumSplit(smetric);
-    right->calcOptimumSplit(smetric);
+    left->calcOptimumSplit(smetric, nbins);
+    right->calcOptimumSplit(smetric, nbins);
 
     // See if the error reduces as we add more nodes.
     calcSignificance();

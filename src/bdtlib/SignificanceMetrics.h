@@ -39,6 +39,8 @@ class SignificanceMetric
         // the significance is different depending on the metric, so make this abstract
         virtual double significance(double signal, double background) = 0;
         virtual double significance(double signal, double background, long long int nsignal, long long int nbackground) = 0;
+
+        // significance for a single bin
         double significance2(double signal, double background)
         {
             double s = significance(signal, background);
@@ -48,6 +50,23 @@ class SignificanceMetric
         {
             double s = significance(signal, background, nsignal, nbackground);
             return s*s;
+        }
+
+        // significance over all the bins
+        double significance2(std::vector<double>& signal, std::vector<double>& background)
+        {
+            double s = 0;    
+            for(unsigned int i=0; i<signal.size(); i++)
+                s += significance2(signal[i], background[i]);
+            return s;
+        }
+        double significance2(std::vector<double>& signal, std::vector<double>& background, 
+                             std::vector<long long int>& nsignal, std::vector<long long int>& nbackground)
+        {
+            double s = 0;    
+            for(unsigned int i=0; i<signal.size(); i++)
+                s += significance2(signal[i], background[i], nsignal[i], nbackground[i]);
+            return s;
         }
 
 };

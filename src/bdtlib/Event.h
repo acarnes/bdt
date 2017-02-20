@@ -19,13 +19,7 @@ struct Event
     double weight;
 
     // Extra variables added for my own studies
-    double DTPt;
-    double CSCPt;
-    double tmvaPt;
-    double tmvaPt1;
-    double emuPt;
-    int Mode;
-    int Quality;
+    int bin;
     // ---------------------------------------
 
     // Sort the events by data[sortingIndex]

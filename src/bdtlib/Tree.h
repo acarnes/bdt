@@ -12,6 +12,7 @@ class Tree
     public:
         Tree();
         Tree(std::vector<Event*>& cEvents);
+        Tree(std::vector<Event*>& cEvents, int cnbins);
         ~Tree();
 
         void setTrainingEvents(std::vector<Event*>& trainingEvents);
@@ -60,6 +61,7 @@ class Tree
         Node *rootNode;
         std::list<Node*> terminalNodes;
         int numTerminalNodes;
+        int nbins;
         double significance;
 };
 
