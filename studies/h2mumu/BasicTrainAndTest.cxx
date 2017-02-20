@@ -49,22 +49,22 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
 {
     useWhichVars.push_back("dimu_pt");               
     useWhichVars.push_back("mu0_eta");               
-    //useWhichVars.push_back("mu0_pt");                
+    useWhichVars.push_back("mu0_pt");                
     useWhichVars.push_back("mu1_eta");               
-    //useWhichVars.push_back("mu1_pt");                
+    useWhichVars.push_back("mu1_pt");                
     
     useWhichVars.push_back("N_valid_jets");          
     //useWhichVars.push_back("jet0_eta");              
-    useWhichVars.push_back("jet0_pt");               
+    //useWhichVars.push_back("jet0_pt");               
     //useWhichVars.push_back("jet1_eta");              
-    useWhichVars.push_back("jet1_pt");               
-    useWhichVars.push_back("m_jj");                  
-    useWhichVars.push_back("dEta_jj");               
+    //useWhichVars.push_back("jet1_pt");               
+    //useWhichVars.push_back("m_jj");                  
+    //useWhichVars.push_back("dEta_jj");               
     //useWhichVars.push_back("dEta_jj_mumu");          
     
-    //useWhichVars.push_back("MET");                   
+    useWhichVars.push_back("MET");                   
     
-    //useWhichVars.push_back("N_valid_bjets");         
+    useWhichVars.push_back("N_valid_bjets");         
     //useWhichVars.push_back("bjet0_eta");             
     //useWhichVars.push_back("bjet0_pt");              
     //useWhichVars.push_back("bjet1_eta");             
@@ -163,21 +163,24 @@ void loadTrainingEvents(std::vector<Event*>& events, std::vector<std::string>& u
              if(line_number > 0)
              {
                  // store target and weight info, initialize feature vector
-                 Event* e = new Event();
-                 e->data = std::vector<double>();
-                 e->data.push_back(0);        // the 0th location is the target, reserved, the rest are for the features
-                 e->trueValue = datamap["is_signal"];
-                 e->weight = datamap["weight"];
-                 e->id = line_number;
-
-                 // push feature values into the vector
-                 for(unsigned int i=0; i<useWhichVars.size(); i++)
+                 if(datamap["weight"] > -5)
                  {
-                     //std::cout << useWhichVars[i] << ": " << datamap[useWhichVars[i]] << std::endl;
-                     e->data.push_back(datamap[useWhichVars[i]]);
-                 }
+                     Event* e = new Event();
+                     e->data = std::vector<double>();
+                     e->data.push_back(0);        // the 0th location is the target, reserved, the rest are for the features
+                     e->trueValue = datamap["is_signal"];
+                     e->weight = datamap["weight"];
+                     e->id = line_number;
 
-                 events.push_back(e);
+                     // push feature values into the vector
+                     for(unsigned int i=0; i<useWhichVars.size(); i++)
+                     {
+                         //std::cout << useWhichVars[i] << ": " << datamap[useWhichVars[i]] << std::endl;
+                         e->data.push_back(datamap[useWhichVars[i]]);
+                     }
+
+                     events.push_back(e);
+                 }
 
                  // output info
                  //for(std::map<std::string,double>::iterator i=datamap.begin(); i!=datamap.end(); ++i)
