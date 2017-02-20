@@ -313,6 +313,8 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins)
            Event* el = v[i-1]; // nearest event on left of split
            Event* er = v[i];   // nearest event on right of split
 
+           // events outside the signal window are only used to calculate the error on the bkg
+           // not the significance 
            if(el->bin < 0) continue;
 
            if(el->trueValue > 0)

@@ -58,9 +58,9 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
 {
     useWhichVars.push_back("dimu_pt");               
     useWhichVars.push_back("mu0_eta");               
-    useWhichVars.push_back("mu0_pt");                
+    //useWhichVars.push_back("mu0_pt");                
     useWhichVars.push_back("mu1_eta");               
-    useWhichVars.push_back("mu1_pt");                
+    //useWhichVars.push_back("mu1_pt");                
     
     useWhichVars.push_back("N_valid_jets");          
     //useWhichVars.push_back("jet0_eta");              
@@ -175,6 +175,7 @@ void loadTrainingEvents(std::vector<Event*>& events, std::vector<std::string>& u
                  {
                      Event* e = new Event();
                      e->bin = datamap["bin"];
+                     //e->bin = 0;
                      e->data = std::vector<double>();
                      e->data.push_back(0);        // the 0th location is the target, reserved, the rest are for the features
                      e->trueValue = datamap["is_signal"];
