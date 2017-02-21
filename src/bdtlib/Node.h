@@ -15,6 +15,7 @@ class Node
         Node(std::string cName);
         ~Node();
 
+        // bunch of get/set methods
         std::string getName();
         void setName(std::string sName);
 
@@ -42,21 +43,46 @@ class Node
         int getNumEvents();
         void setNumEvents(int sNumEvents);
 
+        // signal weights
         double getTotalSignal();
-        void setTotalSignal(int sTotalSignal);
+        void setTotalSignal(double sTotalSignal);
 
+        std::vector<double> getTotalSignalVec();
+        void setTotalSignalVec(std::vector<double>& sTotalSignalVec);
+
+        // bkg weights
         double getTotalBackground();
-        void setTotalBackground(int sTotalBackground);
+        void setTotalBackground(double sTotalBackground);
 
+        std::vector<double> getTotalBackgroundVec();
+        void setTotalBackgroundVec(std::vector<double>& sTotalBackgroundVec);
+
+        // bkg out weights
+        double getTotalBackgroundOut();
+        void setTotalBackgroundOut(double sTotalBackgroundOut);
+
+        // num signal
         long long int getNumSignal();
-        void setNumSignal(int sTotalSignal);
+        void setNumSignal(long long int sNumSignal);
 
+        std::vector<long long int> getNumSignalVec();
+        void setNumSignalVec(std::vector<long long int>& sNumSignalVec);
+
+        // num bkg
         long long int getNumBackground();
-        void setNumBackground(int sTotalBackground);
+        void setNumBackground(long long int sNumBackground);
+
+        std::vector<long long int> getNumBackgroundVec();
+        void setNumBackgroundVec(std::vector<long long int>& sNumBackgroundVec);
+
+        // num bkg out
+        long long int getNumBackgroundOut();
+        void setNumBackgroundOut(long long int sNumBackground);
 
         std::vector< std::vector<Event*> >& getEvents();
         void setEvents(std::vector< std::vector<Event*> >& sEvents);
 
+        // work functions
         void calcOptimumSplit(SignificanceMetric* smetric, int nbins);
         void filterEventsToDaughters();
         Node* filterEventToDaughter(Event* e);
@@ -82,6 +108,7 @@ class Node
 
         std::vector<double> totalBackgroundVec;
         double totalBackground;
+        double totalBackgroundOut;
 
         // sum of signal/background training events used
         std::vector<long long int> numSignalVec;
@@ -89,6 +116,7 @@ class Node
 
         std::vector<long long int> numBackgroundVec;
         long long int numBackground;
+        long long int numBackgroundOut;
 
         int numEvents;
 
