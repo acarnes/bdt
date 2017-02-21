@@ -29,7 +29,7 @@ Int_t nodes = 8;
 int nbins = 20;
 
 // Choose which significance function to use.
-SignificanceMetric* sf = new Poisson(0);
+SignificanceMetric* sf = new Poisson(2);
                   //sf = new Asimov();
 
 // Whether to save the trees from the regression into a directory specified later.

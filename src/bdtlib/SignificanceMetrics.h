@@ -31,8 +31,9 @@ class SignificanceMetric
         // depending on how much background there is in the current calculation
             //unc = unc_0*std::sqrt(nbg_0/background);
             if(unctype == 0) unc = 0; 
-            else if(unctype == 1) unc = std::sqrt(1.37*background + 0.01727*0.01727*background*background)/background; // using net variance
-            else if(unctype == 2) unc = std::sqrt(29.625*background + 0.064338*0.064338*background*background)/background; // using average error
+            else if(unctype == 1) unc = std::sqrt(3/background);
+            else if(unctype == 2) unc = std::sqrt(1.37*background + 0.01727*0.01727*background*background)/background; // using net variance
+            else if(unctype == 3) unc = std::sqrt(29.625*background + 0.064338*0.064338*background*background)/background; // using average error
             else unc = std::sqrt(383.744*background + 0.0747027*0.0747027*background*background)/background; // using max variance
         }
 
@@ -158,7 +159,6 @@ class Poisson : public SignificanceMetric
             //if(signal < 0) signal = 0;
             //if(signal < 1) return 0;
 
-
             setUncertainty(background);
 
             double val = signal/std::sqrt(signal + background + unc*unc*background*background);
@@ -173,7 +173,17 @@ class Poisson : public SignificanceMetric
         double significance(double signal, double background, double backgroundOut, 
                             long long int nsignal, long long int nbackground, long long int nbackgroundOut)
         {
-            return significance(signal, background, nsignal, nbackground);
+            //std::cout << "Uncertainty type : " << unctype << std::endl;
+            //std::cout << "Uncertainty value: " << unc << std::endl;
+
+            if(background < 0) return 0;
+            if(nbackground < 10) return 0;
+
+            if(unctype == 1) setUncertainty(backgroundOut);
+            else setUncertainty(background);
+
+            double val = signal/std::sqrt(signal + background + unc*unc*background*background);
+            return std::isfinite(val)?val:0;
         }
 };
 
