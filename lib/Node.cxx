@@ -372,7 +372,7 @@ void Node::filterEventsToDaughters()
         for(unsigned int j=0; j<events[i].size(); j++)
         {
             Event* e = events[i][j];
-            if(e->data[sv] < sp) l[i].push_back(e);
+            if(e->data[sv] <= sp) l[i].push_back(e);
             if(e->data[sv] > sp) r[i].push_back(e);
         }
     }
@@ -405,7 +405,7 @@ Node* Node::filterEventToDaughter(Event* e)
 
     if(left ==0 || right ==0) return 0;
 
-    if(e->data[sv] < sp) nextNode = left;
+    if(e->data[sv] <= sp) nextNode = left;
     if(e->data[sv] > sp) nextNode = right;
     
     return nextNode;
