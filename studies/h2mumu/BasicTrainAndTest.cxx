@@ -123,7 +123,7 @@ void loadTrainingEvents(std::vector<Event*>& events, std::vector<std::string>& u
     std::map<std::string,double> datamap;
 
     // number of fields in the CSV
-    int N_FIELDS = 39;
+    int N_FIELDS = 41;
 
     // Make sure the file reads.
     if(infile.fail())
