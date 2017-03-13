@@ -11,7 +11,7 @@
 ///////////////////////////////////////////////////////////////////////////
 
 #include "Tree.h"
-#include "SignificanceMetrics.h"
+#include "SignificanceMetrics.hxx"
 #include "TRandom3.h"
 #include <sstream>
 #include <fstream>
@@ -29,8 +29,8 @@ Int_t nodes = 8;
 int nbins = 20;
 
 // Choose which significance function to use.
-SignificanceMetric* sf = new Poisson(0);
-                  //sf = new Asimov();
+SignificanceMetric* sf = new PoissonSignificance(0);
+                  //sf = new AsimovSignificance(0);
 
 // Whether to save the trees from the regression into a directory specified later.
 bool saveTree = true;
@@ -123,7 +123,7 @@ void loadTrainingEvents(std::vector<Event*>& events, std::vector<std::string>& u
     std::map<std::string,double> datamap;
 
     // number of fields in the CSV
-    int N_FIELDS = 41;
+    int N_FIELDS = 48;
 
     // Make sure the file reads.
     if(infile.fail())

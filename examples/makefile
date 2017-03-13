@@ -7,7 +7,7 @@ LIBDIR = ../src/bdtlib/
 XMLDIR = ../src/tinyxml2/
 CFLAGS = -I${LIBDIR} -I${XMLDIR} -c -O3 -g `root-config --cflags`
 LIBFLAGS = `root-config --libs` -g -O3 -lXMLIO -lMLP -lMinuit 
-DEPS = ${LIBDIR}SignificanceMetrics.h ${LIBDIR}Utilities.h
+DEPS = ${LIBDIR}SignificanceMetrics.hxx ${LIBDIR}Utilities.h
 MAINPROGRAM = BasicTrainAndTest
 
 CompileStuff: ${LIBDIR}Node.o ${XMLDIR}tinyxml2.o ${LIBDIR}Tree.o ${MAINPROGRAM}.o
