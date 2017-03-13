@@ -25,7 +25,7 @@
 // main if you want input from the terminal to determine the settings.
 
 // Fundamental settings for the regression.
-Int_t nodes = 8;
+Int_t nodes = 16;
 int nbins = 20;
 
 // Choose which significance function to use.
@@ -47,6 +47,8 @@ std::vector<TString> infilenames = {TString("H2Mu_VBF_bdt_training.csv"),
                                     TString("ZJets_AMC_bdt_training.csv"),
                                     TString("tt_ll_AMC_bdt_training.csv")};
 
+//TString infiledir("data/");
+//std::vector<TString> infilenames = {TString("all_sig_and_bkg_in_110_to_160_GeV.csv")};
 // decide which variables to use for the training
 std::vector<std::string> useWhichVars;
 
@@ -58,18 +60,30 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
 {
     useWhichVars.push_back("dimu_pt");               
     useWhichVars.push_back("mu0_eta");               
-    //useWhichVars.push_back("mu0_pt");                
+    useWhichVars.push_back("mu0_pt");                
     useWhichVars.push_back("mu1_eta");               
-    //useWhichVars.push_back("mu1_pt");                
+    useWhichVars.push_back("mu1_pt");                
+    useWhichVars.push_back("mu_res_eta");                
+    useWhichVars.push_back("phi_star");              
     
     useWhichVars.push_back("N_valid_jets");          
     //useWhichVars.push_back("jet0_eta");              
-    //useWhichVars.push_back("jet0_pt");               
+    useWhichVars.push_back("jet0_pt");               
     //useWhichVars.push_back("jet1_eta");              
-    //useWhichVars.push_back("jet1_pt");               
-    //useWhichVars.push_back("m_jj");                  
-    //useWhichVars.push_back("dEta_jj");               
-    //useWhichVars.push_back("dEta_jj_mumu");          
+    useWhichVars.push_back("jet1_pt");               
+    useWhichVars.push_back("m_jj");                  
+    useWhichVars.push_back("dEta_jj");               
+    useWhichVars.push_back("dEta_jj_mumu");          
+    //useWhichVars.push_back("zep");                   
+    
+    //useWhichVars.push_back("vbf_jet0_eta");              
+    //useWhichVars.push_back("vbf_jet0_pt");               
+    //useWhichVars.push_back("vbf_jet1_eta");              
+    //useWhichVars.push_back("vbf_jet1_pt");               
+    useWhichVars.push_back("vbf_m_jj");                  
+    //useWhichVars.push_back("vbf_dEta_jj");               
+    //useWhichVars.push_back("vbf_dEta_jj_mumu");          
+    //useWhichVars.push_back("vbf_zep");                   
     
     useWhichVars.push_back("MET");                   
     
@@ -96,9 +110,6 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
     //useWhichVars.push_back("extra_muon1_eta");       
     //useWhichVars.push_back("extra_muon1_pt");        
     //
-    //useWhichVars.push_back("zep");                   
-    //useWhichVars.push_back("dPhi");                  
-    //useWhichVars.push_back("phi_star");              
 
     // not features: bin, target, and weight
     // "bin"
@@ -123,7 +134,7 @@ void loadTrainingEvents(std::vector<Event*>& events, std::vector<std::string>& u
     std::map<std::string,double> datamap;
 
     // number of fields in the CSV
-    int N_FIELDS = 48;
+    int N_FIELDS = 49;
 
     // Make sure the file reads.
     if(infile.fail())
@@ -198,7 +209,7 @@ void loadTrainingEvents(std::vector<Event*>& events, std::vector<std::string>& u
 
                  //std::cout << std::endl;
 
-                 //// output info
+                 // output info
                  //for(std::map<std::string,double>::iterator i=datamap.begin(); i!=datamap.end(); ++i)
                  //{
                  //    std::cout << line_number << ", " << i->first << ": " << i->second << std::endl;

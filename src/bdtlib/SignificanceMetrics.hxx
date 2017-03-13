@@ -226,8 +226,8 @@ class PoissonSignificance : public SignificanceMetric
             //std::cout << "Uncertainty type : " << unctype << std::endl;
             //std::cout << "Uncertainty value: " << unc << std::endl;
 
-            if(background <= 0) background = 1;
-            //if(nbackground < 10) return 0;
+            if(background <= 1) return 0;
+            if(nbackground < 20) return 0;
 
             if(unctype == 1) setUncertainty(backgroundOut);
             else setUncertainty(background);
