@@ -12,6 +12,7 @@
 
 #include "Tree.h"
 #include "SignificanceMetrics.hxx"
+#include "LoadEvents.hxx"
 #include "TRandom3.h"
 #include <sstream>
 #include <fstream>
@@ -37,19 +38,27 @@ bool saveTree = true;
 
 // Where to save the trees.
 TString treeDirectory("./trees/");
-//TString infilename("data/categorization_training.csv");
-TString infiledir("data/samples/");
-std::vector<TString> infilenames = {TString("H2Mu_VBF_bdt_training.csv"), 
+
+TString csvdir("data/csv/");
+std::vector<TString> csvnames    = {TString("H2Mu_VBF_bdt_training.csv"), 
                                     TString("H2Mu_gg_bdt_training.csv"), 
                                     TString("H2Mu_WH_neg_bdt_training.csv"), 
                                     TString("H2Mu_WH_pos_bdt_training.csv"), 
                                     TString("H2Mu_ZH_bdt_training.csv"), 
                                     TString("ZJets_AMC_bdt_training.csv"),
-                                    TString("tt_ll_AMC_bdt_training.csv")};
+                                    TString("tt_ll_AMC_bdt_training.csv")
+                                   };
 
-//TString infiledir("data/");
-//std::vector<TString> infilenames = {TString("all_sig_and_bkg_in_110_to_160_GeV.csv")};
-// decide which variables to use for the training
+TString rootdir("/home/puno/h2mumu/UFDimuAnalysis_v2/bin/rootfiles/bdt/");
+std::vector<TString> rootnames   = {TString("H2Mu_VBF_bdt_training.root"), 
+                                    TString("H2Mu_gg_bdt_training.root"), 
+                                    TString("H2Mu_WH_neg_bdt_training.root"), 
+                                    TString("H2Mu_WH_pos_bdt_training.root"), 
+                                    TString("H2Mu_ZH_bdt_training.root"), 
+                                    TString("ZJets_AMC_bdt_training.root"),
+                                    TString("tt_ll_AMC_bdt_training.root")
+                                   };
+
 std::vector<std::string> useWhichVars;
 
 //////////////////////////////////////////////////////////////////////////
@@ -67,9 +76,9 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
     useWhichVars.push_back("phi_star");              
     
     useWhichVars.push_back("N_valid_jets");          
-    //useWhichVars.push_back("jet0_eta");              
+    useWhichVars.push_back("jet0_eta");              
     useWhichVars.push_back("jet0_pt");               
-    //useWhichVars.push_back("jet1_eta");              
+    useWhichVars.push_back("jet1_eta");              
     useWhichVars.push_back("jet1_pt");               
     useWhichVars.push_back("m_jj");                  
     useWhichVars.push_back("dEta_jj");               
@@ -81,8 +90,8 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
     //useWhichVars.push_back("vbf_jet1_eta");              
     //useWhichVars.push_back("vbf_jet1_pt");               
     useWhichVars.push_back("vbf_m_jj");                  
-    //useWhichVars.push_back("vbf_dEta_jj");               
-    //useWhichVars.push_back("vbf_dEta_jj_mumu");          
+    useWhichVars.push_back("vbf_dEta_jj");               
+    useWhichVars.push_back("vbf_dEta_jj_mumu");          
     //useWhichVars.push_back("vbf_zep");                   
     
     useWhichVars.push_back("MET");                   
@@ -118,117 +127,6 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
 }
 
 //////////////////////////////////////////////////////////////////////////
-// ______________________Load Info Into Data Structures________________//
-/////////////////////////////////////////////////////////////////////////
-
-void loadTrainingEvents(std::vector<Event*>& events, std::vector<std::string>& useWhichVars, TString infilename, int numEvents)
-{
-    // The inputfile.
-    std::ifstream infile;
-    infile.open(infilename);
-
-    std::cout << "Loading training events from: " << infilename << std::endl;
-
-    // read info into these vectors
-    std::vector<std::string> keys;
-    std::map<std::string,double> datamap;
-
-    // number of fields in the CSV
-    int N_FIELDS = 49;
-
-    // Make sure the file reads.
-    if(infile.fail())
-    {    
-        std::cout << "failed to open file" << std::endl;
-        return;
-    }
-
-    // Keep track of the line we are reading.
-    int value_number = 0;
-    int line_number = 0;
-
-    std::string value;
-    while(infile.good() && line_number <= numEvents)
-    {
-         // we reached the last field on the line
-         // no trailing comma, \n ends the field
-         if(value_number == (N_FIELDS -1))
-             std::getline(infile, value, '\n');
-         // not the last field, a comma desigantes the end of the field
-         else 
-             std::getline(infile, value, ','); 
-
-         // do something with the information gathered
-         //std::cout << line_number << ", " << value_number << ": " << value << std::endl;
-
-         // the keys are on the first line
-         if(line_number == 0) 
-             keys.push_back(value);
-
-         // The values for the data are on subsequent lines
-         else
-         {
-             double dvalue;
-             std::stringstream ss;
-             ss << value;
-             ss >> dvalue;
-             datamap[keys[value_number]] = dvalue;
-         }
-
-         // increment counters appropriately
-         // and put the info from the line into the event data structure
-         if(value_number == N_FIELDS - 1)
-         {
-             if(line_number > 0)
-             {
-                 // store target and weight info, initialize feature vector
-                 if(datamap["weight"] > -5)
-                 {
-                     Event* e = new Event();
-                     e->bin = datamap["bin"];
-                     //e->bin = 0;
-                     e->data = std::vector<double>();
-                     e->data.push_back(0);        // the 0th location is the target, reserved, the rest are for the features
-                     e->trueValue = datamap["is_signal"];
-                     e->weight = datamap["weight"];
-                     e->id = line_number;
-
-                     //std::cout << "bin   : " << e->bin << std::endl;
-                     //std::cout << "weight: " << e->weight << std::endl;
-                     //std::cout << "target: " << e->trueValue << std::endl;
-
-                     // push feature values into the vector
-                     for(unsigned int i=0; i<useWhichVars.size(); i++)
-                     {
-                         //std::cout << useWhichVars[i] << ": " << datamap[useWhichVars[i]] << std::endl;
-                         e->data.push_back(datamap[useWhichVars[i]]);
-                     }
-
-                     events.push_back(e);
-                 }
-
-                 //std::cout << std::endl;
-
-                 // output info
-                 //for(std::map<std::string,double>::iterator i=datamap.begin(); i!=datamap.end(); ++i)
-                 //{
-                 //    std::cout << line_number << ", " << i->first << ": " << i->second << std::endl;
-                 //}
-
-                 //std::cout << "----------" << std::endl << std::endl;
-             }
-
-             line_number++;
-             value_number = 0;
-         }
-         else
-             value_number++;
-    }
-
-    infile.close();
-}
-
-//////////////////////////////////////////////////////////////////////////
 // ______________________Regression_________ ___________________________//
 /////////////////////////////////////////////////////////////////////////
 
@@ -244,8 +142,11 @@ void buildCategorizationTree()
   std::vector<Event*> trainingEvents = std::vector<Event*>();
 
   initWhichVars(useWhichVars);
-  for(auto& infilename: infilenames)
-      loadTrainingEvents(trainingEvents, useWhichVars, infiledir+infilename, 1000000);
+  //for(auto& filename: csvnames)
+  //    loadEventsCSV(trainingEvents, useWhichVars, csvdir+filename);
+
+  for(auto& filename: rootnames)
+      loadEventsROOT(trainingEvents, useWhichVars, rootdir+filename);
 
   std::cout << std::endl << "Number of training events: " << trainingEvents.size() << std::endl << std::endl;
 
