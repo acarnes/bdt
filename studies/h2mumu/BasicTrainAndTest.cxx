@@ -26,12 +26,9 @@
 // main if you want input from the terminal to determine the settings.
 
 // Fundamental settings for the regression.
+int nbkgmin = 200;
 Int_t nodes = 16;
 int nbins = 20;
-
-// Choose which significance function to use.
-SignificanceMetric* sf = new PoissonSignificance(0);
-                  //sf = new AsimovSignificance(0);
 
 // Whether to save the trees from the regression into a directory specified later.
 bool saveTree = true;
@@ -39,24 +36,60 @@ bool saveTree = true;
 // Where to save the trees.
 TString treeDirectory("./trees/");
 
-TString csvdir("data/csv/");
-std::vector<TString> csvnames    = {TString("H2Mu_VBF_bdt_training.csv"), 
-                                    TString("H2Mu_gg_bdt_training.csv"), 
-                                    TString("H2Mu_WH_neg_bdt_training.csv"), 
-                                    TString("H2Mu_WH_pos_bdt_training.csv"), 
-                                    TString("H2Mu_ZH_bdt_training.csv"), 
-                                    TString("ZJets_AMC_bdt_training.csv"),
-                                    TString("tt_ll_AMC_bdt_training.csv")
+TString csvdir("/home/puno/h2mumu/UFDimuAnalysis_v2/bin/csv/bdtcsv/");
+std::vector<TString> csvnames  =  {TString("H2Mu_VBF_bdt_training_dyMG.csv"),
+                                   TString("H2Mu_WH_neg_bdt_training_dyMG.csv"),
+                                   TString("H2Mu_WH_pos_bdt_training_dyMG.csv"),
+                                   TString("H2Mu_ZH_bdt_training_dyMG.csv"),
+                                   TString("H2Mu_gg_bdt_training_dyMG.csv"),
+                                   TString("WW_bdt_training_dyMG.csv"),
+                                   TString("WZ_3l_bdt_training_dyMG.csv"),
+                                   TString("ZJets_MG_HT_100_200_bdt_training_dyMG.csv"),
+                                   TString("ZJets_MG_HT_1200_2500_bdt_training_dyMG.csv"),
+                                   TString("ZJets_MG_HT_200_400_bdt_training_dyMG.csv"),
+                                   TString("ZJets_MG_HT_2500_inf_bdt_training_dyMG.csv"),
+                                   TString("ZJets_MG_HT_400_600_bdt_training_dyMG.csv"),
+                                   TString("ZJets_MG_HT_600_800_bdt_training_dyMG.csv"),
+                                   TString("ZJets_MG_HT_70_100_bdt_training_dyMG.csv"),
+                                   TString("ZJets_MG_HT_800_1200_bdt_training_dyMG.csv"),
+                                   TString("ZJets_MG_bdt_training_dyMG.csv"),
+                                   TString("ZZTo4L_bdt_training_dyMG.csv"),
+                                   TString("ZZ_2l_2q_bdt_training_dyMG.csv"),
+                                   TString("ZZ_2l_2v_bdt_training_dyMG.csv"),
+                                   TString("tW_neg_bdt_training_dyMG.csv"),
+                                   TString("tW_pos_bdt_training_dyMG.csv"),
+                                   TString("tZq_bdt_training_dyMG.csv"),
+                                   TString("ttW_bdt_training_dyMG.csv"),
+                                   TString("ttZ_bdt_training_dyMG.csv"),
+                                   TString("tt_ll_AMC_bdt_training_dyMG.csv")
                                    };
 
 TString rootdir("/home/puno/h2mumu/UFDimuAnalysis_v2/bin/rootfiles/bdt/");
-std::vector<TString> rootnames   = {TString("H2Mu_VBF_bdt_training.root"), 
-                                    TString("H2Mu_gg_bdt_training.root"), 
-                                    TString("H2Mu_WH_neg_bdt_training.root"), 
-                                    TString("H2Mu_WH_pos_bdt_training.root"), 
-                                    TString("H2Mu_ZH_bdt_training.root"), 
-                                    TString("ZJets_AMC_bdt_training.root"),
-                                    TString("tt_ll_AMC_bdt_training.root")
+std::vector<TString> rootnames  = {TString("H2Mu_VBF_bdt_training_dyMG.root"),
+                                   TString("H2Mu_WH_neg_bdt_training_dyMG.root"),
+                                   TString("H2Mu_WH_pos_bdt_training_dyMG.root"),
+                                   TString("H2Mu_ZH_bdt_training_dyMG.root"),
+                                   TString("H2Mu_gg_bdt_training_dyMG.root"),
+                                   TString("WW_bdt_training_dyMG.root"),
+                                   TString("WZ_3l_bdt_training_dyMG.root"),
+                                   TString("ZJets_MG_HT_100_200_bdt_training_dyMG.root"),
+                                   TString("ZJets_MG_HT_1200_2500_bdt_training_dyMG.root"),
+                                   TString("ZJets_MG_HT_200_400_bdt_training_dyMG.root"),
+                                   TString("ZJets_MG_HT_2500_inf_bdt_training_dyMG.root"),
+                                   TString("ZJets_MG_HT_400_600_bdt_training_dyMG.root"),
+                                   TString("ZJets_MG_HT_600_800_bdt_training_dyMG.root"),
+                                   TString("ZJets_MG_HT_70_100_bdt_training_dyMG.root"),
+                                   TString("ZJets_MG_HT_800_1200_bdt_training_dyMG.root"),
+                                   TString("ZJets_MG_bdt_training_dyMG.root"),
+                                   TString("ZZTo4L_bdt_training_dyMG.root"),
+                                   TString("ZZ_2l_2q_bdt_training_dyMG.root"),
+                                   TString("ZZ_2l_2v_bdt_training_dyMG.root"),
+                                   TString("tW_neg_bdt_training_dyMG.root"),
+                                   TString("tW_pos_bdt_training_dyMG.root"),
+                                   TString("tZq_bdt_training_dyMG.root"),
+                                   TString("ttW_bdt_training_dyMG.root"),
+                                   TString("ttZ_bdt_training_dyMG.root"),
+                                   TString("tt_ll_AMC_bdt_training_dyMG.root")
                                    };
 
 std::vector<std::string> useWhichVars;
@@ -69,9 +102,9 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
 {
     useWhichVars.push_back("dimu_pt");               
     useWhichVars.push_back("mu0_eta");               
-    useWhichVars.push_back("mu0_pt");                
+    //useWhichVars.push_back("mu0_pt");                
     useWhichVars.push_back("mu1_eta");               
-    useWhichVars.push_back("mu1_pt");                
+    //useWhichVars.push_back("mu1_pt");                
     useWhichVars.push_back("mu_res_eta");                
     useWhichVars.push_back("phi_star");              
     
@@ -83,16 +116,16 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
     useWhichVars.push_back("m_jj");                  
     useWhichVars.push_back("dEta_jj");               
     useWhichVars.push_back("dEta_jj_mumu");          
-    //useWhichVars.push_back("zep");                   
+    useWhichVars.push_back("zep");                   
     
-    //useWhichVars.push_back("vbf_jet0_eta");              
-    //useWhichVars.push_back("vbf_jet0_pt");               
-    //useWhichVars.push_back("vbf_jet1_eta");              
-    //useWhichVars.push_back("vbf_jet1_pt");               
+    useWhichVars.push_back("vbf_jet0_eta");              
+    useWhichVars.push_back("vbf_jet0_pt");               
+    useWhichVars.push_back("vbf_jet1_eta");              
+    useWhichVars.push_back("vbf_jet1_pt");               
     useWhichVars.push_back("vbf_m_jj");                  
     useWhichVars.push_back("vbf_dEta_jj");               
     useWhichVars.push_back("vbf_dEta_jj_mumu");          
-    //useWhichVars.push_back("vbf_zep");                   
+    useWhichVars.push_back("vbf_zep");                   
     
     useWhichVars.push_back("MET");                   
     
@@ -104,7 +137,7 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
     //useWhichVars.push_back("mT_b_MET");              
     //useWhichVars.push_back("m_bb");                  
     //useWhichVars.push_back("dEta_bb");               
-    
+    //
     //useWhichVars.push_back("N_valid_extra_leptons"); 
     //
     //useWhichVars.push_back("N_valid_electrons");     
@@ -118,7 +151,7 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
     //useWhichVars.push_back("extra_muon0_pt");        
     //useWhichVars.push_back("extra_muon1_eta");       
     //useWhichVars.push_back("extra_muon1_pt");        
-    //
+    
 
     // not features: bin, target, and weight
     // "bin"
@@ -138,6 +171,10 @@ void buildCategorizationTree()
   // Train 
   ///////////////////////////////////
 
+  // Choose which significance function to use.
+  SignificanceMetric* sf = new PoissonSignificance(0, nbkgmin);
+                    //sf = new AsimovSignificance(0, nbkgmin);
+
   // The training and testing events.
   std::vector<Event*> trainingEvents = std::vector<Event*>();
 
@@ -156,15 +193,16 @@ void buildCategorizationTree()
 
   // Output the parameters of the current run. 
   std::cout << "=======================================" << std::endl;
-  std::cout << "Nodes: " << nodes << std::endl;
-  //std::cout << "Significance Metric: " << sf->name().c_str() << std::endl;
+  std::cout << "Nodes              : " << nodes << std::endl;
+  std::cout << "N_bkg_min          : " << nbkgmin << std::endl;
+  std::cout << "Significance Metric: " << sf->name << std::endl;
   std::cout << "=======================================" << std::endl;
   
   // Do the regression and save the trees.
   tree->buildTree(nodes, sf);
 
   // Output the save directory to the screen.
-  TString savename = "tree.xml";
+  TString savename = Form("tree_nodes%d_minbkg%d.xml", nodes, nbkgmin);
   if(saveTree)
   {
       std::cout << "save tree to: " << treeDirectory+savename << std::endl;
@@ -230,7 +268,8 @@ int main(int argc, char* argv[])
     {
         std::stringstream ss;
         ss << argv[i];
-        if(i==1) ss >> nodes;
+        if(i==1) ss >> nbkgmin;
+        if(i==2) ss >> nodes;
     }
 
     buildCategorizationTree();

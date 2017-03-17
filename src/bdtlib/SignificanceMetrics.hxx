@@ -26,13 +26,22 @@ class SignificanceMetric
 {
     public:
 
+        TString name = "SignificanceMetric";
         int unctype = 0;   // the type of uncertainty to use
         double unc = 0;    // the percent uncertainty for the current number of bg events
+        int nbkgmin = 0;   // the minimum required bkg events in a bin in the signal region
+                           // for the significance to be > 0
 
         SignificanceMetric(int unctype)
         {
             this->unctype = unctype;
         }
+        SignificanceMetric(int unctype, int nbkgmin)
+        {
+            this->unctype = unctype;
+            this->nbkgmin = nbkgmin;
+        }
+
 
         void setUncertainty(double background)
         {
@@ -137,8 +146,9 @@ class AsimovSignificance : public SignificanceMetric
 {
     public:
 
-        AsimovSignificance() : SignificanceMetric(0){}
-        AsimovSignificance(int unctype) : SignificanceMetric(unctype){}
+        AsimovSignificance() : SignificanceMetric(0){ name = "AsimovSignificane"; }
+        AsimovSignificance(int unctype) : SignificanceMetric(unctype){ name = "AsimovSignificane"; }
+        AsimovSignificance(int unctype, int nbkgmin) : SignificanceMetric(unctype, nbkgmin){ name = "AsimovSignificane"; }
 
         double significance(double signal, double background)
         {
@@ -164,6 +174,7 @@ class AsimovSignificance : public SignificanceMetric
         }
         double significance(double signal, double background, long long int nsignal, long long int nbackground)
         {
+            if(nbackground < nbkgmin) return 0;
             return significance(signal, background);
         }
         // need to incorporate nsignal, nbackground, nbackgroundOut constraints
@@ -171,7 +182,7 @@ class AsimovSignificance : public SignificanceMetric
                             long long int nsignal, long long int nbackground, long long int nbackgroundOut)
         {
             if(background <= 0) return 0;
-            if(nbackground < 10) return 0;
+            if(nbackground < nbkgmin) return 0;
 
             if(unctype == 1) setUncertainty(backgroundOut);
             else setUncertainty(background);
@@ -202,8 +213,9 @@ class PoissonSignificance : public SignificanceMetric
 {
     public:
 
-        PoissonSignificance() : SignificanceMetric(0){}
-        PoissonSignificance(int unctype) : SignificanceMetric(unctype){}
+        PoissonSignificance() : SignificanceMetric(0){ name = "PoissonSignificane"; }
+        PoissonSignificance(int unctype) : SignificanceMetric(unctype){ name = "PoissonSignificane"; }
+        PoissonSignificance(int unctype, int nbkgmin) : SignificanceMetric(unctype, nbkgmin){ name = "PoissonSignificane"; } 
 
         double significance(double signal, double background)
         {
@@ -217,7 +229,7 @@ class PoissonSignificance : public SignificanceMetric
         }
         double significance(double signal, double background, long long int nsignal, long long int nbackground)
         {
-            if(nbackground < 10) return 0;
+            if(nbackground < nbkgmin) return 0;
             return significance(signal, background);
         }
         double significance(double signal, double background, double backgroundOut,
@@ -227,7 +239,7 @@ class PoissonSignificance : public SignificanceMetric
             //std::cout << "Uncertainty value: " << unc << std::endl;
 
             if(background <= 1) return 0;
-            if(nbackground < 20) return 0;
+            if(nbackground < nbkgmin) return 0;
 
             if(unctype == 1) setUncertainty(backgroundOut);
             else setUncertainty(background);
