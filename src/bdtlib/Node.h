@@ -61,6 +61,10 @@ class Node
         double getTotalBackgroundOut();
         void setTotalBackgroundOut(double sTotalBackgroundOut);
 
+        // data out weights
+        double getTotalDataOut();
+        void setTotalDataOut(double sTotalDataOut);
+
         // num signal
         long long int getNumSignal();
         void setNumSignal(long long int sNumSignal);
@@ -78,6 +82,10 @@ class Node
         // num bkg out
         long long int getNumBackgroundOut();
         void setNumBackgroundOut(long long int sNumBackground);
+
+        // num data out
+        long long int getNumDataOut();
+        void setNumDataOut(long long int sNumData);
 
         std::vector< std::vector<Event*> >& getEvents();
         void setEvents(std::vector< std::vector<Event*> >& sEvents);
@@ -110,6 +118,8 @@ class Node
         double totalBackground;
         double totalBackgroundOut;
 
+        double totalDataOut;
+
         // sum of signal/background training events used
         std::vector<long long int> numSignalVec;
         long long int numSignal;
@@ -117,6 +127,8 @@ class Node
         std::vector<long long int> numBackgroundVec;
         long long int numBackground;
         long long int numBackgroundOut;
+
+        long long int numDataOut;
 
         int numEvents;
 

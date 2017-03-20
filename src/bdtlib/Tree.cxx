@@ -239,9 +239,15 @@ void Tree::buildTree(int nodeLimit, SignificanceMetric* smetric)
         rootNode->calcOptimumSplit(smetric, nbins);
         calcSignificance();
         std::cout << std::endl << "  " << numTerminalNodes << " Nodes : " << significance << std::endl;
-        std::cout << "        +" << rootNode->getName() << ": " << std::sqrt(rootNode->getSignificanceSquared()) << ", " << rootNode->getNumEvents() << ", " 
-                  << rootNode->getNumSignal() << ", " << rootNode->getNumBackground() << ", " << rootNode->getTotalSignal() 
-                  << ", " << rootNode->getTotalBackground() << std::endl;
+        std::cout << "        +" << rootNode->getName() << ": " 
+                  << std::sqrt(rootNode->getSignificanceSquared()) << ", " 
+                  << rootNode->getNumEvents()          << ", " 
+                  << rootNode->getNumSignal()          << ", " 
+                  << rootNode->getNumBackground()      << ", " 
+                  << rootNode->getTotalSignal()        << ", " 
+                  << rootNode->getTotalBackground()    << ", " 
+                  << rootNode->getTotalDataOut()       << ", "
+                  << rootNode->getTotalBackgroundOut() << std::endl;
     }
 
     for(std::list<Node*>::iterator it=terminalNodes.begin(); it!=terminalNodes.end(); it++)
@@ -288,8 +294,15 @@ void Tree::buildTree(int nodeLimit, SignificanceMetric* smetric)
 
     for(std::list<Node*>::iterator it=terminalNodes.begin(); it!=terminalNodes.end(); it++)
     {   
-       std::cout << "        +" << (*it)->getName() << ": " << std::sqrt((*it)->getSignificanceSquared()) << ", " << (*it)->getNumEvents() 
-                 << ", " << (*it)->getNumSignal() << ", " << (*it)->getNumBackground() << ", " << (*it)->getTotalSignal() << ", " << (*it)->getTotalBackground() << std::endl;
+        std::cout << "        +" << (*it)->getName() << ": " 
+                  << std::sqrt((*it)->getSignificanceSquared()) << ", " 
+                  << (*it)->getNumEvents()       << ", " 
+                  << (*it)->getNumSignal()       << ", " 
+                  << (*it)->getNumBackground()   << ", " 
+                  << (*it)->getTotalSignal()     << ", " 
+                  << (*it)->getTotalBackground() << ", " 
+                  << (*it)->getTotalDataOut()       << ", "
+                  << (*it)->getTotalBackgroundOut() << std::endl;
     }   
 
     // Repeat until done.

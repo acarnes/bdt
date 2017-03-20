@@ -56,11 +56,18 @@ class SignificanceMetric
             else unc = std::sqrt(383.744*background + 0.0747027*0.0747027*background*background)/background;               // using max variance
         }
 
+        //////////////////////////////////////////////////////////////////////////////////
+        // Significance in a Single Bin --------------------------------------------------
+        //////////////////////////////////////////////////////////////////////////////////
+
         // the significance is different depending on the metric, so make this abstract
         virtual double significance(double signal, double background) = 0;
         virtual double significance(double signal, double background, long long int nsignal, long long int nbackground) = 0;
         virtual double significance(double signal, double background, double backgroundOut,
                                     long long int nsignal, long long int nbackground, long long int nbackgroundOut) = 0;
+
+        virtual double significance(double signal, double background, double backgroundOut, double dataOut,
+                                    long long int nsignal, long long int nbackground, long long int nbackgroundOut, long long int ndataOut) = 0;
 
         // significance for a single bin no constraints on nbackground, nsignal
         double significance2(double signal, double background)
@@ -82,6 +89,19 @@ class SignificanceMetric
             double s = significance(signal, background, backgroundOut, nsignal, nbackground, nbackgroundOut);
             return s*s;
         }
+
+        // significance2 for one bin, constraints on nsignal, nbackground, nbackgroundOut, error via backgroundOut
+        double significance2(double signal, double background, double backgroundOut, double dataOut,
+                             long long int nsignal, long long int nbackground, long long int nbackgroundOut, long long int ndataOut)
+        {
+            double s = significance(signal, background, backgroundOut, dataOut, nsignal, nbackground, nbackgroundOut, ndataOut);
+            return s*s;
+        }
+
+        //////////////////////////////////////////////////////////////////////////////////
+        // Significance Over Vectors ----------------------------------------------------
+        //////////////////////////////////////////////////////////////////////////////////
+
 
         // significance2 over all the bins, no constraints on nbackground, nsignal
         double significance2(std::vector<double>& signal, std::vector<double>& background)
@@ -110,17 +130,32 @@ class SignificanceMetric
             return s;
         }
 
+        // significance2 over all the bins, constraints on nsignal, nbackground, nbackgroundOut, ndataOut, dataOut, backgroundOut, error via backgroundOut
+        double significance2(std::vector<double>& signal, std::vector<double>& background, double backgroundOut, double dataOut, 
+                             std::vector<long long int>& nsignal, std::vector<long long int>& nbackground, long long int nbackgroundOut, long long int ndataOut)
+        {
+            double s = 0;
+            for(unsigned int i=0; i<signal.size(); i++)
+                s += significance2(signal[i], background[i], backgroundOut, dataOut, nsignal[i], nbackground[i], nbackgroundOut, ndataOut);
+            return s;
+        }
+
+        //////////////////////////////////////////////////////////////////////////////////
+        // Significance Over Histograms --------------------------------------------------
+        //////////////////////////////////////////////////////////////////////////////////
+
+
         double significance2(TH1D* hsignal, TH1D* hbackground, TH1D* hnsignal, TH1D* hnbackground)
         {
-            double s2 = 0;              // net significance squared
-            double nbackgroundOut = 0;  // number of background events outside signal region
-            double backgroundOut = 0;   // sum of weights of background outside signal region
+            double s2 = 0;                     // net significance squared
+            long long int nbackgroundOut = 0;  // number of background events outside signal region
+            double backgroundOut = 0;          // sum of weights of background outside signal region
             for(unsigned int i=1; i<=hsignal->GetNbinsX(); i++)
             {
-                double ibg = hbackground->GetBinContent(i);    // sum bkg weights in bin i
-                double inbg = hnbackground->GetBinContent(i);  // num background events in bin i
-                double isig = hsignal->GetBinContent(i);       // sum of weights of signal in bin i
-                double insig = hnsignal->GetBinContent(i);     // num signal events in bin i
+                double ibg = hbackground->GetBinContent(i);                          // sum bkg weights in bin i
+                long long int inbg = (long long int)hnbackground->GetBinContent(i);  // num background events in bin i
+                double isig = hsignal->GetBinContent(i);                             // sum of weights of signal in bin i
+                long long int insig = (long long int)hnsignal->GetBinContent(i);     // num signal events in bin i
 
                 // first bin is the amount outside the signal region
                 if(i==1)
@@ -136,6 +171,40 @@ class SignificanceMetric
             }
        
         }
+
+        double significance2(TH1D* hsignal, TH1D* hbackground, TH1D* hdata, TH1D* hnsignal, TH1D* hnbackground, TH1D* hndata)
+        {
+            double s2 = 0;                     // net significance squared
+            long long int nbackgroundOut = 0;  // number of background events outside signal region
+            long long int ndataOut = 0;        // number of data events outside signal region
+            double backgroundOut = 0;          // sum of weights of background outside signal region
+            double dataOut = 0;                // sum of weights of data outside signal region
+
+            for(unsigned int i=1; i<=hsignal->GetNbinsX(); i++)
+            {
+                double idata = hdata->GetBinContent(i);                               // sum bkg weights in bin i
+                long long int indata = (long long int) hndata->GetBinContent(i);      // num background events in bin i
+                double ibg = hbackground->GetBinContent(i);                           // sum bkg weights in bin i
+                long long int inbg = (long long int) hnbackground->GetBinContent(i);  // num background events in bin i
+                double isig = hsignal->GetBinContent(i);                              // sum of weights of signal in bin i
+                long long int insig = (long long int) hnsignal->GetBinContent(i);     // num signal events in bin i
+
+                // first bin is the amount outside the signal region
+                if(i==1)
+                {
+                    nbackgroundOut = inbg;
+                    backgroundOut  = ibg;
+                    ndataOut = indata;
+                    dataOut  = idata;
+                }    
+                // other bins are inside signal region 
+                else
+                {
+                    s2 += significance2(isig, ibg, backgroundOut, dataOut, insig, inbg, nbackgroundOut, ndataOut);
+                }
+            }
+       
+        }
 };
 
 //////////////////////////////////////////////////////////////////
@@ -146,9 +215,9 @@ class AsimovSignificance : public SignificanceMetric
 {
     public:
 
-        AsimovSignificance() : SignificanceMetric(0){ name = "AsimovSignificane"; }
-        AsimovSignificance(int unctype) : SignificanceMetric(unctype){ name = "AsimovSignificane"; }
-        AsimovSignificance(int unctype, int nbkgmin) : SignificanceMetric(unctype, nbkgmin){ name = "AsimovSignificane"; }
+        AsimovSignificance() : SignificanceMetric(0){ name = "AsimovSignificance"; }
+        AsimovSignificance(int unctype) : SignificanceMetric(unctype){ name = "AsimovSignificance"; }
+        AsimovSignificance(int unctype, int nbkgmin) : SignificanceMetric(unctype, nbkgmin){ name = "AsimovSignificance"; }
 
         double significance(double signal, double background)
         {
@@ -203,6 +272,15 @@ class AsimovSignificance : public SignificanceMetric
             // return the full calculation when there is an uncertainty
             return std::isfinite(werr)?werr:0;
         }
+        // need to incorporate nsignal, nbackground, nbackgroundOut, ndataOut, dataOut constraints
+        double significance(double signal, double background, double backgroundOut, double dataOut,
+                            long long int nsignal, long long int nbackground, long long int nbackgroundOut, long long int ndataOut)
+        {
+            if(dataOut == 0) return 0;
+            double scale_factor = dataOut/backgroundOut;                // sometimes the data/mc doesn't match
+            if(scale_factor > 1) background = scale_factor*background;  // scale mc to match the amount of data if mc < data
+            return significance(signal, background, backgroundOut, nsignal, nbackground, nbackgroundOut);
+        }
 };
 
 //////////////////////////////////////////////////////////////////
@@ -213,9 +291,9 @@ class PoissonSignificance : public SignificanceMetric
 {
     public:
 
-        PoissonSignificance() : SignificanceMetric(0){ name = "PoissonSignificane"; }
-        PoissonSignificance(int unctype) : SignificanceMetric(unctype){ name = "PoissonSignificane"; }
-        PoissonSignificance(int unctype, int nbkgmin) : SignificanceMetric(unctype, nbkgmin){ name = "PoissonSignificane"; } 
+        PoissonSignificance() : SignificanceMetric(0){ name = "PoissonSignificance"; }
+        PoissonSignificance(int unctype) : SignificanceMetric(unctype){ name = "PoissonSignificance"; }
+        PoissonSignificance(int unctype, int nbkgmin) : SignificanceMetric(unctype, nbkgmin){ name = "PoissonSignificance"; } 
 
         double significance(double signal, double background)
         {
@@ -246,6 +324,15 @@ class PoissonSignificance : public SignificanceMetric
 
             double val = signal/TMath::Sqrt(background + unc*unc*background*background);
             return std::isfinite(val)?val:0;
+        }
+        // need to incorporate nsignal, nbackground, nbackgroundOut, ndataOut, dataOut constraints
+        double significance(double signal, double background, double backgroundOut, double dataOut,
+                            long long int nsignal, long long int nbackground, long long int nbackgroundOut, long long int ndataOut)
+        {
+            if(dataOut == 0) return 0;
+            double scale_factor = dataOut/backgroundOut;                // sometimes the data/mc doesn't match
+            if(scale_factor > 1) background = scale_factor*background;  // scale mc to match the amount of data if mc < data
+            return significance(signal, background, backgroundOut, nsignal, nbackground, nbackgroundOut);
         }
 };
 

@@ -27,7 +27,7 @@
 
 // Fundamental settings for the regression.
 int nbkgmin = 200;
-Int_t nodes = 16;
+Int_t nodes = 8;
 int nbins = 20;
 
 // Whether to save the trees from the regression into a directory specified later.
@@ -37,7 +37,15 @@ bool saveTree = true;
 TString treeDirectory("./trees/");
 
 TString csvdir("/home/puno/h2mumu/UFDimuAnalysis_v2/bin/csv/bdtcsv/");
-std::vector<TString> csvnames  =  {TString("H2Mu_VBF_bdt_training_dyMG.csv"),
+std::vector<TString> csvnames  =  {
+                                   TString("RunB_bdt_training_dyMG.csv"),
+                                   TString("RunC_bdt_training_dyMG.csv"),
+                                   TString("RunD_bdt_training_dyMG.csv"),
+                                   TString("RunE_bdt_training_dyMG.csv"),
+                                   TString("RunF_bdt_training_dyMG.csv"),
+                                   TString("RunG_bdt_training_dyMG.csv"),
+                                   TString("RunH_bdt_training_dyMG.csv"),
+                                   TString("H2Mu_VBF_bdt_training_dyMG.csv"),
                                    TString("H2Mu_WH_neg_bdt_training_dyMG.csv"),
                                    TString("H2Mu_WH_pos_bdt_training_dyMG.csv"),
                                    TString("H2Mu_ZH_bdt_training_dyMG.csv"),
@@ -65,7 +73,15 @@ std::vector<TString> csvnames  =  {TString("H2Mu_VBF_bdt_training_dyMG.csv"),
                                    };
 
 TString rootdir("/home/puno/h2mumu/UFDimuAnalysis_v2/bin/rootfiles/bdt/");
-std::vector<TString> rootnames  = {TString("H2Mu_VBF_bdt_training_dyMG.root"),
+std::vector<TString> rootnames  = {
+                                   TString("RunB_bdt_training_dyMG.root"),
+                                   TString("RunC_bdt_training_dyMG.root"),
+                                   TString("RunD_bdt_training_dyMG.root"),
+                                   TString("RunE_bdt_training_dyMG.root"),
+                                   TString("RunF_bdt_training_dyMG.root"),
+                                   TString("RunG_bdt_training_dyMG.root"),
+                                   TString("RunH_bdt_training_dyMG.root"),
+                                   TString("H2Mu_VBF_bdt_training_dyMG.root"),
                                    TString("H2Mu_WH_neg_bdt_training_dyMG.root"),
                                    TString("H2Mu_WH_pos_bdt_training_dyMG.root"),
                                    TString("H2Mu_ZH_bdt_training_dyMG.root"),

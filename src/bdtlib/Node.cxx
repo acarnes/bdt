@@ -277,6 +277,42 @@ long long int Node::getNumBackgroundOut()
 
 // ----------------------------------------------------------------------
 
+void Node::setTotalBackgroundOut(double sTotalBackgroundOut)
+{
+    totalBackgroundOut = sTotalBackgroundOut;
+}
+
+double Node::getTotalBackgroundOut()
+{
+    return numBackgroundOut;
+}
+
+// ----------------------------------------------------------------------
+
+void Node::setNumDataOut(long long int sNumDataOut)
+{
+    numDataOut = sNumDataOut;
+}
+
+long long int Node::getNumDataOut()
+{
+    return numDataOut;
+}
+
+// ----------------------------------------------------------------------
+
+void Node::setTotalDataOut(double sTotalDataOut)
+{
+    totalDataOut = sTotalDataOut;
+}
+
+double Node::getTotalDataOut()
+{
+    return totalDataOut;
+}
+
+// ----------------------------------------------------------------------
+
 std::vector< std::vector<Event*> >& Node::getEvents()
 {
     return events;
@@ -302,17 +338,23 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins)
     int bestSplitVariable = -1; 
     double bestSignificanceGain = -1;
 
-    // sum of number of signal/bkg and bkg out of window events
+    // sum of number of signal/bkg and data_out/bkg_out of window events
     std::vector<long long int> numS(nbins, 0);
     std::vector<long long int> numB(nbins, 0);
     long long int numBout = 0;                 // background out of window, used to determine
                                                // bg uncertainty in the window
 
-    // sum of weights of signal/bkg & bkg out of window events
+    long long int numDataOut = 0;              // data out of window, used to determine
+                                               // bg scale factor in the window
+
+    // sum of weights of signal/bkg & data_out/bkg_out of window events
     std::vector<double> netS(nbins, 0.0);
     std::vector<double> netB(nbins, 0.0);
     double netBout = 0.0;                     // background out of window, used to determine
                                               // bg uncertainty in the window
+
+    double netDataOut = 0;                    // data out of window, used to determine
+                                              // bg scale factor in the window
 
     numEvents = events[0].size();
 
@@ -329,8 +371,17 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins)
         // error inside the window (fit outside window determines error on bkg inside window)
         if(e->bin < 0 && e->trueValue <=0)
         {
-            netBout += e->weight; 
-            numBout++;
+            // 0 = bkg, -1 = data
+            if(e->trueValue == 0) 
+            {
+                netBout += e->weight; 
+                numBout++;
+            }
+            else
+            {
+                netDataOut += e->weight; 
+                numDataOut++;
+            }
         }  
         // get info for sig and bkg inside window
         else if(e->bin >= 0)
@@ -339,15 +390,16 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins)
             // in our signal window. Keep track for each bin in the window.
             double tvalue = e->trueValue;
             if(tvalue > 0) netS[e->bin] += e->weight; // signal
-            else netB[e->bin] += e->weight;           // background
+            else if(tvalue == 0) netB[e->bin] += e->weight;           // background
 
             if(tvalue > 0) numS[e->bin]++; // signal
-            else numB[e->bin]++;           // background
+            else if(tvalue == 0) numB[e->bin]++;           // background
         }
     }  
 
     // calculate net significance for this node
-    significanceSquared = smetric->significance2(netS, netB);
+    //significanceSquared = smetric->significance2(netS, netB);
+    significanceSquared = smetric->significance2(netS, netB, netBout, netDataOut, numS, numB, numBout, numDataOut);
     //std::cout << "totalSignificance= " << significanceSquared << std::endl << std::endl;
 
     unsigned int numVars = events.size();
@@ -366,6 +418,9 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins)
         double SUMleftBout = 0;
         double SUMrightBout = netBout;
 
+        double SUMleftDataOut = 0;
+        double SUMrightDataOut = netDataOut;
+
         // The number of sig and bkg in the proposed left, right nodes
         std::vector<long long int> numLeftS(nbins,0);
         std::vector<long long int> numRightS = numS;
@@ -375,6 +430,9 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins)
 
         long long int numLeftBout = 0;
         long long int numRightBout = numBout;
+
+        long long int numLeftDataOut = 0;
+        long long int numRightDataOut = numDataOut;
 
         int candidateSplitVariable = variableToCheck;
 
@@ -389,13 +447,24 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins)
            Event* el = v[i-1]; // nearest event on left of split
            Event* er = v[i];   // nearest event on right of split
 
-           // bkg outside the window
+           // bkg/data outside the window
            if(el->bin < 0 && el->trueValue <=0)
            {
-               SUMleftBout+=el->weight;
-               SUMrightBout-=el->weight;
-               numLeftBout+=1;
-               numRightBout-=1;
+               // 0 = bkg, -1 = data
+               if(el->trueValue == 0)
+               {
+                   SUMleftBout+=el->weight;
+                   SUMrightBout-=el->weight;
+                   numLeftBout+=1;
+                   numRightBout-=1;
+               }
+               else
+               {
+                   SUMleftDataOut+=el->weight;
+                   SUMrightDataOut-=el->weight;
+                   numLeftDataOut+=1;
+                   numRightDataOut-=1;
+               }
            }
            // signal inside window
            else if(el->bin >= 0 && el->trueValue > 0)
@@ -407,7 +476,7 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins)
                numRightS[el->bin]-=1;
            }
            // background inside window
-           else if(el->bin >=0 && el->trueValue <= 0)
+           else if(el->bin >=0 && el->trueValue == 0)
            {
                SUMleftB[el->bin] = SUMleftB[el->bin] + el->weight;
                SUMrightB[el->bin] = SUMrightB[el->bin] - el->weight;
@@ -420,9 +489,9 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins)
            if(el->data[candidateSplitVariable] < er->data[candidateSplitVariable])
            {
                candidateSignificanceGain = 
-                 smetric->significance2(SUMleftS, SUMleftB, SUMleftBout, numLeftS, numLeftB, numLeftBout) 
-                 + smetric->significance2(SUMrightS, SUMrightB, SUMrightBout, numRightS, numRightB, numRightBout) 
-                 - smetric->significance2(netS, netB, netBout, numS, numB, numBout);
+                 smetric->significance2(SUMleftS, SUMleftB, SUMleftBout, SUMleftDataOut, numLeftS, numLeftB, numLeftBout, numLeftDataOut) 
+                 + smetric->significance2(SUMrightS, SUMrightB, SUMrightBout, SUMrightDataOut, numRightS, numRightB, numRightBout, numRightDataOut) 
+                 - smetric->significance2(netS, netB, netBout, netDataOut, numS, numB, numBout, numDataOut);
 //               std::cout << "candidateSignificanceGain= " << candidateSignificanceGain << std::endl << std::endl;
            
                // if the new candidate is better than the current best, then we have a new overall best.
@@ -452,6 +521,7 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins)
     totalBackground = std::accumulate(netB.begin(), netB.end(), 0.0);
 
     totalBackgroundOut = netBout;
+    totalDataOut = netDataOut;
     
     // the number of signal/bkg events used in training
     numSignalVec = numS;
@@ -461,6 +531,7 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins)
     numBackground = std::accumulate(numB.begin(), numB.end(), 0);
 
     numBackgroundOut = numBout;
+    this->numDataOut = numDataOut;
     
     significanceGain = bestSignificanceGain;
     //std::cout << "Significance Increase = " << significanceGain << std::endl;
