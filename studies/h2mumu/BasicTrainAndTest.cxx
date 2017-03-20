@@ -29,6 +29,7 @@
 int nbkgmin = 200;
 Int_t nodes = 8;
 int nbins = 20;
+bool scale_by_data_mc = true;
 
 // Whether to save the trees from the regression into a directory specified later.
 bool saveTree = true;
@@ -188,7 +189,7 @@ void buildCategorizationTree()
   ///////////////////////////////////
 
   // Choose which significance function to use.
-  SignificanceMetric* sf = new PoissonSignificance(0, nbkgmin);
+  SignificanceMetric* sf = new PoissonSignificance(0, nbkgmin, scale_by_data_mc);
                     //sf = new AsimovSignificance(0, nbkgmin);
 
   // The training and testing events.
@@ -286,6 +287,7 @@ int main(int argc, char* argv[])
         ss << argv[i];
         if(i==1) ss >> nbkgmin;
         if(i==2) ss >> nodes;
+        if(i==3) ss >> scale_by_data_mc;
     }
 
     buildCategorizationTree();

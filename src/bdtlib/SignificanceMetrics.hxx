@@ -27,10 +27,11 @@ class SignificanceMetric
     public:
 
         TString name = "SignificanceMetric";
-        int unctype = 0;   // the type of uncertainty to use
-        double unc = 0;    // the percent uncertainty for the current number of bg events
-        int nbkgmin = 0;   // the minimum required bkg events in a bin in the signal region
-                           // for the significance to be > 0
+        bool scale_by_data_mc = false;  // scale the bkg_mc_in by data_out/bkg_mc_out
+        int unctype = 0;                // the type of uncertainty to use
+        double unc = 0;                 // the percent uncertainty for the current number of bg events
+        int nbkgmin = 0;                // the minimum required bkg events in a bin in the signal region
+                                        // for the significance to be > 0
 
         SignificanceMetric(int unctype)
         {
@@ -40,6 +41,12 @@ class SignificanceMetric
         {
             this->unctype = unctype;
             this->nbkgmin = nbkgmin;
+        }
+        SignificanceMetric(int unctype, int nbkgmin, bool scale_by_data_mc)
+        {
+            this->unctype = unctype;
+            this->nbkgmin = nbkgmin;
+            this->scale_by_data_mc = scale_by_data_mc;
         }
 
 
@@ -218,6 +225,7 @@ class AsimovSignificance : public SignificanceMetric
         AsimovSignificance() : SignificanceMetric(0){ name = "AsimovSignificance"; }
         AsimovSignificance(int unctype) : SignificanceMetric(unctype){ name = "AsimovSignificance"; }
         AsimovSignificance(int unctype, int nbkgmin) : SignificanceMetric(unctype, nbkgmin){ name = "AsimovSignificance"; }
+        AsimovSignificance(int unctype, int nbkgmin, bool scale_by_data_mc) : SignificanceMetric(unctype, nbkgmin, scale_by_data_mc){ name = "AsimovSignificance"; }
 
         double significance(double signal, double background)
         {
@@ -278,7 +286,7 @@ class AsimovSignificance : public SignificanceMetric
         {
             if(dataOut == 0) return 0;
             double scale_factor = dataOut/backgroundOut;                // sometimes the data/mc doesn't match
-            if(scale_factor > 1) background = scale_factor*background;  // scale mc to match the amount of data if mc < data
+            if(scale_factor > 1 && scale_by_data_mc) background = scale_factor*background;  // scale mc to match the amount of data if mc < data
             return significance(signal, background, backgroundOut, nsignal, nbackground, nbackgroundOut);
         }
 };
@@ -294,6 +302,7 @@ class PoissonSignificance : public SignificanceMetric
         PoissonSignificance() : SignificanceMetric(0){ name = "PoissonSignificance"; }
         PoissonSignificance(int unctype) : SignificanceMetric(unctype){ name = "PoissonSignificance"; }
         PoissonSignificance(int unctype, int nbkgmin) : SignificanceMetric(unctype, nbkgmin){ name = "PoissonSignificance"; } 
+        PoissonSignificance(int unctype, int nbkgmin, bool scale_by_data_mc) : SignificanceMetric(unctype, nbkgmin, scale_by_data_mc){ name = "PoissonSignificance"; } 
 
         double significance(double signal, double background)
         {
@@ -331,7 +340,7 @@ class PoissonSignificance : public SignificanceMetric
         {
             if(dataOut == 0) return 0;
             double scale_factor = dataOut/backgroundOut;                // sometimes the data/mc doesn't match
-            if(scale_factor > 1) background = scale_factor*background;  // scale mc to match the amount of data if mc < data
+            if(scale_factor > 1 && scale_by_data_mc) background = scale_factor*background;  // scale mc to match the amount of data if mc < data
             return significance(signal, background, backgroundOut, nsignal, nbackground, nbackgroundOut);
         }
 };

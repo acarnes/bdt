@@ -284,7 +284,7 @@ void Node::setTotalBackgroundOut(double sTotalBackgroundOut)
 
 double Node::getTotalBackgroundOut()
 {
-    return numBackgroundOut;
+    return totalBackgroundOut;
 }
 
 // ----------------------------------------------------------------------
