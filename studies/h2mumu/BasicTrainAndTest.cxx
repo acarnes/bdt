@@ -219,7 +219,7 @@ void buildCategorizationTree()
   tree->buildTree(nodes, sf);
 
   // Output the save directory to the screen.
-  TString savename = Form("tree_nodes%d_minbkg%d.xml", nodes, nbkgmin);
+  TString savename = Form("tree_nodes%d_minbkg%d_scale%d.xml", nodes, nbkgmin, scale_by_data_mc);
   if(saveTree)
   {
       std::cout << "save tree to: " << treeDirectory+savename << std::endl;
