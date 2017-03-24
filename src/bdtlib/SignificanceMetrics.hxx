@@ -29,6 +29,7 @@ class SignificanceMetric
         TString name = "SignificanceMetric";
         bool scale_by_data_mc = false;  // scale the bkg_mc_in by data_out/bkg_mc_out
         int unctype = 0;                // the type of uncertainty to use
+        double nparams = 3;             // the number of params the fit would use, only used w/ awb error
         double unc = 0;                 // the percent uncertainty for the current number of bg events
         int nbkgmin = 0;                // the minimum required bkg events in a bin in the signal region
                                         // for the significance to be > 0
@@ -48,6 +49,14 @@ class SignificanceMetric
             this->nbkgmin = nbkgmin;
             this->scale_by_data_mc = scale_by_data_mc;
         }
+        SignificanceMetric(int unctype, double nparams, int nbkgmin, bool scale_by_data_mc)
+        {
+            this->unctype = unctype;
+            this->nparams = nparams;
+            this->nbkgmin = nbkgmin;
+            this->scale_by_data_mc = scale_by_data_mc;
+        }
+
 
 
         void setUncertainty(double background)
@@ -56,8 +65,8 @@ class SignificanceMetric
         // I derived a few different functions for unc = f(background) ~ sqrt(a1*b + a2*a2*b^2) 
         // There are some other options as well, unc = const percentage and unc scales like sqrt(NPARAMS/BOUT)
             if(unctype == 0) unc = 0;
-            else if(unctype == 1) unc = std::sqrt(3/background);  // AWB unc scaling 
-            else if(unctype == 2) unc = 0.1;                      // 10% regardless of amount of background
+            else if(unctype == 1) unc = std::sqrt(nparams/background);  // AWB unc scaling 
+            else if(unctype == 2) unc = 0.1;                            // 10% regardless of amount of background
             else if(unctype == 3) unc = std::sqrt(1.37*background + 0.01727*0.01727*background*background)/background;     // using net variance
             else if(unctype == 4) unc = std::sqrt(29.625*background + 0.064338*0.064338*background*background)/background; // using average error
             else unc = std::sqrt(383.744*background + 0.0747027*0.0747027*background*background)/background;               // using max variance
@@ -226,6 +235,8 @@ class AsimovSignificance : public SignificanceMetric
         AsimovSignificance(int unctype) : SignificanceMetric(unctype){ name = "AsimovSignificance"; }
         AsimovSignificance(int unctype, int nbkgmin) : SignificanceMetric(unctype, nbkgmin){ name = "AsimovSignificance"; }
         AsimovSignificance(int unctype, int nbkgmin, bool scale_by_data_mc) : SignificanceMetric(unctype, nbkgmin, scale_by_data_mc){ name = "AsimovSignificance"; }
+        AsimovSignificance(int unctype, double nparams, int nbkgmin, bool scale_by_data_mc) : 
+            SignificanceMetric(unctype, nparams, nbkgmin, scale_by_data_mc){ name = "AsimovSignificance"; }
 
         double significance(double signal, double background)
         {
@@ -303,6 +314,8 @@ class PoissonSignificance : public SignificanceMetric
         PoissonSignificance(int unctype) : SignificanceMetric(unctype){ name = "PoissonSignificance"; }
         PoissonSignificance(int unctype, int nbkgmin) : SignificanceMetric(unctype, nbkgmin){ name = "PoissonSignificance"; } 
         PoissonSignificance(int unctype, int nbkgmin, bool scale_by_data_mc) : SignificanceMetric(unctype, nbkgmin, scale_by_data_mc){ name = "PoissonSignificance"; } 
+        PoissonSignificance(int unctype, double nparams, int nbkgmin, bool scale_by_data_mc) : 
+            SignificanceMetric(unctype, nparams, nbkgmin, scale_by_data_mc){ name = "PoissonSignificance"; } 
 
         double significance(double signal, double background)
         {

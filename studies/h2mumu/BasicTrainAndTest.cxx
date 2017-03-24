@@ -26,6 +26,8 @@
 // main if you want input from the terminal to determine the settings.
 
 // Fundamental settings for the regression.
+int unctype = 0;
+double nparams = 3;
 int nbkgmin = 200;
 Int_t nodes = 8;
 int nbins = 20;
@@ -189,8 +191,8 @@ void buildCategorizationTree()
   ///////////////////////////////////
 
   // Choose which significance function to use.
-  SignificanceMetric* sf = new PoissonSignificance(0, nbkgmin, scale_by_data_mc);
-                    //sf = new AsimovSignificance(0, nbkgmin);
+  SignificanceMetric* sf = new PoissonSignificance(unctype, nparams, nbkgmin, scale_by_data_mc);
+                    //sf = new AsimovSignificance(unctype, nbkgmin, scale_by_data_mc);
 
   // The training and testing events.
   std::vector<Event*> trainingEvents = std::vector<Event*>();
@@ -209,17 +211,18 @@ void buildCategorizationTree()
   tree->setFeatureNames(useWhichVars);
 
   // Output the parameters of the current run. 
-  std::cout << "=======================================" << std::endl;
+  std::cout << "=========================================" << std::endl;
   std::cout << "Nodes              : " << nodes << std::endl;
   std::cout << "N_bkg_min          : " << nbkgmin << std::endl;
+  std::cout << "scale_by_data_mc   : " << scale_by_data_mc << std::endl;
   std::cout << "Significance Metric: " << sf->name << std::endl;
-  std::cout << "=======================================" << std::endl;
+  std::cout << "=========================================" << std::endl;
   
   // Do the regression and save the trees.
   tree->buildTree(nodes, sf);
 
   // Output the save directory to the screen.
-  TString savename = Form("tree_nodes%d_minbkg%d_scale%d.xml", nodes, nbkgmin, scale_by_data_mc);
+  TString savename = Form("tree_nodes%d_minbkg%d_unctype%d_scale%d_%s.xml", nodes, nbkgmin, unctype, scale_by_data_mc, sf->name.Data());
   if(saveTree)
   {
       std::cout << "save tree to: " << treeDirectory+savename << std::endl;
@@ -287,7 +290,9 @@ int main(int argc, char* argv[])
         ss << argv[i];
         if(i==1) ss >> nbkgmin;
         if(i==2) ss >> nodes;
-        if(i==3) ss >> scale_by_data_mc;
+        if(i==3) ss >> unctype;
+        if(i==4) ss >> nparams;
+        if(i==5) ss >> scale_by_data_mc;
     }
 
     buildCategorizationTree();
