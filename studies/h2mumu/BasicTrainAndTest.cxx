@@ -31,7 +31,7 @@ double nparams = 3;
 int nbkgmin = 200;
 Int_t nodes = 8;
 int nbins = 20;
-bool scale_by_data_mc = true;
+bool scale_by_data_mc = false;
 
 // Whether to save the trees from the regression into a directory specified later.
 bool saveTree = true;
@@ -210,19 +210,28 @@ void buildCategorizationTree()
   Tree* tree = new Tree(trainingEvents, nbins);
   tree->setFeatureNames(useWhichVars);
 
+  // get the tree.xml savename in order
+  TString nparams_string = Form("%9.4f", nparams);
+  nparams_string = nparams_string.ReplaceAll(".", "p");
+  nparams_string = nparams_string.ReplaceAll(" ", "");
+
+  // Output the save directory to the screen.
+  TString savename = Form("tree_nodes%d_minbkg%d_unctype%d_nparams%s_scale%d_%s.xml", nodes, nbkgmin, unctype, nparams_string.Data(), scale_by_data_mc, sf->name.Data());
+  
   // Output the parameters of the current run. 
   std::cout << "=========================================" << std::endl;
   std::cout << "Nodes              : " << nodes << std::endl;
   std::cout << "N_bkg_min          : " << nbkgmin << std::endl;
+  std::cout << "unctype            : " << unctype << std::endl;
+  std::cout << "nparams            : " << nparams << std::endl;
   std::cout << "scale_by_data_mc   : " << scale_by_data_mc << std::endl;
   std::cout << "Significance Metric: " << sf->name << std::endl;
+  std::cout << "tree save name     : " << treeDirectory+savename << std::endl;
   std::cout << "=========================================" << std::endl;
-  
+
   // Do the regression and save the trees.
   tree->buildTree(nodes, sf);
 
-  // Output the save directory to the screen.
-  TString savename = Form("tree_nodes%d_minbkg%d_unctype%d_scale%d_%s.xml", nodes, nbkgmin, unctype, scale_by_data_mc, sf->name.Data());
   if(saveTree)
   {
       std::cout << "save tree to: " << treeDirectory+savename << std::endl;
