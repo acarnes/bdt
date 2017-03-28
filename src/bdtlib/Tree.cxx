@@ -509,6 +509,13 @@ void Tree::addXMLAttributes(Node* node, tinyxml2::XMLElement* np)
 {
     // Convert Node members into XML attributes    
     // and add them to the XMLEngine.
+    //std::cout << node->getName() << std::endl;
+    //std::cout << node->getSplitVariable() << std::endl;
+    //std::cout << featureNames[node->getSplitVariable()].c_str() << std::endl;
+    //std::cout << node->getSplitValue() << std::endl;
+    //std::cout << node->getSignificanceSquared() << std::endl;
+    //std::cout << node->getSignificanceGain() << std::endl;
+
     np->SetAttribute("splitVar", node->getSplitVariable());
     np->SetAttribute("splitVarName", featureNames[node->getSplitVariable()].c_str());
     np->SetAttribute("splitVal", node->getSplitValue());

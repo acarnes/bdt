@@ -488,11 +488,10 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins)
            // x on both sides is unequal, calculate the candidate significance gain
            if(el->data[candidateSplitVariable] < er->data[candidateSplitVariable])
            {
-               candidateSignificanceGain = 
-                 smetric->significance2(SUMleftS, SUMleftB, SUMleftBout, SUMleftDataOut, numLeftS, numLeftB, numLeftBout, numLeftDataOut) 
-                 + smetric->significance2(SUMrightS, SUMrightB, SUMrightBout, SUMrightDataOut, numRightS, numRightB, numRightBout, numRightDataOut) 
-                 - smetric->significance2(netS, netB, netBout, netDataOut, numS, numB, numBout, numDataOut);
-//               std::cout << "candidateSignificanceGain= " << candidateSignificanceGain << std::endl << std::endl;
+               double sl2 = smetric->significance2(SUMleftS, SUMleftB, SUMleftBout, SUMleftDataOut, numLeftS, numLeftB, numLeftBout, numLeftDataOut);
+               double sr2 = smetric->significance2(SUMrightS, SUMrightB, SUMrightBout, SUMrightDataOut, numRightS, numRightB, numRightBout, numRightDataOut);
+               candidateSignificanceGain = sl2 + sr2 - significanceSquared; 
+               //std::cout << "candidateSignificanceGain= " << candidateSignificanceGain << std::endl << std::endl;
            
                // if the new candidate is better than the current best, then we have a new overall best.
                if(candidateSignificanceGain > bestSignificanceGain)
@@ -511,7 +510,7 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins)
     // the significance for the node, already figured this out above
     // significanceSquared = smetric->significance(netS, netB);
 //    std::cout << "fitValue= " << fitValue << std::endl;
-    
+
     // the sum of weights for signal and background
     // expected number in reality for some lumi
     totalSignalVec = netS;

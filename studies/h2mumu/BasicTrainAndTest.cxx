@@ -31,7 +31,7 @@ double nparams = 3;
 int nbkgmin = 200;
 Int_t nodes = 8;
 int nbins = 20;
-bool scale_by_data_mc = false;
+bool scale = false;
 
 // Whether to save the trees from the regression into a directory specified later.
 bool saveTree = true;
@@ -120,31 +120,31 @@ std::vector<std::string> useWhichVars;
 void initWhichVars(std::vector<std::string>& useWhichVars)
 {
     useWhichVars.push_back("dimu_pt");               
-    useWhichVars.push_back("mu0_eta");               
+    //useWhichVars.push_back("mu0_eta");               
     //useWhichVars.push_back("mu0_pt");                
-    useWhichVars.push_back("mu1_eta");               
+    //useWhichVars.push_back("mu1_eta");               
     //useWhichVars.push_back("mu1_pt");                
     useWhichVars.push_back("mu_res_eta");                
     useWhichVars.push_back("phi_star");              
     
     useWhichVars.push_back("N_valid_jets");          
-    useWhichVars.push_back("jet0_eta");              
+    //useWhichVars.push_back("jet0_eta");              
     useWhichVars.push_back("jet0_pt");               
-    useWhichVars.push_back("jet1_eta");              
+    //useWhichVars.push_back("jet1_eta");              
     useWhichVars.push_back("jet1_pt");               
     useWhichVars.push_back("m_jj");                  
     useWhichVars.push_back("dEta_jj");               
     useWhichVars.push_back("dEta_jj_mumu");          
     useWhichVars.push_back("zep");                   
     
-    useWhichVars.push_back("vbf_jet0_eta");              
-    useWhichVars.push_back("vbf_jet0_pt");               
-    useWhichVars.push_back("vbf_jet1_eta");              
-    useWhichVars.push_back("vbf_jet1_pt");               
-    useWhichVars.push_back("vbf_m_jj");                  
-    useWhichVars.push_back("vbf_dEta_jj");               
-    useWhichVars.push_back("vbf_dEta_jj_mumu");          
-    useWhichVars.push_back("vbf_zep");                   
+    //useWhichVars.push_back("vbf_jet0_eta");              
+    //useWhichVars.push_back("vbf_jet0_pt");               
+    //useWhichVars.push_back("vbf_jet1_eta");              
+    //useWhichVars.push_back("vbf_jet1_pt");               
+    //useWhichVars.push_back("vbf_m_jj");                  
+    //useWhichVars.push_back("vbf_dEta_jj");               
+    //useWhichVars.push_back("vbf_dEta_jj_mumu");          
+    //useWhichVars.push_back("vbf_zep");                   
     
     useWhichVars.push_back("MET");                   
     
@@ -191,8 +191,8 @@ void buildCategorizationTree()
   ///////////////////////////////////
 
   // Choose which significance function to use.
-  SignificanceMetric* sf = new PoissonSignificance(unctype, nparams, nbkgmin, scale_by_data_mc);
-                    //sf = new AsimovSignificance(unctype, nbkgmin, scale_by_data_mc);
+  SignificanceMetric* sf = new PoissonSignificance(unctype, nparams, nbkgmin, scale);
+  //SignificanceMetric* sf = new AsimovSignificance(unctype, nbkgmin, scale);
 
   // The training and testing events.
   std::vector<Event*> trainingEvents = std::vector<Event*>();
@@ -216,7 +216,7 @@ void buildCategorizationTree()
   nparams_string = nparams_string.ReplaceAll(" ", "");
 
   // Output the save directory to the screen.
-  TString savename = Form("tree_nodes%d_minbkg%d_unctype%d_nparams%s_scale%d_%s.xml", nodes, nbkgmin, unctype, nparams_string.Data(), scale_by_data_mc, sf->name.Data());
+  TString savename = Form("tree_nodes%d_minbkg%d_unctype%d_nparams%s_scale%d_%s.xml", nodes, nbkgmin, unctype, nparams_string.Data(), scale, sf->name.Data());
   
   // Output the parameters of the current run. 
   std::cout << "=========================================" << std::endl;
@@ -224,7 +224,7 @@ void buildCategorizationTree()
   std::cout << "N_bkg_min          : " << nbkgmin << std::endl;
   std::cout << "unctype            : " << unctype << std::endl;
   std::cout << "nparams            : " << nparams << std::endl;
-  std::cout << "scale_by_data_mc   : " << scale_by_data_mc << std::endl;
+  std::cout << "scale              : " << scale << std::endl;
   std::cout << "Significance Metric: " << sf->name << std::endl;
   std::cout << "tree save name     : " << treeDirectory+savename << std::endl;
   std::cout << "=========================================" << std::endl;
@@ -301,7 +301,7 @@ int main(int argc, char* argv[])
         if(i==2) ss >> nodes;
         if(i==3) ss >> unctype;
         if(i==4) ss >> nparams;
-        if(i==5) ss >> scale_by_data_mc;
+        if(i==5) ss >> scale;
     }
 
     buildCategorizationTree();
