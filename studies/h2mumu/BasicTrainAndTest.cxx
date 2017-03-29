@@ -45,7 +45,8 @@ std::vector<TString> csvnames  =  {
                                    TString("RunC_bdt_training_dyMG.csv"),
                                    TString("RunD_bdt_training_dyMG.csv"),
                                    TString("RunE_bdt_training_dyMG.csv"),
-                                   TString("RunF_bdt_training_dyMG.csv"),
+                                   TString("RunF_1_bdt_training_dyMG.csv"),
+                                   TString("RunF_2_bdt_training_dyMG.csv"),
                                    TString("RunG_bdt_training_dyMG.csv"),
                                    TString("RunH_bdt_training_dyMG.csv"),
                                    TString("H2Mu_VBF_bdt_training_dyMG.csv"),
@@ -64,7 +65,7 @@ std::vector<TString> csvnames  =  {
                                    TString("ZJets_MG_HT_70_100_bdt_training_dyMG.csv"),
                                    TString("ZJets_MG_HT_800_1200_bdt_training_dyMG.csv"),
                                    TString("ZJets_MG_bdt_training_dyMG.csv"),
-                                   TString("ZZTo4L_bdt_training_dyMG.csv"),
+                                   TString("ZZ_4l_bdt_training_dyMG.csv"),
                                    TString("ZZ_2l_2q_bdt_training_dyMG.csv"),
                                    TString("ZZ_2l_2v_bdt_training_dyMG.csv"),
                                    TString("tW_neg_bdt_training_dyMG.csv"),
@@ -81,7 +82,8 @@ std::vector<TString> rootnames  = {
                                    TString("RunC_bdt_training_dyMG.root"),
                                    TString("RunD_bdt_training_dyMG.root"),
                                    TString("RunE_bdt_training_dyMG.root"),
-                                   TString("RunF_bdt_training_dyMG.root"),
+                                   TString("RunF_1_bdt_training_dyMG.root"),
+                                   TString("RunF_2_bdt_training_dyMG.root"),
                                    TString("RunG_bdt_training_dyMG.root"),
                                    TString("RunH_bdt_training_dyMG.root"),
                                    TString("H2Mu_VBF_bdt_training_dyMG.root"),
@@ -100,7 +102,7 @@ std::vector<TString> rootnames  = {
                                    TString("ZJets_MG_HT_70_100_bdt_training_dyMG.root"),
                                    TString("ZJets_MG_HT_800_1200_bdt_training_dyMG.root"),
                                    TString("ZJets_MG_bdt_training_dyMG.root"),
-                                   TString("ZZTo4L_bdt_training_dyMG.root"),
+                                   TString("ZZ_4l_bdt_training_dyMG.root"),
                                    TString("ZZ_2l_2q_bdt_training_dyMG.root"),
                                    TString("ZZ_2l_2v_bdt_training_dyMG.root"),
                                    TString("tW_neg_bdt_training_dyMG.root"),
@@ -119,19 +121,42 @@ std::vector<std::string> useWhichVars;
 
 void initWhichVars(std::vector<std::string>& useWhichVars)
 {
-    useWhichVars.push_back("dimu_pt");               
-    //useWhichVars.push_back("mu0_eta");               
-    //useWhichVars.push_back("mu0_pt");                
+    const int N_JETS      = 4;
+    const int N_JET_PAIRS = 4;
+
+    useWhichVars.push_back("bdt_score");               
+
     //useWhichVars.push_back("mu1_eta");               
     //useWhichVars.push_back("mu1_pt");                
-    useWhichVars.push_back("mu_res_eta");                
-    useWhichVars.push_back("phi_star");              
+    //useWhichVars.push_back("mu2_eta");               
+    //useWhichVars.push_back("mu2_pt");                
+    //useWhichVars.push_back("mu1_abs_eta");                
+    //useWhichVars.push_back("mu2_abs_eta");                
     
-    useWhichVars.push_back("N_valid_jets");          
-    //useWhichVars.push_back("jet0_eta");              
-    useWhichVars.push_back("jet0_pt");               
-    //useWhichVars.push_back("jet1_eta");              
-    useWhichVars.push_back("jet1_pt");               
+    useWhichVars.push_back("dimu_pt");               
+    useWhichVars.push_back("dimu_dPhiStar");               
+    useWhichVars.push_back("dimu_avg_abs_eta");               
+    useWhichVars.push_back("dimu_min_abs_eta");               
+    useWhichVars.push_back("dimu_max_abs_eta");               
+
+    //useWhichVars.push_back("dimu_mass");               
+    //useWhichVars.push_back("dimu_mass_Roch");               
+    //useWhichVars.push_back("dimu_eta");               
+    //useWhichVars.push_back("dimu_abs_eta");               
+    //useWhichVars.push_back("dimu_rapid");               
+    //useWhichVars.push_back("dimu_dR");               
+    //useWhichVars.push_back("dimu_dEta");               
+    //useWhichVars.push_back("dimu_abs_dEta");               
+    //useWhichVars.push_back("dimu_dPhi");               
+    //useWhichVars.push_back("dimu_abs_dPhi");               
+
+    useWhichVars.push_back("nJets");          
+    //useWhichVars.push_back("nJetsCent");          
+    //useWhichVars.push_back("nJetsFwd");          
+    useWhichVars.push_back("jj_jet0_eta");              
+    useWhichVars.push_back("jj_jet0_pt");               
+    useWhichVars.push_back("jj_jet1_eta");              
+    useWhichVars.push_back("jj_jet1_pt");               
     useWhichVars.push_back("m_jj");                  
     useWhichVars.push_back("dEta_jj");               
     useWhichVars.push_back("dEta_jj_mumu");          
@@ -146,9 +171,33 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
     //useWhichVars.push_back("vbf_dEta_jj_mumu");          
     //useWhichVars.push_back("vbf_zep");                   
     
+    // Dijet variables
+    //TString str;
+    //for (int i = 1; i <= N_JET_PAIRS; i++) {
+    //  str.Form("dijet%d_", i);
+    //  useWhichVars.push_back((str+"mass").Data());        
+    //  useWhichVars.push_back((str+"pt").Data());          
+    //  useWhichVars.push_back((str+"dEta").Data());        
+    //  useWhichVars.push_back((str+"abs_dEta").Data());    
+    //  useWhichVars.push_back((str+"min_abs_eta").Data()); 
+    //  useWhichVars.push_back((str+"max_abs_eta").Data());
+    //}
+
+    //// Jet variables
+    //for (int i = 1; i <= N_JETS; i++) {
+    //  str.Form("jet%d_", i); 
+    //  useWhichVars.push_back((str+"pt").Data());      
+    //  useWhichVars.push_back((str+"eta").Data());     
+    //  useWhichVars.push_back((str+"abs_eta").Data()); 
+    //}
+
     useWhichVars.push_back("MET");                   
+    //useWhichVars.push_back("MHT");                   
+    //useWhichVars.push_back("MT_had");                   
+    //useWhichVars.push_back("mass_had");                   
     
-    useWhichVars.push_back("N_valid_bjets");         
+    //useWhichVars.push_back("nBMed");         
+    useWhichVars.push_back("nValBTags");         
     //useWhichVars.push_back("bjet0_eta");             
     //useWhichVars.push_back("bjet0_pt");              
     //useWhichVars.push_back("bjet1_eta");             
@@ -157,15 +206,15 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
     //useWhichVars.push_back("m_bb");                  
     //useWhichVars.push_back("dEta_bb");               
     //
-    //useWhichVars.push_back("N_valid_extra_leptons"); 
+    //useWhichVars.push_back("nExtraLep"); 
     //
-    //useWhichVars.push_back("N_valid_electrons");     
+    //useWhichVars.push_back("nEle");     
     //useWhichVars.push_back("electron0_eta");         
     //useWhichVars.push_back("electron0_pt");          
     //useWhichVars.push_back("electron1_eta");         
     //useWhichVars.push_back("electron1_pt");          
     //
-    //useWhichVars.push_back("N_valid_extra_muons");   
+    //useWhichVars.push_back("nExtraMu");   
     //useWhichVars.push_back("extra_muon0_eta");       
     //useWhichVars.push_back("extra_muon0_pt");        
     //useWhichVars.push_back("extra_muon1_eta");       
