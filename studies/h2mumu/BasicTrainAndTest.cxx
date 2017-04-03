@@ -27,11 +27,12 @@
 
 // Fundamental settings for the regression.
 int unctype = 0;
-double nparams = 3;
+double nparams = 1;
 int nbkgmin = 200;
-Int_t nodes = 8;
+Int_t nodes = 16;
 int nbins = 20;
 bool scale = false;
+TString varset = "bdt";
 
 // Whether to save the trees from the regression into a directory specified later.
 bool saveTree = true;
@@ -124,7 +125,54 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
     const int N_JETS      = 4;
     const int N_JET_PAIRS = 4;
 
-    useWhichVars.push_back("bdt_score");               
+    ////////////////////////////////////////////
+    // bdt score
+    if(varset.Contains("bdt")) 
+        useWhichVars.push_back("bdt_score");               
+
+    if(varset.Contains("multi"))
+    {
+        useWhichVars.push_back("bdt_ggh_score");
+        useWhichVars.push_back("bdt_vbf_score");
+        useWhichVars.push_back("bdt_vh_score");
+        useWhichVars.push_back("bdt_ewk_score");
+        useWhichVars.push_back("bdt_top_score");
+        useWhichVars.push_back("nValBTags");         
+    }
+
+    ////////////////////////////////////////////
+    // resolution variables
+
+    // resolution variables 
+    if(varset.Contains("res")) 
+    {
+        useWhichVars.push_back("dimu_avg_abs_eta");               
+        useWhichVars.push_back("dimu_min_abs_eta");               
+        useWhichVars.push_back("dimu_max_abs_eta");               
+    }
+
+    ////////////////////////////////////////////
+    // main set of variables used in training
+    
+    if(varset.Contains("ext")) 
+    {
+        useWhichVars.push_back("dimu_pt");               
+        useWhichVars.push_back("dimu_dPhiStar");               
+        useWhichVars.push_back("nJets");          
+        useWhichVars.push_back("jj_jet0_eta");              
+        useWhichVars.push_back("jj_jet0_pt");               
+        useWhichVars.push_back("jj_jet1_eta");              
+        useWhichVars.push_back("jj_jet1_pt");               
+        useWhichVars.push_back("m_jj");                  
+        useWhichVars.push_back("dEta_jj");               
+        useWhichVars.push_back("dEta_jj_mumu");          
+        useWhichVars.push_back("zep");                   
+        useWhichVars.push_back("MET");                   
+        //useWhichVars.push_back("nValBTags");         
+    }
+    
+    ////////////////////////////////////////////
+    // extra variables available for trainning
 
     //useWhichVars.push_back("mu1_eta");               
     //useWhichVars.push_back("mu1_pt");                
@@ -133,12 +181,6 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
     //useWhichVars.push_back("mu1_abs_eta");                
     //useWhichVars.push_back("mu2_abs_eta");                
     
-    useWhichVars.push_back("dimu_pt");               
-    useWhichVars.push_back("dimu_dPhiStar");               
-    useWhichVars.push_back("dimu_avg_abs_eta");               
-    useWhichVars.push_back("dimu_min_abs_eta");               
-    useWhichVars.push_back("dimu_max_abs_eta");               
-
     //useWhichVars.push_back("dimu_mass");               
     //useWhichVars.push_back("dimu_mass_Roch");               
     //useWhichVars.push_back("dimu_eta");               
@@ -150,18 +192,8 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
     //useWhichVars.push_back("dimu_dPhi");               
     //useWhichVars.push_back("dimu_abs_dPhi");               
 
-    useWhichVars.push_back("nJets");          
     //useWhichVars.push_back("nJetsCent");          
     //useWhichVars.push_back("nJetsFwd");          
-    useWhichVars.push_back("jj_jet0_eta");              
-    useWhichVars.push_back("jj_jet0_pt");               
-    useWhichVars.push_back("jj_jet1_eta");              
-    useWhichVars.push_back("jj_jet1_pt");               
-    useWhichVars.push_back("m_jj");                  
-    useWhichVars.push_back("dEta_jj");               
-    useWhichVars.push_back("dEta_jj_mumu");          
-    useWhichVars.push_back("zep");                   
-    
     //useWhichVars.push_back("vbf_jet0_eta");              
     //useWhichVars.push_back("vbf_jet0_pt");               
     //useWhichVars.push_back("vbf_jet1_eta");              
@@ -191,13 +223,11 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
     //  useWhichVars.push_back((str+"abs_eta").Data()); 
     //}
 
-    useWhichVars.push_back("MET");                   
     //useWhichVars.push_back("MHT");                   
     //useWhichVars.push_back("MT_had");                   
     //useWhichVars.push_back("mass_had");                   
     
     //useWhichVars.push_back("nBMed");         
-    useWhichVars.push_back("nValBTags");         
     //useWhichVars.push_back("bjet0_eta");             
     //useWhichVars.push_back("bjet0_pt");              
     //useWhichVars.push_back("bjet1_eta");             
@@ -265,12 +295,13 @@ void buildCategorizationTree()
   nparams_string = nparams_string.ReplaceAll(" ", "");
 
   // Output the save directory to the screen.
-  TString savename = Form("tree_nodes%d_minbkg%d_unctype%d_nparams%s_scale%d_%s.xml", nodes, nbkgmin, unctype, nparams_string.Data(), scale, sf->name.Data());
+  TString savename = Form("tree_%s_nodes%d_minbkg%d_unctype%d_nparams%s_scale%d_%s.xml", varset.Data(), nodes, nbkgmin, unctype, nparams_string.Data(), scale, sf->name.Data());
   
   // Output the parameters of the current run. 
   std::cout << "=========================================" << std::endl;
   std::cout << "Nodes              : " << nodes << std::endl;
   std::cout << "N_bkg_min          : " << nbkgmin << std::endl;
+  std::cout << "varset             : " << varset << std::endl;
   std::cout << "unctype            : " << unctype << std::endl;
   std::cout << "nparams            : " << nparams << std::endl;
   std::cout << "scale              : " << scale << std::endl;
@@ -291,6 +322,7 @@ void buildCategorizationTree()
   // Rank the variable importance and output it to the screen.
   std::vector<std::string> rank;
   tree->outputVariableRanking(rank);
+
   /////////////////////////////////////
   //// Test 
   /////////////////////////////////////
@@ -346,11 +378,12 @@ int main(int argc, char* argv[])
     {
         std::stringstream ss;
         ss << argv[i];
-        if(i==1) ss >> nbkgmin;
+        if(i==1) varset = ss.str().c_str();
         if(i==2) ss >> nodes;
-        if(i==3) ss >> unctype;
-        if(i==4) ss >> nparams;
+        if(i==3) ss >> nbkgmin;
+        if(i==4) ss >> unctype;
         if(i==5) ss >> scale;
+        if(i==6) ss >> nparams;
     }
 
     buildCategorizationTree();
