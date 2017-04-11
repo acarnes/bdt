@@ -31,7 +31,8 @@ double nparams = 1;
 int nbkgmin = 200;
 Int_t nodes = 16;
 int nbins = 20;
-bool scale = false;
+bool scale_fluctuations = false;
+bool scale_data = false;
 TString varset = "bdt";
 
 // Whether to save the trees from the regression into a directory specified later.
@@ -270,7 +271,7 @@ void buildCategorizationTree()
   ///////////////////////////////////
 
   // Choose which significance function to use.
-  SignificanceMetric* sf = new PoissonSignificance(unctype, nparams, nbkgmin, scale);
+  SignificanceMetric* sf = new PoissonSignificance(unctype, nparams, nbkgmin, scale_fluctuations, scale_data);
   //SignificanceMetric* sf = new AsimovSignificance(unctype, nbkgmin, scale);
 
   // The training and testing events.
@@ -295,7 +296,7 @@ void buildCategorizationTree()
   nparams_string = nparams_string.ReplaceAll(" ", "");
 
   // Output the save directory to the screen.
-  TString savename = Form("tree_%s_nodes%d_minbkg%d_unctype%d_nparams%s_scale%d_%s.xml", varset.Data(), nodes, nbkgmin, unctype, nparams_string.Data(), scale, sf->name.Data());
+  TString savename = Form("tree_%s_n%d_mbg%d_unc%d_np%s_sf%d_sd%d_%s.xml", varset.Data(), nodes, nbkgmin, unctype, nparams_string.Data(), scale_fluctuations, scale_data, sf->name.Data());
   
   // Output the parameters of the current run. 
   std::cout << "=========================================" << std::endl;
@@ -304,7 +305,8 @@ void buildCategorizationTree()
   std::cout << "varset             : " << varset << std::endl;
   std::cout << "unctype            : " << unctype << std::endl;
   std::cout << "nparams            : " << nparams << std::endl;
-  std::cout << "scale              : " << scale << std::endl;
+  std::cout << "scale_fluctuations : " << scale_fluctuations << std::endl;
+  std::cout << "scale_data         : " << scale_data << std::endl;
   std::cout << "Significance Metric: " << sf->name << std::endl;
   std::cout << "tree save name     : " << treeDirectory+savename << std::endl;
   std::cout << "=========================================" << std::endl;
@@ -382,8 +384,9 @@ int main(int argc, char* argv[])
         if(i==2) ss >> nodes;
         if(i==3) ss >> nbkgmin;
         if(i==4) ss >> unctype;
-        if(i==5) ss >> scale;
-        if(i==6) ss >> nparams;
+        if(i==5) ss >> scale_fluctuations;
+        if(i==6) ss >> scale_data;
+        if(i==7) ss >> nparams;
     }
 
     buildCategorizationTree();

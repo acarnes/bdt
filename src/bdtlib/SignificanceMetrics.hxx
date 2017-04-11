@@ -27,12 +27,13 @@ class SignificanceMetric
     public:
 
         TString name = "SignificanceMetric";
-        bool scale = false;  // scale the bkg_mc_in by data_out/bkg_mc_out
-        int unctype = 0;                // the type of uncertainty to use
-        double nparams = 3;             // the number of params the fit would use, only used w/ awb error
-        double unc = 0;                 // the percent uncertainty for the current number of bg events
-        int nbkgmin = 0;                // the minimum required bkg events in a bin in the signal region
-                                        // for the significance to be > 0
+        bool scale_fluctuations = false;  // scale the bkg_mc_in by data_out/bkg_mc_out
+        bool scale_data = false;          // scale the bkg_mc_in by data_out/bkg_mc_out
+        int unctype = 0;                  // the type of uncertainty to use
+        double nparams = 3;               // the number of params the fit would use, only used w/ awb error
+        double unc = 0;                   // the percent uncertainty for the current number of bg events
+        int nbkgmin = 0;                  // the minimum required bkg events in a bin in the signal region
+                                          // for the significance to be > 0
 
         SignificanceMetric(int unctype)
         {
@@ -47,14 +48,22 @@ class SignificanceMetric
         {
             this->unctype = unctype;
             this->nbkgmin = nbkgmin;
-            this->scale = scale;
+            this->scale_fluctuations = scale_fluctuations;
         }
-        SignificanceMetric(int unctype, double nparams, int nbkgmin, bool scale)
+        SignificanceMetric(int unctype, double nparams, int nbkgmin, bool scale_fluctuations)
         {
             this->unctype = unctype;
             this->nparams = nparams;
             this->nbkgmin = nbkgmin;
-            this->scale = scale;
+            this->scale_fluctuations = scale_fluctuations;
+        }
+        SignificanceMetric(int unctype, double nparams, int nbkgmin, bool scale_fluctuations, bool scale_data)
+        {
+            this->unctype = unctype;
+            this->nparams = nparams;
+            this->nbkgmin = nbkgmin;
+            this->scale_fluctuations = scale_fluctuations;
+            this->scale_data = scale_data;
         }
 
         void setUncertainty(double background)
@@ -232,9 +241,15 @@ class AsimovSignificance : public SignificanceMetric
         AsimovSignificance() : SignificanceMetric(0){ name = "AsimovSignificance"; }
         AsimovSignificance(int unctype) : SignificanceMetric(unctype){ name = "AsimovSignificance"; }
         AsimovSignificance(int unctype, int nbkgmin) : SignificanceMetric(unctype, nbkgmin){ name = "AsimovSignificance"; }
-        AsimovSignificance(int unctype, int nbkgmin, bool scale) : SignificanceMetric(unctype, nbkgmin, scale){ name = "AsimovSignificance"; }
-        AsimovSignificance(int unctype, double nparams, int nbkgmin, bool scale) : 
-            SignificanceMetric(unctype, nparams, nbkgmin, scale){ name = "AsimovSignificance"; }
+
+        AsimovSignificance(int unctype, int nbkgmin, bool scale_fluctuations) : 
+            SignificanceMetric(unctype, nbkgmin, scale_fluctuations){ name = "AsimovSignificance"; }
+
+        AsimovSignificance(int unctype, double nparams, int nbkgmin, bool scale_fluctuations) : 
+            SignificanceMetric(unctype, nparams, nbkgmin, scale_fluctuations){ name = "AsimovSignificance"; }
+
+        AsimovSignificance(int unctype, double nparams, int nbkgmin, bool scale_fluctuations, bool scale_data) : 
+            SignificanceMetric(unctype, nparams, nbkgmin, scale_fluctuations, scale_data){ name = "AsimovSignificance"; }
 
         double significance(double signal, double background)
         {
@@ -293,11 +308,18 @@ class AsimovSignificance : public SignificanceMetric
         double significance(double signal, double background, double backgroundOut, double dataOut,
                             long long int nsignal, long long int nbackground, long long int nbackgroundOut, long long int ndataOut)
         {
-            if(dataOut == 0) return 0;
-            double scale_factor = (1.2*backgroundOut/80)/background;                // bkg_estimtated/bkg_mc_seen 
-            if(scale_factor > 1.09 && scale) 
+            // scale so that data/mc matches
+            double scale_factor_data = dataOut/backgroundOut;
+
+            // pull downward fluctuations up
+            double scale_factor = (1.2*backgroundOut/80)/background;                // scale up by bkg_expected/bkg_mc_seen 
+
+            if(scale_factor > 1.09 && scale_fluctuations) 
                 background = scale_factor*background;                               // scale mc up if it is smaller than the amount estimated 
-                                                                                    // using the bkg outside the signal window
+
+            if(scale_data && scale_factor_data > 1.09)                              // scale mc up if data > mc
+                background = scale_factor_data*background;
+                                                                                  
             return significance(signal, background, backgroundOut, nsignal, nbackground, nbackgroundOut);
         }
 };
@@ -313,9 +335,15 @@ class PoissonSignificance : public SignificanceMetric
         PoissonSignificance() : SignificanceMetric(0){ name = "PoissonSignificance"; }
         PoissonSignificance(int unctype) : SignificanceMetric(unctype){ name = "PoissonSignificance"; }
         PoissonSignificance(int unctype, int nbkgmin) : SignificanceMetric(unctype, nbkgmin){ name = "PoissonSignificance"; } 
-        PoissonSignificance(int unctype, int nbkgmin, bool scale) : SignificanceMetric(unctype, nbkgmin, scale){ name = "PoissonSignificance"; } 
-        PoissonSignificance(int unctype, double nparams, int nbkgmin, bool scale) : 
-            SignificanceMetric(unctype, nparams, nbkgmin, scale){ name = "PoissonSignificance"; } 
+
+        PoissonSignificance(int unctype, int nbkgmin, bool scale_fluctuations) : 
+            SignificanceMetric(unctype, nbkgmin, scale_fluctuations){ name = "PoissonSignificance"; } 
+
+        PoissonSignificance(int unctype, double nparams, int nbkgmin, bool scale_fluctuations) : 
+            SignificanceMetric(unctype, nparams, nbkgmin, scale_fluctuations){ name = "PoissonSignificance"; } 
+
+        PoissonSignificance(int unctype, double nparams, int nbkgmin, bool scale_fluctuations, bool scale_data) : 
+            SignificanceMetric(unctype, nparams, nbkgmin, scale_fluctuations, scale_data){ name = "PoissonSignificance"; } 
 
         double significance(double signal, double background)
         {
@@ -347,15 +375,25 @@ class PoissonSignificance : public SignificanceMetric
             double val = signal/TMath::Sqrt(background + unc*unc*background*background);
             return std::isfinite(val)?val:0;
         }
+
         // need to incorporate nsignal, nbackground, nbackgroundOut, ndataOut, dataOut constraints
         double significance(double signal, double background, double backgroundOut, double dataOut,
                             long long int nsignal, long long int nbackground, long long int nbackgroundOut, long long int ndataOut)
         {
             if(dataOut == 0) return 0;
-            double scale_factor = (1.2*backgroundOut/80)/background;                // bkg_estimtated/bkg_mc_seen 
-            if(scale_factor > 1.09 && scale) 
+
+             // scale so that data/mc matches
+            double scale_factor_data = dataOut/backgroundOut;
+
+            // pull downward fluctuations up
+            double scale_factor = (1.2*backgroundOut/80)/background;                // scale up by bkg_expected/bkg_mc_seen 
+
+            if(scale_factor > 1.09 && scale_fluctuations) 
                 background = scale_factor*background;                               // scale mc up if it is smaller than the amount estimated 
-                                                                                    // using the bkg outside the signal window
+
+            if(scale_data && scale_factor_data > 1.09)                              // scale mc up if data > mc
+                background = scale_factor_data*background;
+                                                                                  
             return significance(signal, background, backgroundOut, nsignal, nbackground, nbackgroundOut);
         }
 };
