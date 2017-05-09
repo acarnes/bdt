@@ -33,6 +33,7 @@ Int_t nodes = 16;
 int nbins = 20;
 bool scale_fluctuations = false;
 bool scale_data = false;
+bool smooth = false;
 TString varset = "bdt";
 
 // Whether to save the trees from the regression into a directory specified later.
@@ -43,76 +44,82 @@ TString treeDirectory("./trees/");
 
 TString csvdir("/home/puno/h2mumu/UFDimuAnalysis_v2/bin/csv/bdtcsv/");
 std::vector<TString> csvnames  =  {
-                                   TString("RunB_bdt_training_dyMG.csv"),
-                                   TString("RunC_bdt_training_dyMG.csv"),
-                                   TString("RunD_bdt_training_dyMG.csv"),
-                                   TString("RunE_bdt_training_dyMG.csv"),
-                                   TString("RunF_1_bdt_training_dyMG.csv"),
-                                   TString("RunF_2_bdt_training_dyMG.csv"),
-                                   TString("RunG_bdt_training_dyMG.csv"),
-                                   TString("RunH_bdt_training_dyMG.csv"),
-                                   TString("H2Mu_VBF_bdt_training_dyMG.csv"),
-                                   TString("H2Mu_WH_neg_bdt_training_dyMG.csv"),
-                                   TString("H2Mu_WH_pos_bdt_training_dyMG.csv"),
-                                   TString("H2Mu_ZH_bdt_training_dyMG.csv"),
-                                   TString("H2Mu_gg_bdt_training_dyMG.csv"),
-                                   TString("WW_bdt_training_dyMG.csv"),
-                                   TString("WZ_3l_bdt_training_dyMG.csv"),
-                                   TString("ZJets_MG_HT_100_200_bdt_training_dyMG.csv"),
-                                   TString("ZJets_MG_HT_1200_2500_bdt_training_dyMG.csv"),
-                                   TString("ZJets_MG_HT_200_400_bdt_training_dyMG.csv"),
-                                   TString("ZJets_MG_HT_2500_inf_bdt_training_dyMG.csv"),
-                                   TString("ZJets_MG_HT_400_600_bdt_training_dyMG.csv"),
-                                   TString("ZJets_MG_HT_600_800_bdt_training_dyMG.csv"),
-                                   TString("ZJets_MG_HT_70_100_bdt_training_dyMG.csv"),
-                                   TString("ZJets_MG_HT_800_1200_bdt_training_dyMG.csv"),
-                                   TString("ZJets_MG_bdt_training_dyMG.csv"),
-                                   TString("ZZ_4l_bdt_training_dyMG.csv"),
-                                   TString("ZZ_2l_2q_bdt_training_dyMG.csv"),
-                                   TString("ZZ_2l_2v_bdt_training_dyMG.csv"),
-                                   TString("tW_neg_bdt_training_dyMG.csv"),
-                                   TString("tW_pos_bdt_training_dyMG.csv"),
-                                   TString("tZq_bdt_training_dyMG.csv"),
-                                   TString("ttW_bdt_training_dyMG.csv"),
-                                   TString("ttZ_bdt_training_dyMG.csv"),
-                                   TString("tt_ll_AMC_bdt_training_dyMG.csv")
+                                   TString("RunB_bdt_training_dyAMC-J.csv"),
+                                   TString("RunC_bdt_training_dyAMC-J.csv"),
+                                   TString("RunD_bdt_training_dyAMC-J.csv"),
+                                   TString("RunE_bdt_training_dyAMC-J.csv"),
+                                   TString("RunF_1_bdt_training_dyAMC-J.csv"),
+                                   TString("RunF_2_bdt_training_dyAMC-J.csv"),
+                                   TString("RunG_bdt_training_dyAMC-J.csv"),
+                                   TString("RunH_bdt_training_dyAMC-J.csv"),
+                                   TString("H2Mu_VBF_bdt_training_dyAMC-J.csv"),
+                                   TString("H2Mu_WH_neg_bdt_training_dyAMC-J.csv"),
+                                   TString("H2Mu_WH_pos_bdt_training_dyAMC-J.csv"),
+                                   TString("H2Mu_ZH_bdt_training_dyAMC-J.csv"),
+                                   TString("H2Mu_gg_bdt_training_dyAMC-J.csv"),
+                                   TString("WW_bdt_training_dyAMC-J.csv"),
+                                   TString("WZ_3l_bdt_training_dyAMC-J.csv"),
+                                   //TString("ZJets_MG_HT_100_200_bdt_training_dyAMC-J.csv"),
+                                   //TString("ZJets_MG_HT_1200_2500_bdt_training_dyAMC-J.csv"),
+                                   //TString("ZJets_MG_HT_200_400_bdt_training_dyAMC-J.csv"),
+                                   //TString("ZJets_MG_HT_2500_inf_bdt_training_dyAMC-J.csv"),
+                                   //TString("ZJets_MG_HT_400_600_bdt_training_dyAMC-J.csv"),
+                                   //TString("ZJets_MG_HT_600_800_bdt_training_dyAMC-J.csv"),
+                                   //TString("ZJets_MG_HT_70_100_bdt_training_dyAMC-J.csv"),
+                                   //TString("ZJets_MG_HT_800_1200_bdt_training_dyAMC-J.csv"),
+                                   //TString("ZJets_MG_bdt_training_dyAMC-J.csv"),
+                                   TString("ZJets_AMC_0j_bdt_training_dyAMC-J.csv"),
+                                   TString("ZJets_AMC_1j_bdt_training_dyAMC-J.csv"),
+                                   TString("ZJets_AMC_2j_bdt_training_dyAMC-J.csv"),
+                                   TString("ZZ_4l_bdt_training_dyAMC-J.csv"),
+                                   TString("ZZ_2l_2q_bdt_training_dyAMC-J.csv"),
+                                   TString("ZZ_2l_2v_bdt_training_dyAMC-J.csv"),
+                                   TString("tW_neg_bdt_training_dyAMC-J.csv"),
+                                   TString("tW_pos_bdt_training_dyAMC-J.csv"),
+                                   TString("tZq_bdt_training_dyAMC-J.csv"),
+                                   TString("ttW_bdt_training_dyAMC-J.csv"),
+                                   TString("ttZ_bdt_training_dyAMC-J.csv"),
+                                   TString("tt_ll_AMC_bdt_training_dyAMC-J.csv")
                                    };
 
 TString rootdir("/home/puno/h2mumu/UFDimuAnalysis_v2/bin/rootfiles/bdt/");
 std::vector<TString> rootnames  = {
-                                   TString("RunB_bdt_training_dyMG.root"),
-                                   TString("RunC_bdt_training_dyMG.root"),
-                                   TString("RunD_bdt_training_dyMG.root"),
-                                   TString("RunE_bdt_training_dyMG.root"),
-                                   TString("RunF_1_bdt_training_dyMG.root"),
-                                   TString("RunF_2_bdt_training_dyMG.root"),
-                                   TString("RunG_bdt_training_dyMG.root"),
-                                   TString("RunH_bdt_training_dyMG.root"),
-                                   TString("H2Mu_VBF_bdt_training_dyMG.root"),
-                                   TString("H2Mu_WH_neg_bdt_training_dyMG.root"),
-                                   TString("H2Mu_WH_pos_bdt_training_dyMG.root"),
-                                   TString("H2Mu_ZH_bdt_training_dyMG.root"),
-                                   TString("H2Mu_gg_bdt_training_dyMG.root"),
-                                   TString("WW_bdt_training_dyMG.root"),
-                                   TString("WZ_3l_bdt_training_dyMG.root"),
-                                   TString("ZJets_MG_HT_100_200_bdt_training_dyMG.root"),
-                                   TString("ZJets_MG_HT_1200_2500_bdt_training_dyMG.root"),
-                                   TString("ZJets_MG_HT_200_400_bdt_training_dyMG.root"),
-                                   TString("ZJets_MG_HT_2500_inf_bdt_training_dyMG.root"),
-                                   TString("ZJets_MG_HT_400_600_bdt_training_dyMG.root"),
-                                   TString("ZJets_MG_HT_600_800_bdt_training_dyMG.root"),
-                                   TString("ZJets_MG_HT_70_100_bdt_training_dyMG.root"),
-                                   TString("ZJets_MG_HT_800_1200_bdt_training_dyMG.root"),
-                                   TString("ZJets_MG_bdt_training_dyMG.root"),
-                                   TString("ZZ_4l_bdt_training_dyMG.root"),
-                                   TString("ZZ_2l_2q_bdt_training_dyMG.root"),
-                                   TString("ZZ_2l_2v_bdt_training_dyMG.root"),
-                                   TString("tW_neg_bdt_training_dyMG.root"),
-                                   TString("tW_pos_bdt_training_dyMG.root"),
-                                   TString("tZq_bdt_training_dyMG.root"),
-                                   TString("ttW_bdt_training_dyMG.root"),
-                                   TString("ttZ_bdt_training_dyMG.root"),
-                                   TString("tt_ll_AMC_bdt_training_dyMG.root")
+                                   TString("RunB_bdt_training_dyAMC-J.root"),
+                                   TString("RunC_bdt_training_dyAMC-J.root"),
+                                   TString("RunD_bdt_training_dyAMC-J.root"),
+                                   TString("RunE_bdt_training_dyAMC-J.root"),
+                                   TString("RunF_1_bdt_training_dyAMC-J.root"),
+                                   TString("RunF_2_bdt_training_dyAMC-J.root"),
+                                   TString("RunG_bdt_training_dyAMC-J.root"),
+                                   TString("RunH_bdt_training_dyAMC-J.root"),
+                                   TString("H2Mu_VBF_bdt_training_dyAMC-J.root"),
+                                   TString("H2Mu_WH_neg_bdt_training_dyAMC-J.root"),
+                                   TString("H2Mu_WH_pos_bdt_training_dyAMC-J.root"),
+                                   TString("H2Mu_ZH_bdt_training_dyAMC-J.root"),
+                                   TString("H2Mu_gg_bdt_training_dyAMC-J.root"),
+                                   TString("WW_bdt_training_dyAMC-J.root"),
+                                   TString("WZ_3l_bdt_training_dyAMC-J.root"),
+                                   //TString("ZJets_MG_HT_100_200_bdt_training_dyAMC-J.root"),
+                                   //TString("ZJets_MG_HT_1200_2500_bdt_training_dyAMC-J.root"),
+                                   //TString("ZJets_MG_HT_200_400_bdt_training_dyAMC-J.root"),
+                                   //TString("ZJets_MG_HT_2500_inf_bdt_training_dyAMC-J.root"),
+                                   //TString("ZJets_MG_HT_400_600_bdt_training_dyAMC-J.root"),
+                                   //TString("ZJets_MG_HT_600_800_bdt_training_dyAMC-J.root"),
+                                   //TString("ZJets_MG_HT_70_100_bdt_training_dyAMC-J.root"),
+                                   //TString("ZJets_MG_HT_800_1200_bdt_training_dyAMC-J.root"),
+                                   //TString("ZJets_MG_bdt_training_dyAMC-J.root"),
+                                   TString("ZJets_AMC_0j_bdt_training_dyAMC-J.root"),
+                                   TString("ZJets_AMC_1j_bdt_training_dyAMC-J.root"),
+                                   TString("ZJets_AMC_2j_bdt_training_dyAMC-J.root"),
+                                   TString("ZZ_4l_bdt_training_dyAMC-J.root"),
+                                   TString("ZZ_2l_2q_bdt_training_dyAMC-J.root"),
+                                   TString("ZZ_2l_2v_bdt_training_dyAMC-J.root"),
+                                   TString("tW_neg_bdt_training_dyAMC-J.root"),
+                                   TString("tW_pos_bdt_training_dyAMC-J.root"),
+                                   TString("tZq_bdt_training_dyAMC-J.root"),
+                                   TString("ttW_bdt_training_dyAMC-J.root"),
+                                   TString("ttZ_bdt_training_dyAMC-J.root"),
+                                   TString("tt_ll_AMC_bdt_training_dyAMC-J.root")
                                    };
 
 std::vector<std::string> useWhichVars;
@@ -271,7 +278,7 @@ void buildCategorizationTree()
   ///////////////////////////////////
 
   // Choose which significance function to use.
-  SignificanceMetric* sf = new PoissonSignificance(unctype, nparams, nbkgmin, scale_fluctuations, scale_data);
+  SignificanceMetric* sf = new PoissonSignificance(unctype, nparams, nbkgmin, scale_fluctuations, scale_data, smooth);
   //SignificanceMetric* sf = new AsimovSignificance(unctype, nbkgmin, scale);
 
   // The training and testing events.
@@ -296,7 +303,8 @@ void buildCategorizationTree()
   nparams_string = nparams_string.ReplaceAll(" ", "");
 
   // Output the save directory to the screen.
-  TString savename = Form("tree_%s_n%d_mbg%d_unc%d_np%s_sf%d_sd%d_%s.xml", varset.Data(), nodes, nbkgmin, unctype, nparams_string.Data(), scale_fluctuations, scale_data, sf->name.Data());
+  TString savename = Form("tree_%s_n%d_mbg%d_unc%d_np%s_sf%d_sd%d_sb%d_%s.xml", varset.Data(), nodes, nbkgmin, unctype, nparams_string.Data(), 
+                          scale_fluctuations, scale_data, smooth, sf->name.Data());
   
   // Output the parameters of the current run. 
   std::cout << "=========================================" << std::endl;
@@ -307,6 +315,7 @@ void buildCategorizationTree()
   std::cout << "nparams            : " << nparams << std::endl;
   std::cout << "scale_fluctuations : " << scale_fluctuations << std::endl;
   std::cout << "scale_data         : " << scale_data << std::endl;
+  std::cout << "smooth             : " << smooth << std::endl;
   std::cout << "Significance Metric: " << sf->name << std::endl;
   std::cout << "tree save name     : " << treeDirectory+savename << std::endl;
   std::cout << "=========================================" << std::endl;
@@ -386,7 +395,8 @@ int main(int argc, char* argv[])
         if(i==4) ss >> unctype;
         if(i==5) ss >> scale_fluctuations;
         if(i==6) ss >> scale_data;
-        if(i==7) ss >> nparams;
+        if(i==7) ss >> smooth;
+        if(i==8) ss >> nparams;
     }
 
     buildCategorizationTree();
