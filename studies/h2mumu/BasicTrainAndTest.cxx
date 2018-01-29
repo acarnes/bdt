@@ -152,11 +152,15 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
     // resolution variables
 
     // resolution variables 
-    if(varset.Contains("res")) 
+    if(varset.Contains("res_eta")) 
     {
-        useWhichVars.push_back("dimu_avg_abs_eta");               
-        useWhichVars.push_back("dimu_min_abs_eta");               
+        //useWhichVars.push_back("dimu_avg_abs_eta");               
+        //useWhichVars.push_back("dimu_min_abs_eta");               
         useWhichVars.push_back("dimu_max_abs_eta");               
+    }
+    if(varset.Contains("res_mass")) 
+    {
+        useWhichVars.push_back("massErr_Roch");               
     }
 
     ////////////////////////////////////////////
@@ -380,24 +384,34 @@ int main(int argc, char* argv[])
 // Run a regression with the appropriate settings.
 
     // Gather regression settings from the command line if you want.
-    // Then you can run as ./TrainAndEvaluate setting1 setting2 ...
+    // Then you can run as ./BasicTrainAndTest setting1 setting2 ...
 
     // Simply overwrite the settings at the beginning
     // with those from the command line like so.
+    // Otherwise it will use the default settings listed at the top of this file
 
     for(int i=1; i<argc; i++)
     {
         std::stringstream ss;
         ss << argv[i];
-        if(i==1) varset = ss.str().c_str();
-        if(i==2) ss >> nodes;
-        if(i==3) ss >> nbkgmin;
-        if(i==4) ss >> unctype;
-        if(i==5) ss >> scale_fluctuations;
-        if(i==6) ss >> scale_data;
-        if(i==7) ss >> smooth;
-        if(i==8) ss >> nparams;
+        if(i==1) varset = ss.str().c_str(); // string telling which variables to use for categorization
+        if(i==2) ss >> nodes;               // the number of categories 
+        if(i==3) ss >> nbkgmin;             // the smallest amount of background allowed in a bin (prevent overtraining)
+        if(i==4) ss >> unctype;             // the uncertainty type to use
+        if(i==5) ss >> scale_fluctuations;  // scale the fluctuations using an adhoc estimate based upon the bkg out of the window
+        if(i==6) ss >> scale_data;          // scale the bkg in the window based upon ndata/nbkg outside the window
+        if(i==7) ss >> smooth;              // smooth the estimate of the bkg in a bin by averaging it with its neighboring bins
+        if(i==8) ss >> nparams;             // this is only important for a certain uncertainty type
     }
+
+    // of course set the varset string to whatever you want, and the nodes to whatever (15 is good)
+    // Other than those options, I recommend using nbkgmin=25, unctype=0 (no extra uncertainty), and smooth=1 
+    // the rest of the options can be set to 0
+    
+    // If the bkg MC and the data don't match then you can turn on scale_data
+    // scale_fluctuations is better left off, smooth is a better way to curtail downward bkg fluctuations
+
+    // Use AsimovSignificance as a metric instead of Poisson if you want, but it didn't make a big difference for me
 
     buildCategorizationTree();
     return 0;
