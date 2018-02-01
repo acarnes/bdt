@@ -6,7 +6,7 @@ The Autocategorizer code is on the binned_categorizer branch.
 The Boosted Decision Tree code is on the master branch. The noroot branch has the same BDT code without any ROOT dependencies.
 
 ## Boosted Decision Trees
-See the example directory to see how to use the BDT code. There is an example cxx file there outlining basic usage of the BDT package.
+See the examples directory to see how to use the BDT code. There is an example cxx file there outlining basic usage of the BDT package.
 
 ## The Autocategorizer
 The binned_categorizer branch has the code for the autocategorizer. The master is a boosted decision tree package I made to do some trigger work way earlier. The BDT code was repurposed to make the autocategorizer. Anyways, if you want to categorize make sure to checkout the binned_categorizer branch after cloning/forking this repo.
