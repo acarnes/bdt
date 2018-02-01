@@ -1,8 +1,9 @@
 # The Autocategorizer and Boosted Decision Trees
+https://github.com/acarnes/bdt/
 
-The Autocategorizer    @ https://github.com/acarnes/bdt/ -- branch=binned_categorizer
-Boosted Decision Trees @ https://github.com/acarnes/bdt/ -- branch=master, branch=noroot
-	branch=noroot has the same BDT code, except that the library has removed all dependence on ROOT
+The Autocategorizer code is on the binned_categorizer branch.
+
+The Boosted Decision Tree code is on the master branch. The noroot branch has the same BDT code without any ROOT dependencies.
 
 ## Boosted Decision Trees
 See the example directory to see how to use the BDT code. There is an example cxx file there outlining basic usage of the BDT package.
