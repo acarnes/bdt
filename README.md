@@ -36,7 +36,7 @@ If you run the code without any options (./BasicTrainAndTest) it will use the de
 LoadEvents.hxx has code to load the events from the csv/ntuples. I was running BasicTrainAndTest.cxx on the ntuples at the ufhpc at /home/puno/h2mumu/UFDimuAnalysis_v2/bin/rootfiles/bdt. To get the code running you can copy those over to wherever you are working or set up your code on the uf hpc and run on them directly. I also copied the ntuples needed for h2mumu/BasicTrainAndTest.cxx over to lxplus at /afs/cern.ch/work/a/acarnes/public/autocat/bdt/studies/h2mumu/infiles . Once you have the code running with those files you can move ahead and work with your own.  
 
 When you run the code you will see some output like this
-````
+```
   1 Nodes : 0.844168
         +root: 0.844168, 1873402, 267789, 272802, 227.964, 113487, 391514, 371845
   2 Nodes : 1.02409
