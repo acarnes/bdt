@@ -362,7 +362,9 @@ class AsimovSignificance : public SignificanceMetric
                             long long int nsignal, long long int nbackground, long long int nbackgroundOut, long long int ndataOut)
         {
             // scale so that data/mc matches
-            double scale_factor_data = dataOut/backgroundOut;
+            double scale_factor_data = 1;
+            if(scale_data && dataOut <= 0) return 0;
+            if(backgroundOut > 0) scale_factor_data = dataOut/backgroundOut;
 
             // pull downward fluctuations up
             double scale_factor = (1.2*backgroundOut/80)/background;                // scale up by bkg_expected/bkg_mc_seen 
@@ -422,7 +424,7 @@ class PoissonSignificance : public SignificanceMetric
             //std::cout << "Uncertainty type : " << unctype << std::endl;
             //std::cout << "Uncertainty value: " << unc << std::endl;
 
-            if(background <= 1) return 0;
+            if(background <= 0) background = 1;
             if(nbackground < nbkgmin) return 0;
 
             if(unctype == 1) setUncertainty(backgroundOut);
@@ -436,10 +438,10 @@ class PoissonSignificance : public SignificanceMetric
         double significance(double signal, double background, double backgroundOut, double dataOut,
                             long long int nsignal, long long int nbackground, long long int nbackgroundOut, long long int ndataOut)
         {
-            if(dataOut == 0) return 0;
-
-             // scale so that data/mc matches
-            double scale_factor_data = dataOut/backgroundOut;
+            // scale so that data/mc matches
+            double scale_factor_data = 1;
+            if(scale_data && dataOut <= 0) return 0;
+            if(backgroundOut > 0) scale_factor_data = dataOut/backgroundOut;
 
             // pull downward fluctuations up
             double scale_factor = (1.2*backgroundOut/80)/background;                // scale up by bkg_expected/bkg_mc_seen 
