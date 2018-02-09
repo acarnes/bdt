@@ -53,6 +53,7 @@ Tree::Tree(std::vector<Event*>& cEvents)
         featureVarNames.push_back("x"+Utilities::numToStr<int>(i));
     }
     setFeatureNames(featureVarNames);
+    maskAllFeatures(events[0][0], true); // use all the features
 }
 
 Tree::Tree(std::vector<Event*>& cEvents, int cnbins)
@@ -72,6 +73,7 @@ Tree::Tree(std::vector<Event*>& cEvents, int cnbins)
         featureVarNames.push_back("x"+Utilities::numToStr<int>(i));
     }
     setFeatureNames(featureVarNames);
+    maskAllFeatures(events[0][0], true); // use all the features
 }
 
 Tree::Tree(std::vector<std::vector<Event*> >& cEvents, int cnbins)
@@ -89,6 +91,7 @@ Tree::Tree(std::vector<std::vector<Event*> >& cEvents, int cnbins)
         featureVarNames.push_back("x"+Utilities::numToStr<int>(i));
     }
     setFeatureNames(featureVarNames);
+    maskAllFeatures(events[0][0], true); // use all the features
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -139,6 +142,23 @@ void Tree::setFeatureNames(std::vector<std::string>& cFeatureNames)
     {
         featureNames.push_back(cFeatureNames[i]);
     }
+}
+
+// ----------------------------------------------------------------------
+
+std::vector<bool> Tree::getFeatureMask()
+{
+    return featureMask;
+}
+
+void Tree::setFeatureMask(std::vector<bool>& cFeatureMask)
+{
+    featureMask = cFeatureMask;
+}
+
+void Tree::maskAllFeatures(Event* e, bool m)
+{
+    featureMask = std::vector<bool>(e->data.size(), m);
 }
 
 // ----------------------------------------------------------------------
@@ -247,7 +267,7 @@ void Tree::buildTree(int nodeLimit, SignificanceMetric* smetric)
 
     if(numTerminalNodes == 1)
     {   
-        rootNode->calcOptimumSplit(smetric, nbins);
+        rootNode->calcOptimumSplit(smetric, nbins, featureMask);
         calcSignificance();
         std::cout << std::endl << "  " << numTerminalNodes << " Nodes : " << significance << std::endl;
         std::cout << "        +" << rootNode->getName() << ": " 
@@ -292,8 +312,8 @@ void Tree::buildTree(int nodeLimit, SignificanceMetric* smetric)
     nodeToSplit->filterEventsToDaughters();  
 
     // Calculate the best splits for the new nodes.
-    left->calcOptimumSplit(smetric, nbins);
-    right->calcOptimumSplit(smetric, nbins);
+    left->calcOptimumSplit(smetric, nbins, featureMask);
+    right->calcOptimumSplit(smetric, nbins, featureMask);
 
     // See if the error reduces as we add more nodes.
     calcSignificance();

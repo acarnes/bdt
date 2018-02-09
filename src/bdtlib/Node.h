@@ -91,7 +91,7 @@ class Node
         void setEvents(std::vector< std::vector<Event*> >& sEvents);
 
         // work functions
-        void calcOptimumSplit(SignificanceMetric* smetric, int nbins);
+        void calcOptimumSplit(SignificanceMetric* smetric, int nbins, std::vector<bool>& featureMask);
         void filterEventsToDaughters();
         Node* filterEventToDaughter(Event* e);
         void listEvents();

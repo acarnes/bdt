@@ -328,7 +328,7 @@ void Node::setEvents(std::vector< std::vector<Event*> >& sEvents)
 // ______________________Performace_Functions___________________________//
 //////////////////////////////////////////////////////////////////////////
 
-void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins)
+void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins, std::vector<bool>& featureMask)
 {
 // We want to build a tree that maximises S/sqrt(S+B) -> S^2/(S+B)
 // or some other significance metric
@@ -407,6 +407,9 @@ void Node::calcOptimumSplit(SignificanceMetric* smetric, int nbins)
     // Calculate the best split point for each variable
     for(unsigned int variableToCheck = 1; variableToCheck < numVars; variableToCheck++)
     { 
+        // The random forest only uses a subset of features
+        // only use this feature if it is turned on
+        if(!featureMask[variableToCheck]) continue;
 
         // The sum of the weights for sig and bkg in the proposed left, right nodes
         std::vector<double> SUMleftB(nbins, 0.0);

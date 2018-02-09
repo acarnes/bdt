@@ -30,6 +30,10 @@ class Tree
         std::vector<std::string> getFeatureNames();
         void setFeatureNames(std::vector<std::string>& featureNames);
 
+        std::vector<bool> getFeatureMask();
+        void setFeatureMask(std::vector<bool>& featureMask);
+        void maskAllFeatures(Event* e, bool m);
+
         void buildTree(int nodeLimit, SignificanceMetric* smetric);
         void calcSignificance();
         void filterEvents(std::vector<Event*>& tEvents);
@@ -57,6 +61,7 @@ class Tree
 
 
     private:
+        std::vector<bool> featureMask; // turn features on/off for the random forest
         std::vector<std::string> featureNames;
         std::vector< std::vector<Event*> > events;
         Node *rootNode;
