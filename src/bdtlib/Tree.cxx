@@ -74,6 +74,23 @@ Tree::Tree(std::vector<Event*>& cEvents, int cnbins)
     setFeatureNames(featureVarNames);
 }
 
+Tree::Tree(std::vector<std::vector<Event*> >& cEvents, int cnbins)
+{
+    rootNode = new Node("root");
+    rootNode->setEvents(events);
+    nbins = cnbins;
+
+    terminalNodes.push_back(rootNode);
+    numTerminalNodes = 1;
+
+    std::vector<std::string> featureVarNames;
+    for(unsigned int i=1; i<events.size(); i++)
+    {
+        featureVarNames.push_back("x"+Utilities::numToStr<int>(i));
+    }
+    setFeatureNames(featureVarNames);
+}
+
 //////////////////////////////////////////////////////////////////////////
 // _______________________Destructor____________________________________//
 //////////////////////////////////////////////////////////////////////////
@@ -185,12 +202,6 @@ void Tree::listEvents(std::vector< std::vector<Event*> >& e)
 // it is a static member.
 int Event::sortingIndex = 1;
 
-bool compareEvents(Event* e1, Event* e2)
-{
-// Sort the events according to the variable given by the sortingIndex.
-    return e1->data[Event::sortingIndex] < e2->data[Event::sortingIndex];
-}
-
 //////////////////////////////////////////////////////////////////////////
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
@@ -203,7 +214,7 @@ void Tree::sortEventVectors(std::vector< std::vector<Event*> >& e)
     for(unsigned int i=0; i<e.size(); i++)
     {
         Event::sortingIndex = i;
-        std::sort(e[i].begin(), e[i].end(), compareEvents);
+        std::sort(e[i].begin(), e[i].end(), Utilities::compareEvents);
     }
 }
 
@@ -385,18 +396,18 @@ void Tree::rankVariablesRecursive(Node* node, std::vector<double>& v)
     if(left==0 || right==0) return;
 
     int sv =  node->getSplitVariable();
-    double er = node->getSignificanceGain();
+    double sg = node->getSignificanceGain();
 
     if(sv == -1)
     {
         std::cout << "ERROR: negative split variable for nonterminal node." << std::endl;
         std::cout << "rankVarRecursive Split Variable = " << sv << std::endl;
-        std::cout << "rankVarRecursive Error Reduction = " << er << std::endl;
+        std::cout << "rankVarRecursive Error Reduction = " << sg << std::endl;
     }
 
     // Add error reduction to the current total for the appropriate
     // variable.
-    v[sv] += er;
+    v[sv] += sg;
 
     rankVariablesRecursive(left, v);
     rankVariablesRecursive(right, v); 
@@ -418,7 +429,7 @@ void Tree::outputVariableRanking(std::vector<std::string>& rank)
     // for each variable i in v[i].
     std::vector<double> v(events.size(), 0);
 
-    std::cout << std::endl << "Ranking Variables by Net Error Reduction... " << std::endl;
+    std::cout << std::endl << "Ranking Variables by Net Significance Gain... " << std::endl;
 
     rankVariables(v);
 

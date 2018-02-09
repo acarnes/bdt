@@ -10,8 +10,8 @@ LIBFLAGS = `root-config --libs` -g -O3 -lXMLIO -lMLP -lMinuit
 DEPS = LoadEvents.hxx ${LIBDIR}SignificanceMetrics.hxx ${LIBDIR}Utilities.h
 MAINPROGRAM = BasicTrainAndTest
 
-CompileStuff: ${LIBDIR}CategoryReader.o ${LIBDIR}Node.o ${XMLDIR}tinyxml2.o ${LIBDIR}Tree.o ${MAINPROGRAM}.o
-	$(CC) $(LIBFLAGS) ${LIBDIR}CategoryReader.o ${LIBDIR}Node.o ${XMLDIR}tinyxml2.o ${LIBDIR}Tree.o ${MAINPROGRAM}.o -o ${MAINPROGRAM}
+CompileStuff: ${LIBDIR}CategoryReader.o ${LIBDIR}Node.o ${XMLDIR}tinyxml2.o ${LIBDIR}Tree.o ${LIBDIR}Forest.o ${MAINPROGRAM}.o
+	$(CC) $(LIBFLAGS) ${LIBDIR}CategoryReader.o ${LIBDIR}Node.o ${XMLDIR}tinyxml2.o ${LIBDIR}Tree.o ${LIBDIR}Forest.o ${MAINPROGRAM}.o -o ${MAINPROGRAM}
 
 ${MAINPROGRAM}.o: ${MAINPROGRAM}.cxx ${DEPS}
 	$(CC) $(CFLAGS) ${MAINPROGRAM}.cxx  
@@ -24,6 +24,9 @@ ${XMLDIR}tinyxml2.o: ${XMLDIR}tinyxml2.cpp
 
 ${LIBDIR}Tree.o: ${LIBDIR}Tree.cxx
 	$(CC) $(CFLAGS) ${LIBDIR}Tree.cxx -o ${LIBDIR}Tree.o
+
+${LIBDIR}Forest.o: ${LIBDIR}Forest.cxx
+	$(CC) $(CFLAGS) ${LIBDIR}Forest.cxx -o ${LIBDIR}Forest.o
 
 ${LIBDIR}CategoryReader.o: ${LIBDIR}CategoryReader.cxx
 	$(CC) $(CFLAGS) ${LIBDIR}CategoryReader.cxx -o ${LIBDIR}CategoryReader.o

@@ -13,6 +13,7 @@ class Tree
         Tree();
         Tree(std::vector<Event*>& cEvents);
         Tree(std::vector<Event*>& cEvents, int cnbins);
+        Tree(std::vector<std::vector<Event*> >& cEvents, int cnbins);
         ~Tree();
 
         void setTrainingEvents(std::vector<Event*>& trainingEvents);

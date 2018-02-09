@@ -3,6 +3,7 @@
 #ifndef ADD_UTILITIES
 #define ADD_UTILITIES 
 
+#include "Event.h"
 #include <vector>
 #include <string>
 #include <sstream>
@@ -51,6 +52,19 @@ public:
         std::string s = ss.str();
         return s;
     };
+
+    static bool compareEvents(Event* e1, Event* e2) 
+    {
+    // Sort the events according to the variable given by the sortingIndex.
+        return e1->data[Event::sortingIndex] < e2->data[Event::sortingIndex];
+    };
+
+    static bool compareEventsById(Event* e1, Event* e2) 
+    {
+    // Sort the events by ID. We need this to produce rate plots.
+        return e1->id < e2->id;
+    };
+
 
 
 };

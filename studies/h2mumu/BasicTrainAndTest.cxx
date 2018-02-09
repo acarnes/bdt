@@ -11,7 +11,7 @@
 ///////////////////////////////////////////////////////////////////////////
 
 #include "CategoryReader.h"
-#include "Tree.h"
+#include "Forest.h"
 #include "SignificanceMetrics.hxx"
 #include "LoadEvents.hxx"
 #include "TRandom3.h"
@@ -30,6 +30,7 @@
 int unctype = 0;
 double nparams = 1;
 int nbkgmin = 200;
+int trees = 2;
 Int_t nodes = 16;
 int nbins = 20;
 bool scale_fluctuations = false;
@@ -41,7 +42,7 @@ TString varset = "bdt";
 bool saveTree = true;
 
 // Where to save the trees.
-TString treeDirectory("./trees/");
+TString treeDirectory("./forest/");
 
 TString csvdir("/home/puno/h2mumu/UFDimuAnalysis_v2/bin/csv/bdtcsv/");
 std::vector<TString> csvnames  =  {
@@ -290,20 +291,12 @@ void buildCategorizationTree()
   std::cout << std::endl << "Number of training events: " << trainingEvents.size() << std::endl << std::endl;
 
   // Initialize new forest.
-  Tree* tree = new Tree(trainingEvents, nbins);
-  tree->setFeatureNames(useWhichVars);
-
-  // get the tree.xml savename in order
-  TString nparams_string = Form("%9.4f", nparams);
-  nparams_string = nparams_string.ReplaceAll(".", "p");
-  nparams_string = nparams_string.ReplaceAll(" ", "");
-
-  // Output the save directory to the screen.
-  TString savename = Form("tree_%s_n%d_mbg%d_unc%d_np%s_sf%d_sd%d_sb%d_%s.xml", varset.Data(), nodes, nbkgmin, unctype, nparams_string.Data(), 
-                          scale_fluctuations, scale_data, smooth, sf->name.Data());
+  Forest* forest = new Forest(trainingEvents);
+  forest->setFeatureNames(useWhichVars);
   
   // Output the parameters of the current run. 
   std::cout << "=========================================" << std::endl;
+  std::cout << "Trees              : " << trees << std::endl;
   std::cout << "Nodes              : " << nodes << std::endl;
   std::cout << "N_bkg_min          : " << nbkgmin << std::endl;
   std::cout << "varset             : " << varset << std::endl;
@@ -313,30 +306,23 @@ void buildCategorizationTree()
   std::cout << "scale_data         : " << scale_data << std::endl;
   std::cout << "smooth             : " << smooth << std::endl;
   std::cout << "Significance Metric: " << sf->name << std::endl;
-  std::cout << "tree save name     : " << treeDirectory+savename << std::endl;
+  std::cout << "tree save dir      : "  << treeDirectory << std::endl;
   std::cout << "=========================================" << std::endl;
 
   // Do the regression and save the trees.
-  tree->buildTree(nodes, sf);
-
-  if(saveTree)
-  {
-      std::cout << "save tree to: " << treeDirectory+savename << std::endl;
-      tree->saveToXML(treeDirectory+savename);
-  }
-
+  forest->doRegression(nodes, trees, nbins, sf, treeDirectory.Data(), saveTree);
 
   // Rank the variable importance and output it to the screen.
   std::vector<std::string> rank;
-  tree->outputVariableRanking(rank);
+  forest->rankVariables(rank);
 
-  delete tree;
+  delete forest;
 
   // ----------------------------------------------------
   ///////////////////////////////////////////////////////
 
-  XMLCategorizer xmlc(treeDirectory+savename);
-  xmlc.outputCategories();
+  //XMLCategorizer xmlc(treeDirectory+savename);
+  //xmlc.outputCategories();
 
 }
 

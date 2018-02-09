@@ -4,7 +4,7 @@
 #define ADD_FOREST
 
 #include "Tree.h"
-#include "LossFunctions.h"
+#include "SignificanceMetrics.hxx"
 
 class Forest
 {
@@ -18,12 +18,14 @@ class Forest
         // Get/Set
         void setTrainingEvents(std::vector<Event*>& trainingEvents);
         std::vector<Event*> getTrainingEvents();
+        std::vector<std::string> getFeatureNames();
+        void setFeatureNames(std::vector<std::string>& cFeatureNames);
 
         // Returns the number of trees in the forest.
         unsigned int size();
 
         // Get info on variable importance.
-        void rankVariables(std::vector<int>& rank);
+        void rankVariables(std::vector<std::string>& rank);
  
         // Output the list of split values used for each variable.
         void saveSplitValues(const char* savefilename);
@@ -34,21 +36,20 @@ class Forest
         void loadForestFromXML(const char* directory, int numTrees); 
 
         // Perform the regression
-        void fit(Tree *tree, double learningRate, LossFunction* l);
-        void doRegression(int nodeLimit, int treeLimit, double learningRate, LossFunction* l, 
+        void doRegression(int nodeLimit, int treeLimit, int nbins, SignificanceMetric* s, 
                           const char* savetreesdirectory, bool saveTrees);
 
         // Predict some events
-        void updateEvents(Tree* tree);
-        void appendCorrection(std::vector<Event*>& eventsp, int treenum);
-        void predictEvents(std::vector<Event*>& eventsp, int trees);
-        void appendCorrection(Event* e, int treenum);
-        void predictEvent(Event* e, int trees);
+        void updateEvents(Tree* tree, int numtrees);
+        void appendCorrection(std::vector<Event*>& eventsp, int treenum, int numtrees);
+        void predictEvents(std::vector<Event*>& eventsp, int numtrees);
+        void appendCorrection(Event* e, int treenum, int numtrees);
+        void predictEvent(Event* e, int numtrees);
 
         Tree* getTree(unsigned int i);
 
     private:
-
+        std::vector<std::string> featureNames;
         std::vector< std::vector<Event*> > events;
         std::vector<Tree*> trees;
 };
