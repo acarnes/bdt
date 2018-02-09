@@ -53,7 +53,7 @@ Tree::Tree(std::vector<Event*>& cEvents)
         featureVarNames.push_back("x"+Utilities::numToStr<int>(i));
     }
     setFeatureNames(featureVarNames);
-    maskAllFeatures(events[0][0], true); // use all the features
+    maskAllFeatures(true); // use all the features
 }
 
 Tree::Tree(std::vector<Event*>& cEvents, int cnbins)
@@ -73,7 +73,7 @@ Tree::Tree(std::vector<Event*>& cEvents, int cnbins)
         featureVarNames.push_back("x"+Utilities::numToStr<int>(i));
     }
     setFeatureNames(featureVarNames);
-    maskAllFeatures(events[0][0], true); // use all the features
+    maskAllFeatures(true); // use all the features
 }
 
 Tree::Tree(std::vector<Event*>& cEvents, int cnbins, double fEvents, int nFeatures)
@@ -95,7 +95,24 @@ Tree::Tree(std::vector<Event*>& cEvents, int cnbins, double fEvents, int nFeatur
         featureVarNames.push_back("x"+Utilities::numToStr<int>(i));
     }
     setFeatureNames(featureVarNames);
-    maskAllFeatures(events[0][0], true); // use all the features
+    selectRandomFeatures(nFeatures);
+}
+
+Tree::Tree(std::vector<Event*>& cEvents, int cnbins, double fEvents, int nFeatures, std::vector<std::string>& cfeatureNames)
+{
+    if(fEvents == 1) setTrainingEvents(cEvents);
+    else setTrainingEvents(cEvents, fEvents);
+
+    sortEventVectors(events);
+    rootNode = new Node("root");
+    rootNode->setEvents(events);
+    nbins = cnbins;
+
+    terminalNodes.push_back(rootNode);
+    numTerminalNodes = 1;
+
+    featureNames = cfeatureNames;
+    selectRandomFeatures(nFeatures);
 }
 
 Tree::Tree(std::vector<std::vector<Event*> >& cEvents, int cnbins)
@@ -113,7 +130,7 @@ Tree::Tree(std::vector<std::vector<Event*> >& cEvents, int cnbins)
         featureVarNames.push_back("x"+Utilities::numToStr<int>(i));
     }
     setFeatureNames(featureVarNames);
-    maskAllFeatures(events[0][0], true); // use all the features
+    maskAllFeatures(true); // use all the features
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -194,9 +211,40 @@ void Tree::setFeatureMask(std::vector<bool>& cFeatureMask)
     featureMask = cFeatureMask;
 }
 
-void Tree::maskAllFeatures(Event* e, bool m)
+void Tree::maskAllFeatures(bool m)
 {
-    featureMask = std::vector<bool>(e->data.size(), m);
+// m=true, turn all features on
+// m=false, turn all features off
+    featureMask = std::vector<bool>(events[0][0]->data.size(), m);
+}
+
+void Tree::selectRandomFeatures(int nFeatures)
+{
+// Randomly turn on nFeatures. Use only these active features in the tree. 
+
+    // first turn off all the features
+    maskAllFeatures(false);
+
+    // now randomly turn on features until nFeatures are activated
+    int nActivated = 0;
+    int totalFeatures = events[0][0]->data.size()-1; // data.size() gives nFeatures + an extra for the target var
+    while(nActivated < nFeatures)
+    {
+        int iActivate = (rand() % totalFeatures) + 1; // rand % totalFeatures gives a number in 0 to totalFeatures
+                                                      // but featureMask runs from 0 to totalFeatures+1 with 0 for the target
+                                                      // the actual features are 1->totalFeatures
+        if(!featureMask[iActivate]) 
+        {
+            featureMask[iActivate] = true;
+            nActivated++;
+        }
+    }
+
+    std::cout << std::endl << "  Randomly Selected Features" << std::endl;
+    for(unsigned int i=0; i < featureMask.size(); i++)
+    {
+        std::cout << "  x" << i << ", " << featureNames[i] << ": " << featureMask[i] << std::endl;
+    }
 }
 
 // ----------------------------------------------------------------------

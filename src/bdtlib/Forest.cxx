@@ -329,7 +329,7 @@ void Forest::doRegression(int nodeLimit, int treeLimit, int nbins, SignificanceM
         std::cout << std::endl << "++Building Tree " << i << "... " << std::endl;
 
         // Initialize the new tree
-        Tree* tree = new Tree(events[0], nbins, fEvents, nFeatures);
+        Tree* tree = new Tree(events[0], nbins, fEvents, nFeatures, featureNames);
 
         // Add the tree to the forest and build the tree
         trees.push_back(tree);    

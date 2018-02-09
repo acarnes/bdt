@@ -14,6 +14,7 @@ class Tree
         Tree(std::vector<Event*>& cEvents);
         Tree(std::vector<Event*>& cEvents, int cnbins);
         Tree(std::vector<Event*>& cEvents, int cnbins, double fEvents, int nFeatures);
+        Tree(std::vector<Event*>& cEvents, int cnbins, double fEvents, int nFeatures, std::vector<std::string>& featureNames);
         Tree(std::vector<std::vector<Event*> >& cEvents, int cnbins);
         ~Tree();
 
@@ -34,7 +35,8 @@ class Tree
 
         std::vector<bool> getFeatureMask();
         void setFeatureMask(std::vector<bool>& featureMask);
-        void maskAllFeatures(Event* e, bool m);
+        void maskAllFeatures(bool m);
+        void selectRandomFeatures(int nFeatures);
 
         void buildTree(int nodeLimit, SignificanceMetric* smetric);
         void calcSignificance();
