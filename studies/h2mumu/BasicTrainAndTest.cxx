@@ -27,16 +27,19 @@
 // main if you want input from the terminal to determine the settings.
 
 // Fundamental settings for the regression.
-int unctype = 0;
-double nparams = 1;
-int nbkgmin = 10;
+int nbins = 20;
 int trees = 2;
 Int_t nodes = 16;
-int nbins = 20;
-bool scale_fluctuations = false;
-bool scale_data = false;
+double fEvents = 0.5;
+
+int nbkgmin = 25;
 bool smooth = true;
 TString varset = "bdt";
+
+int unctype = 0;
+double nparams = 1;
+bool scale_fluctuations = false;
+bool scale_data = false;
 
 // Whether to save the trees from the regression into a directory specified later.
 bool saveTree = true;
@@ -250,14 +253,20 @@ void buildCategorization()
 
   std::cout << std::endl << "Number of training events: " << trainingEvents.size() << std::endl << std::endl;
 
+  // Calculate the number of features to use in each tree of the random forest
+  int nFeatures = (int) TMath::Sqrt(useWhichVars.size());
+  if (nFeatures < 1) nFeatures = 1;
+
   // Initialize new forest.
-  Forest* forest = new Forest(trainingEvents);
+  Forest* forest = new Forest(trainingEvents, fEvents, nFeatures);
   forest->setFeatureNames(useWhichVars);
   
   // Output the parameters of the current run. 
   std::cout << "=========================================" << std::endl;
   std::cout << "Trees              : " << trees << std::endl;
   std::cout << "Nodes              : " << nodes << std::endl;
+  std::cout << "fEvents            : " << fEvents << std::endl;
+  std::cout << "nFeatures          : " << nFeatures << std::endl;
   std::cout << "N_bkg_min          : " << nbkgmin << std::endl;
   std::cout << "varset             : " << varset << std::endl;
   std::cout << "unctype            : " << unctype << std::endl;

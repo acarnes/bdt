@@ -27,7 +27,7 @@ public:
     template<class bidiiter>bidiiter static shuffle(bidiiter begin, bidiiter end, size_t num_random)
     {
     // We will end up with the same elements in the collection except that
-    // the first num_random elements will be randomized.
+    // the first num_random elements will be random elements from the collection.
     
         size_t left = std::distance(begin, end);
         while (num_random--) {

@@ -13,6 +13,7 @@ class Forest
         // Constructor(s)/Destructor
         Forest();
         Forest(std::vector<Event*>& trainingEvents);
+        Forest(std::vector<Event*>& trainingEvents, double fEvents, int nFeatures);
         ~Forest();
 
         // Get/Set
@@ -49,6 +50,8 @@ class Forest
         Tree* getTree(unsigned int i);
 
     private:
+        double fEvents; // fraction of events to use in each tree
+        int nFeatures;  // number of features to use in each tree
         std::vector<std::string> featureNames;
         std::vector< std::vector<Event*> > events;
         std::vector<Tree*> trees;

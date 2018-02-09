@@ -76,6 +76,28 @@ Tree::Tree(std::vector<Event*>& cEvents, int cnbins)
     maskAllFeatures(events[0][0], true); // use all the features
 }
 
+Tree::Tree(std::vector<Event*>& cEvents, int cnbins, double fEvents, int nFeatures)
+{
+    if(fEvents == 1) setTrainingEvents(cEvents);
+    else setTrainingEvents(cEvents, fEvents);
+
+    sortEventVectors(events);
+    rootNode = new Node("root");
+    rootNode->setEvents(events);
+    nbins = cnbins;
+
+    terminalNodes.push_back(rootNode);
+    numTerminalNodes = 1;
+
+    std::vector<std::string> featureVarNames;
+    for(unsigned int i=1; i<events.size(); i++)
+    {
+        featureVarNames.push_back("x"+Utilities::numToStr<int>(i));
+    }
+    setFeatureNames(featureVarNames);
+    maskAllFeatures(events[0][0], true); // use all the features
+}
+
 Tree::Tree(std::vector<std::vector<Event*> >& cEvents, int cnbins)
 {
     rootNode = new Node("root");
@@ -123,6 +145,22 @@ void Tree::setTrainingEvents(std::vector<Event*>& trainingEvents)
         events.push_back(trainingEvents);
     }
 
+}
+
+void Tree::setTrainingEvents(std::vector<Event*> trainingEvents, double fEvents)
+{
+    Event* e = trainingEvents[0];
+    unsigned int numrows = e->data.size();
+
+    // Reset the events matrix. 
+    events = std::vector< std::vector<Event*> >();
+    Utilities::shuffle(trainingEvents.begin(), trainingEvents.end(), fEvents*trainingEvents.size());
+
+    // Use only the randomized subportion for the tree
+    for(unsigned int i=0; i<e->data.size(); i++)
+    {
+        events.push_back(std::vector<Event*>(trainingEvents.begin(),trainingEvents.begin() + fEvents*trainingEvents.size())); 
+    }
 }
 
 // return a copy of the training events

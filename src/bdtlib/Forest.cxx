@@ -32,6 +32,8 @@
 Forest::Forest()
 {
     events = std::vector< std::vector<Event*> >(1);
+    fEvents = 1; 
+    nFeatures = -1; // use -1 for all 
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -41,6 +43,19 @@ Forest::Forest()
 Forest::Forest(std::vector<Event*>& trainingEvents)
 {
     setTrainingEvents(trainingEvents);
+    fEvents = 1;   
+    nFeatures = -1; // use -1 for all
+}
+
+//////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////
+
+Forest::Forest(std::vector<Event*>& trainingEvents, double cfEvents, int cnFeatures)
+{
+    setTrainingEvents(trainingEvents);
+    fEvents = cfEvents;
+    nFeatures = cnFeatures;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -311,10 +326,10 @@ void Forest::doRegression(int nodeLimit, int treeLimit, int nbins, SignificanceM
 
     for(unsigned int i=0; i< (unsigned) treeLimit; i++)
     {
-        std::cout << "++Building Tree " << i << "... " << std::endl;
+        std::cout << std::endl << "++Building Tree " << i << "... " << std::endl;
 
         // Initialize the new tree
-        Tree* tree = new Tree(events[0], nbins);
+        Tree* tree = new Tree(events[0], nbins, fEvents, nFeatures);
 
         // Add the tree to the forest and build the tree
         trees.push_back(tree);    
