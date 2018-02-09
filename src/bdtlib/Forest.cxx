@@ -45,6 +45,7 @@ Forest::Forest(std::vector<Event*>& trainingEvents)
     setTrainingEvents(trainingEvents);
     fEvents = 1;   
     nFeatures = -1; // use -1 for all
+    featureRankings = std::vector<double>(events.size(), 0);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -56,6 +57,7 @@ Forest::Forest(std::vector<Event*>& trainingEvents, double cfEvents, int cnFeatu
     setTrainingEvents(trainingEvents);
     fEvents = cfEvents;
     nFeatures = cnFeatures;
+    featureRankings = std::vector<double>(events.size(), 0);
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -197,56 +199,43 @@ void Forest::sortEventVectors(std::vector< std::vector<Event*> >& e)
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::rankVariables(std::vector<std::string>& rank)
+void Forest::appendFeatureRankings(Tree& tree)
 {
-// This function ranks the determining variables according to their importance
-// in determining the fit. Use a low learning rate for better results.
-// Separates completely useless variables from useful ones well,
-// but isn't the best at separating variables of similar importance. 
-// This is calculated using the error reduction on the training set. The function
-// should be changed to use the testing set, but this works fine for now.
-// I will try to change this in the future.
+    tree.rankFeatures(featureRankings); 
+}
 
-    // Initialize the vector v, which will store the total error reduction
-    // for each variable i in v[i].
-    std::vector<double> v(events.size(), 0);
+//////////////////////////////////////////////////////////////////////////
+// ----------------------------------------------------------------------
+//////////////////////////////////////////////////////////////////////////
 
-    std::cout << std::endl << "Ranking Variables by Net Error Reduction... " << std::endl;
-
-    for(unsigned int j=0; j < trees.size(); j++)
-    {
-        trees[j]->rankVariables(v); 
-    }
-
-    double max = *std::max_element(v.begin(), v.end());
+void Forest::outputFeatureRankings()
+{
+    std::cout << std::endl << "Ranking Variables by Significance Gain... " << std::endl;
+    double max = *std::max_element(featureRankings.begin(), featureRankings.end());
    
     // Scale the importance. Maximum importance = 100.
-    for(unsigned int i=0; i < v.size(); i++)
+    for(unsigned int i=0; i < featureRankings.size(); i++)
     {
-        v[i] = 100*v[i]/max;
+        featureRankings[i] = 100*featureRankings[i]/max;
     }
 
     // Change the storage format so that we can keep the index 
     // and the value associated after sorting.
     std::vector< std::pair<double, int> > w(events.size());
 
-    for(unsigned int i=0; i<v.size(); i++)
+    for(unsigned int i=0; i<featureRankings.size(); i++)
     {
-        w[i] = std::pair<double, int>(v[i],i);
+        w[i] = std::pair<double, int>(featureRankings[i],i);
     }
 
     // Sort so that we can output in order of importance.
     std::sort(w.begin(),w.end());
     
     // Output the results.
-    for(int i=(v.size()-1); i>=0; i--)
+    for(int i=(featureRankings.size()-1); i>=0; i--)
     {   
-        rank.push_back(featureNames[w[i].second]);
         std::cout << "x" << w[i].second << ", " << featureNames[w[i].second] << ": " << w[i].first  << std::endl;
     }   
-
-    std::cout << std::endl << "Done." << std::endl << std::endl;
-
 
     std::cout << std::endl << "Done." << std::endl << std::endl;
 }
@@ -329,11 +318,11 @@ void Forest::doRegression(int nodeLimit, int treeLimit, int nbins, SignificanceM
         std::cout << std::endl << "++Building Tree " << i << "... " << std::endl;
 
         // Initialize the new tree
-        Tree* tree = new Tree(events[0], nbins, fEvents, nFeatures, featureNames);
+        Tree tree(events[0], nbins, fEvents, nFeatures, featureNames);
 
         // Add the tree to the forest and build the tree
-        trees.push_back(tree);    
-        tree->buildTree(nodeLimit, s);
+        tree.buildTree(nodeLimit, s);
+        appendFeatureRankings(tree);
 
         // Save trees to xml in some directory.
         std::ostringstream ss; 
@@ -341,7 +330,7 @@ void Forest::doRegression(int nodeLimit, int treeLimit, int nbins, SignificanceM
         std::string s = ss.str();
         const char* c = s.c_str();
 
-        if(saveTrees) tree->saveToXML(c);
+        if(saveTrees) tree.saveToXML(c);
     }
     std::cout << std::endl;
     std::cout << std::endl << "Done." << std::endl << std::endl;
@@ -460,12 +449,12 @@ void Forest::appendCorrection(Event* e, int treenum, int numtrees)
 // ----------------------------------------------------------------------------------
 /////////////////////////////////////////////////////////////////////////////////////
 
-void Forest::loadForestFromXML(const char* directory, int numTrees)
+void Forest::loadForestFromXML(const char* directory, int numtrees)
 {
 // Load a forest that has already been created and stored into XML somewhere.
 
     // Initialize the vector of trees.
-    trees = std::vector<Tree*>(numTrees);
+    trees = std::vector<Tree*>(numtrees);
 
     // Load the Forest.
     std::cout << std::endl << "Loading Forest from XML ... " << std::endl;

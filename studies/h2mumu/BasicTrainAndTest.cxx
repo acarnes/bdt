@@ -31,10 +31,11 @@ int nbins = 20;
 int trees = 2;
 Int_t nodes = 16;
 double fEvents = 0.5;
+int nFeatures = 5;
 
 int nbkgmin = 25;
 bool smooth = true;
-TString varset = "bdt";
+TString varset = "run2";
 
 int unctype = 0;
 double nparams = 1;
@@ -120,6 +121,30 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
     }
 
     ////////////////////////////////////////////
+    // run2 bdt training vars + resolution var
+    if(varset.Contains("run2"))
+    {
+        useWhichVars.push_back("dimu_max_abs_eta");               
+        useWhichVars.push_back("dimu_pt");
+        useWhichVars.push_back("dimu_eta");
+        useWhichVars.push_back("dimu_abs_dEta");
+        useWhichVars.push_back("dimu_abs_dPhi");
+        useWhichVars.push_back("jet1_pt");
+        useWhichVars.push_back("jet1_eta");
+        useWhichVars.push_back("jet2_pt");
+        useWhichVars.push_back("jet2_eta");
+        useWhichVars.push_back("dijet1_mass");
+        useWhichVars.push_back("dijet1_abs_dEta");
+        useWhichVars.push_back("dijet2_mass");
+        useWhichVars.push_back("dijet2_abs_dEta");
+        useWhichVars.push_back("nJets");
+        useWhichVars.push_back("nJetsCent");          
+        useWhichVars.push_back("nJetsFwd");          
+        useWhichVars.push_back("nBMed");
+        useWhichVars.push_back("MET");
+    }
+    
+    ////////////////////////////////////////////
     // main set of variables used in training
     
     if(varset.Contains("ext")) 
@@ -138,7 +163,7 @@ void initWhichVars(std::vector<std::string>& useWhichVars)
         useWhichVars.push_back("MET");                   
         //useWhichVars.push_back("nValBTags");         
     }
-    
+
     ////////////////////////////////////////////
     // extra variables available for trainning
 
@@ -254,38 +279,35 @@ void buildCategorization()
   std::cout << std::endl << "Number of training events: " << trainingEvents.size() << std::endl << std::endl;
 
   // Calculate the number of features to use in each tree of the random forest
-  int nFeatures = (int) TMath::Sqrt(useWhichVars.size());
+  //int nFeatures = (int) TMath::Sqrt(useWhichVars.size());
   if (nFeatures < 1) nFeatures = 1;
 
   // Initialize new forest.
-  Forest* forest = new Forest(trainingEvents, fEvents, nFeatures);
-  forest->setFeatureNames(useWhichVars);
+  Forest forest(trainingEvents, fEvents, nFeatures);
+  forest.setFeatureNames(useWhichVars);
   
   // Output the parameters of the current run. 
   std::cout << "=========================================" << std::endl;
+  std::cout << "varset             : " << varset << std::endl;
   std::cout << "Trees              : " << trees << std::endl;
   std::cout << "Nodes              : " << nodes << std::endl;
   std::cout << "fEvents            : " << fEvents << std::endl;
   std::cout << "nFeatures          : " << nFeatures << std::endl;
   std::cout << "N_bkg_min          : " << nbkgmin << std::endl;
-  std::cout << "varset             : " << varset << std::endl;
+  std::cout << "smooth             : " << smooth << std::endl;
   std::cout << "unctype            : " << unctype << std::endl;
   std::cout << "nparams            : " << nparams << std::endl;
   std::cout << "scale_fluctuations : " << scale_fluctuations << std::endl;
   std::cout << "scale_data         : " << scale_data << std::endl;
-  std::cout << "smooth             : " << smooth << std::endl;
   std::cout << "Significance Metric: " << sf->name << std::endl;
   std::cout << "tree save dir      : "  << treeDirectory << std::endl;
   std::cout << "=========================================" << std::endl;
 
   // Do the regression and save the trees.
-  forest->doRegression(nodes, trees, nbins, sf, treeDirectory.Data(), saveTree);
+  forest.doRegression(nodes, trees, nbins, sf, treeDirectory.Data(), saveTree);
 
   // Rank the variable importance and output it to the screen.
-  std::vector<std::string> rank;
-  forest->rankVariables(rank);
-
-  delete forest;
+  forest.outputFeatureRankings();
 
   // ----------------------------------------------------
   ///////////////////////////////////////////////////////
@@ -316,13 +338,16 @@ int main(int argc, char* argv[])
         std::stringstream ss;
         ss << argv[i];
         if(i==1) varset = ss.str().c_str(); // string telling which variables to use for categorization
-        if(i==2) ss >> nodes;               // the number of categories 
-        if(i==3) ss >> nbkgmin;             // the smallest amount of background allowed in a bin (prevent overtraining)
-        if(i==4) ss >> unctype;             // the uncertainty type to use
-        if(i==5) ss >> scale_fluctuations;  // scale the fluctuations using an adhoc estimate based upon the bkg out of the window
-        if(i==6) ss >> scale_data;          // scale the bkg in the window based upon ndata/nbkg outside the window
+        if(i==2) ss >> trees;               // the number of categories 
+        if(i==3) ss >> nodes;               // the number of categories 
+        if(i==4) ss >> fEvents;             // the number of categories 
+        if(i==5) ss >> nFeatures;           // the number of categories 
+        if(i==6) ss >> nbkgmin;             // the smallest amount of background allowed in a bin (prevent overtraining)
         if(i==7) ss >> smooth;              // smooth the estimate of the bkg in a bin by averaging it with its neighboring bins
-        if(i==8) ss >> nparams;             // this is only important for a certain uncertainty type
+        if(i==8) ss >> unctype;             // the uncertainty type to use
+        if(i==9) ss >> scale_fluctuations;  // scale the fluctuations using an adhoc estimate based upon the bkg out of the window
+        if(i==10) ss >> scale_data;         // scale the bkg in the window based upon ndata/nbkg outside the window
+        if(i==11) ss >> nparams;            // this is only important for a certain uncertainty type
     }
 
     // of course set the varset string to whatever you want, and the nodes to whatever (15 is good)

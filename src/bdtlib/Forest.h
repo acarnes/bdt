@@ -26,7 +26,8 @@ class Forest
         unsigned int size();
 
         // Get info on variable importance.
-        void rankVariables(std::vector<std::string>& rank);
+        void appendFeatureRankings(Tree& tree);
+        void outputFeatureRankings();
  
         // Output the list of split values used for each variable.
         void saveSplitValues(const char* savefilename);
@@ -52,6 +53,8 @@ class Forest
     private:
         double fEvents; // fraction of events to use in each tree
         int nFeatures;  // number of features to use in each tree
+        int numTrees;
+        std::vector<double> featureRankings;
         std::vector<std::string> featureNames;
         std::vector< std::vector<Event*> > events;
         std::vector<Tree*> trees;

@@ -228,6 +228,19 @@ void Tree::selectRandomFeatures(int nFeatures)
     // now randomly turn on features until nFeatures are activated
     int nActivated = 0;
     int totalFeatures = events[0][0]->data.size()-1; // data.size() gives nFeatures + an extra for the target var
+
+    // edge case
+    if(nFeatures >= totalFeatures)
+    {
+        maskAllFeatures(true);
+        std::cout << std::endl << "  Using All Features" << std::endl;
+        for(unsigned int i=0; i < featureMask.size(); i++)
+        {
+            if(featureMask[i]) std::cout << "  x" << i << ", " << featureNames[i] << std::endl;
+        }
+        return;
+    }
+
     while(nActivated < nFeatures)
     {
         int iActivate = (rand() % totalFeatures) + 1; // rand % totalFeatures gives a number in 0 to totalFeatures
@@ -243,7 +256,7 @@ void Tree::selectRandomFeatures(int nFeatures)
     std::cout << std::endl << "  Randomly Selected Features" << std::endl;
     for(unsigned int i=0; i < featureMask.size(); i++)
     {
-        std::cout << "  x" << i << ", " << featureNames[i] << ": " << featureMask[i] << std::endl;
+        if(featureMask[i]) std::cout << "  x" << i << ", " << featureNames[i] << std::endl;
     }
 }
 
@@ -489,7 +502,7 @@ Node* Tree::filterEventRecursive(Node* node, Event* e)
 // ----------------------------------------------------------------------
 
 
-void Tree::rankVariablesRecursive(Node* node, std::vector<double>& v)
+void Tree::rankFeaturesRecursive(Node* node, std::vector<double>& v)
 {
 // We recursively go through all of the nodes in the tree and find the
 // total error reduction for each variable. The one with the most
@@ -515,21 +528,21 @@ void Tree::rankVariablesRecursive(Node* node, std::vector<double>& v)
     // variable.
     v[sv] += sg;
 
-    rankVariablesRecursive(left, v);
-    rankVariablesRecursive(right, v); 
+    rankFeaturesRecursive(left, v);
+    rankFeaturesRecursive(right, v); 
 
 }
 
 // ----------------------------------------------------------------------
 
-void Tree::rankVariables(std::vector<double>& v)
+void Tree::rankFeatures(std::vector<double>& v)
 {
-    rankVariablesRecursive(rootNode, v);
+    rankFeaturesRecursive(rootNode, v);
 }
 
 // ----------------------------------------------------------------------
 
-void Tree::outputVariableRanking(std::vector<std::string>& rank)
+void Tree::outputFeatureRankings()
 {
     // Initialize the vector v, which will store the total error reduction
     // for each variable i in v[i].
@@ -537,7 +550,7 @@ void Tree::outputVariableRanking(std::vector<std::string>& rank)
 
     std::cout << std::endl << "Ranking Variables by Net Significance Gain... " << std::endl;
 
-    rankVariables(v);
+    rankFeatures(v);
 
     double max = *std::max_element(v.begin(), v.end());
 
@@ -562,7 +575,6 @@ void Tree::outputVariableRanking(std::vector<std::string>& rank)
     // Output the results.
     for(int i=(v.size()-1); i>=0; i--)
     {
-        rank.push_back(featureNames[w[i].second]);
         std::cout << "x" << w[i].second << ", " << featureNames[w[i].second] << ": " << w[i].first  << std::endl;
     }
 

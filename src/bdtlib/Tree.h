@@ -52,9 +52,9 @@ class Tree
         void loadFromXML(const char* filename);
         void loadFromXMLRecursive(tinyxml2::XMLElement* xmlnode, Node* tnode);
 
-        void rankVariables(std::vector<double>& v);
-        void rankVariablesRecursive(Node* node, std::vector<double>& v);
-        void outputVariableRanking(std::vector<std::string>& rank);
+        void rankFeatures(std::vector<double>& v);
+        void rankFeaturesRecursive(Node* node, std::vector<double>& v);
+        void outputFeatureRankings();
 
         void getSplitValues(std::vector< std::vector<double> >& v);
         void getSplitValuesRecursive(Node* node, std::vector< std::vector<double> >& v);
