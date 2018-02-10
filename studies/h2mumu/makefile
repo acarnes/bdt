@@ -7,8 +7,10 @@ LIBDIR = ../../src/bdtlib/
 XMLDIR = ../../src/tinyxml2/
 CFLAGS = -I${LIBDIR} -I${XMLDIR} -c -O3 -g `root-config --cflags`
 LIBFLAGS = `root-config --libs` -g -O3 -lXMLIO -lMLP -lMinuit 
-DEPS = LoadEvents.hxx ${LIBDIR}SignificanceMetrics.hxx ${LIBDIR}Utilities.h
-MAINPROGRAM = BasicTrainAndTest
+DEPS = LoadEvents.hxx ${LIBDIR}SignificanceMetrics.hxx ${LIBDIR}Utilities.h ${LIBDIR}ThreadPool.hxx
+#MAINPROGRAM = baseline
+MAINPROGRAM = train
+#MAINPROGRAM = test
 
 CompileStuff: ${LIBDIR}CategoryReader.o ${LIBDIR}Node.o ${XMLDIR}tinyxml2.o ${LIBDIR}Tree.o ${LIBDIR}Forest.o ${MAINPROGRAM}.o
 	$(CC) $(LIBFLAGS) ${LIBDIR}CategoryReader.o ${LIBDIR}Node.o ${XMLDIR}tinyxml2.o ${LIBDIR}Tree.o ${LIBDIR}Forest.o ${MAINPROGRAM}.o -o ${MAINPROGRAM}
@@ -25,7 +27,7 @@ ${XMLDIR}tinyxml2.o: ${XMLDIR}tinyxml2.cpp
 ${LIBDIR}Tree.o: ${LIBDIR}Tree.cxx
 	$(CC) $(CFLAGS) ${LIBDIR}Tree.cxx -o ${LIBDIR}Tree.o
 
-${LIBDIR}Forest.o: ${LIBDIR}Forest.cxx
+${LIBDIR}Forest.o: ${LIBDIR}Forest.cxx ${LIBDIR}ThreadPool.hxx
 	$(CC) $(CFLAGS) ${LIBDIR}Forest.cxx -o ${LIBDIR}Forest.o
 
 ${LIBDIR}CategoryReader.o: ${LIBDIR}CategoryReader.cxx

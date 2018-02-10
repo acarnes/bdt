@@ -233,10 +233,10 @@ void Tree::selectRandomFeatures(int nFeatures)
     if(nFeatures >= totalFeatures)
     {
         maskAllFeatures(true);
-        std::cout << std::endl << "  Using All Features" << std::endl;
+        outString += "\n  Using All Features \n";
         for(unsigned int i=0; i < featureMask.size(); i++)
         {
-            if(featureMask[i]) std::cout << "  x" << i << ", " << featureNames[i] << std::endl;
+            if(featureMask[i]) outString += Form("  x%d, %s\n", i, featureNames[i].c_str());
         }
         return;
     }
@@ -253,10 +253,10 @@ void Tree::selectRandomFeatures(int nFeatures)
         }
     }
 
-    std::cout << std::endl << "  Randomly Selected Features" << std::endl;
+    outString += "\n  Randomly Selected Features \n";
     for(unsigned int i=0; i < featureMask.size(); i++)
     {
-        if(featureMask[i]) std::cout << "  x" << i << ", " << featureNames[i] << std::endl;
+        if(featureMask[i]) outString += Form("  x%d, %s\n", i, featureNames[i].c_str());
     }
 }
 
@@ -317,23 +317,14 @@ void Tree::listEvents(std::vector< std::vector<Event*> >& e)
 // ----------------------------------------------------------------------
 //////////////////////////////////////////////////////////////////////////
 
-// We have to initialize Event::sortingIndex outside of a function since
-// it is a static member.
-int Event::sortingIndex = 1;
-
-//////////////////////////////////////////////////////////////////////////
-// ----------------------------------------------------------------------
-//////////////////////////////////////////////////////////////////////////
-
 void Tree::sortEventVectors(std::vector< std::vector<Event*> >& e)
 {
 // When a node chooses the optimum split point and split variable it needs
 // the events to be sorted according to the variable it is considering.
 
     for(unsigned int i=0; i<e.size(); i++)
-    {
-        Event::sortingIndex = i;
-        std::sort(e[i].begin(), e[i].end(), Utilities::compareEvents);
+    {   
+        std::sort(e[i].begin(), e[i].end(), [&i](Event* e1, Event* e2) -> bool {return e1->data[i] < e2->data[i];});
     }
 }
 
@@ -368,16 +359,10 @@ void Tree::buildTree(int nodeLimit, SignificanceMetric* smetric)
     {   
         rootNode->calcOptimumSplit(smetric, nbins, featureMask);
         calcSignificance();
-        std::cout << std::endl << "  " << numTerminalNodes << " Nodes : " << significance << std::endl;
-        std::cout << "        +" << rootNode->getName() << ": " 
-                  << std::sqrt(rootNode->getSignificanceSquared()) << ", " 
-                  << rootNode->getNumEvents()          << ", " 
-                  << rootNode->getNumSignal()          << ", " 
-                  << rootNode->getNumBackground()      << ", " 
-                  << rootNode->getTotalSignal()        << ", " 
-                  << rootNode->getTotalBackground()    << ", " 
-                  << rootNode->getTotalDataOut()       << ", "
-                  << rootNode->getTotalBackgroundOut() << std::endl;
+        outString += Form("\n  %d Nodes : %f\n        + %s: %f, %d, %d, %d, %f, %f, %f, %f\n",
+                numTerminalNodes, significance, rootNode->getName().c_str(), std::sqrt(rootNode->getSignificanceSquared()), 
+                rootNode->getNumEvents(), rootNode->getNumSignal(), rootNode->getNumBackground(), rootNode->getTotalSignal(),
+                rootNode->getTotalBackground(), rootNode->getTotalDataOut(), rootNode->getTotalBackgroundOut());
     }
 
     for(std::list<Node*>::iterator it=terminalNodes.begin(); it!=terminalNodes.end(); it++)
@@ -419,20 +404,15 @@ void Tree::buildTree(int nodeLimit, SignificanceMetric* smetric)
  
     if(numTerminalNodes % 1 == 0)
     {
-        std::cout << "  " << numTerminalNodes << " Nodes : " << significance << std::endl;
+        outString+= Form("  %d Nodes : %f \n", numTerminalNodes, significance);
     }
 
     for(std::list<Node*>::iterator it=terminalNodes.begin(); it!=terminalNodes.end(); it++)
     {   
-        std::cout << "        +" << (*it)->getName() << ": " 
-                  << std::sqrt((*it)->getSignificanceSquared()) << ", " 
-                  << (*it)->getNumEvents()       << ", " 
-                  << (*it)->getNumSignal()       << ", " 
-                  << (*it)->getNumBackground()   << ", " 
-                  << (*it)->getTotalSignal()     << ", " 
-                  << (*it)->getTotalBackground() << ", " 
-                  << (*it)->getTotalDataOut()       << ", "
-                  << (*it)->getTotalBackgroundOut() << std::endl;
+        outString += Form("        + %s: %f, %d, %d, %d, %f, %f, %f, %f\n",
+                (*it)->getName().c_str(), std::sqrt((*it)->getSignificanceSquared()), (*it)->getNumEvents(),
+                (*it)->getNumSignal(), (*it)->getNumBackground(), (*it)->getTotalSignal(),
+                (*it)->getTotalBackground(), (*it)->getTotalDataOut(), (*it)->getTotalBackgroundOut());
     }   
 
     // Repeat until done.

@@ -35,11 +35,11 @@ class Forest
         // Helpful operations
         void listEvents(std::vector< std::vector<Event*> >& e);
         void sortEventVectors(std::vector< std::vector<Event*> >& e);
-        void loadForestFromXML(const char* directory, int numTrees); 
+        void loadFromXML(const char* directory, int numTrees); 
 
         // Perform the regression
         void doRegression(int nodeLimit, int treeLimit, int nbins, SignificanceMetric* s, 
-                          const char* savetreesdirectory, bool saveTrees);
+                          const char* savetreesdirectory, bool saveTrees, int nthreads=1);
 
         // Predict some events
         void updateEvents(Tree* tree, int numtrees);

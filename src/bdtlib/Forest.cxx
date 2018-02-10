@@ -16,6 +16,7 @@
 // _______________________Includes_______________________________________//
 ///////////////////////////////////////////////////////////////////////////
 
+#include "ThreadPool.hxx"
 #include "Forest.h"
 #include "Utilities.h"
 
@@ -190,8 +191,7 @@ void Forest::sortEventVectors(std::vector< std::vector<Event*> >& e)
 
     for(unsigned int i=0; i<e.size(); i++)
     {
-        Event::sortingIndex = i;
-        std::sort(e[i].begin(), e[i].end(), Utilities::compareEvents);
+        std::sort(e[i].begin(), e[i].end(), [&i](Event* e1, Event* e2) -> bool {return e1->data[i] < e2->data[i];});
     }
 }
 
@@ -298,11 +298,10 @@ void Forest::saveSplitValues(const char* savefilename)
 // ____________________Do/Test_the Regression___________________________//
 //////////////////////////////////////////////////////////////////////////
 
-void Forest::doRegression(int nodeLimit, int treeLimit, int nbins, SignificanceMetric* s, const char* savetreesdirectory, bool saveTrees)
+void Forest::doRegression(int nodeLimit, int treeLimit, int nbins, SignificanceMetric* s, const char* savetreesdirectory, bool saveTrees, int nthreads)
 {
 // Build the forest using the training sample.
 
-    std::cout << std::endl << "--Building Forest..." << std::endl << std::endl;
 
     // The trees work with a matrix of events where the rows have the same set of events. Each row however
     // is sorted according to the feature variable given by event->data[row].
@@ -310,31 +309,45 @@ void Forest::doRegression(int nodeLimit, int treeLimit, int nbins, SignificanceM
     // feature variable every time we want to calculate the best split point for that feature.
     // By keeping sorted copies we avoid the sorting operation during splint point calculation
     // and save computation time. If we do not sort each of the rows the regression will fail.
-    std::cout << "Sorting event vectors..." << std::endl;
+    std::cout << "Sorting event vectors...\n" << std::endl;
     sortEventVectors(events);
 
-    for(unsigned int i=0; i< (unsigned) treeLimit; i++)
-    {
-        std::cout << std::endl << "++Building Tree " << i << "... " << std::endl;
+    std::cout << std::endl << "--Building Forest..." << std::endl << std::endl;
 
+    auto buildTree = [this](int i, int inodeLimit, int itreeLimit, int inbins, 
+                        SignificanceMetric* is, const char* isavetreesdirectory, bool isaveTrees)
+    {
         // Initialize the new tree
-        Tree tree(events[0], nbins, fEvents, nFeatures, featureNames);
+        Tree tree(events[0], inbins, fEvents, nFeatures, featureNames);
 
         // Add the tree to the forest and build the tree
-        tree.buildTree(nodeLimit, s);
+        TString sOutput = Form("++Building Tree %d \n", i);
+        tree.buildTree(inodeLimit, is);
+        sOutput+=tree.outString;
         appendFeatureRankings(tree);
 
         // Save trees to xml in some directory.
         std::ostringstream ss; 
-        ss << savetreesdirectory << "/" << i << ".xml";
+        ss << isavetreesdirectory << "/" << i << ".xml";
         std::string s = ss.str();
         const char* c = s.c_str();
 
-        if(saveTrees) tree.saveToXML(c);
-    }
+        if(isaveTrees) tree.saveToXML(c);
+        std::cout << sOutput.Data() << std::endl;
+        return i;
+    };
+
+    ThreadPool pool(nthreads);
+    std::vector< std::future<int> > results;
+
+    for(unsigned int i=0; i< (unsigned) treeLimit; i++)
+        results.push_back(pool.enqueue(buildTree, i, nodeLimit, treeLimit, nbins, s, savetreesdirectory, saveTrees)); 
+
+    for(auto& r: results)
+        r.get();
+
     std::cout << std::endl;
     std::cout << std::endl << "Done." << std::endl << std::endl;
-
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -449,7 +462,7 @@ void Forest::appendCorrection(Event* e, int treenum, int numtrees)
 // ----------------------------------------------------------------------------------
 /////////////////////////////////////////////////////////////////////////////////////
 
-void Forest::loadForestFromXML(const char* directory, int numtrees)
+void Forest::loadFromXML(const char* directory, int numtrees)
 {
 // Load a forest that has already been created and stored into XML somewhere.
 
@@ -458,7 +471,7 @@ void Forest::loadForestFromXML(const char* directory, int numtrees)
 
     // Load the Forest.
     std::cout << std::endl << "Loading Forest from XML ... " << std::endl;
-    for(unsigned int i=0; i < numTrees; i++) 
+    for(unsigned int i=0; i < trees.size(); i++) 
     {   
         trees[i] = new Tree(); 
 

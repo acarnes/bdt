@@ -63,6 +63,7 @@ class Tree
         void saveSplitValues(const char* savefilename);
         void listEvents(std::vector< std::vector<Event*> >& e);
 
+        TString outString = "";
 
     private:
         std::vector<bool> featureMask; // turn features on/off for the random forest
