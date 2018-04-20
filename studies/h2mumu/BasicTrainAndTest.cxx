@@ -10,6 +10,7 @@
 // _______________________Includes_______________________________________//
 ///////////////////////////////////////////////////////////////////////////
 
+#include "CategoryReader.h"
 #include "Tree.h"
 #include "SignificanceMetrics.hxx"
 #include "LoadEvents.hxx"
@@ -99,15 +100,6 @@ std::vector<TString> rootnames  = {
                                    TString("H2Mu_gg_bdt_training_dyAMC-J.root"),
                                    TString("WW_bdt_training_dyAMC-J.root"),
                                    TString("WZ_3l_bdt_training_dyAMC-J.root"),
-                                   //TString("ZJets_MG_HT_100_200_bdt_training_dyAMC-J.root"),
-                                   //TString("ZJets_MG_HT_1200_2500_bdt_training_dyAMC-J.root"),
-                                   //TString("ZJets_MG_HT_200_400_bdt_training_dyAMC-J.root"),
-                                   //TString("ZJets_MG_HT_2500_inf_bdt_training_dyAMC-J.root"),
-                                   //TString("ZJets_MG_HT_400_600_bdt_training_dyAMC-J.root"),
-                                   //TString("ZJets_MG_HT_600_800_bdt_training_dyAMC-J.root"),
-                                   //TString("ZJets_MG_HT_70_100_bdt_training_dyAMC-J.root"),
-                                   //TString("ZJets_MG_HT_800_1200_bdt_training_dyAMC-J.root"),
-                                   //TString("ZJets_MG_bdt_training_dyAMC-J.root"),
                                    TString("ZJets_AMC_0j_bdt_training_dyAMC-J.root"),
                                    TString("ZJets_AMC_1j_bdt_training_dyAMC-J.root"),
                                    TString("ZJets_AMC_2j_bdt_training_dyAMC-J.root"),
@@ -338,39 +330,13 @@ void buildCategorizationTree()
   std::vector<std::string> rank;
   tree->outputVariableRanking(rank);
 
-  /////////////////////////////////////
-  //// Test 
-  /////////////////////////////////////
-
-  //// The forest built from the training above is already in memory. There is no need to load trees from xml.
-  //// If you wish to test from a forest that was saved to xml you would do the following.
-  //// forest->loadForestFromXML(treeDirectory);
-
-  //std::cout << "Number of test events: " << testingEvents.size() << std::endl;
-  //
-  //// Predict the values for a vector of events.
-  //// Input the vector and the number of trees in the forest you wish to use (usually the total number).
-  //forest->predictEvents(testingEvents, trees);
-  //std::cout << std::endl;
-  //
-  //// Predict a single event.
-  //// Input the event and the number of trees in the forest you wish to use (usually the total number).
-  //forest->predictEvent(testingEvents[0], trees);
-  //std::cout << std::endl;
-
-  //// Output information about the events
-  //// Look at the predicted values
-  //for(unsigned int i=0; i<testingEvents.size(); i++)
-  //{
-  //    Event* e = testingEvents[i];
-  //    std::cout << "===== EVENT: " << e->id << " =======" << std::endl;
-  //    e->outputEvent();
-  //    std::cout << std::endl;
-  //} 
   delete tree;
 
   // ----------------------------------------------------
   ///////////////////////////////////////////////////////
+
+  XMLCategorizer xmlc(treeDirectory+savename);
+  xmlc.outputCategories();
 
 }
 
