@@ -44,6 +44,7 @@ struct Event
     {
         std::cout << "trueValue = " << trueValue << std::endl;
         std::cout << "weight = " << weight << std::endl;
+        std::cout << "bin = " << bin << std::endl;
         std::cout << "predictedValue = " << predictedValue << std::endl;
         std::cout << "id = " << id << std::endl;
         for(unsigned int i=0; i<data.size(); i++)

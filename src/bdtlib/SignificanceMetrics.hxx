@@ -198,6 +198,8 @@ class SignificanceMetric
                              std::vector<long long int>& nsignal, std::vector<long long int>& nbackground, long long int nbackgroundOut, long long int ndataOut)
         {
             double s = 0;
+            double si = 0;
+
             for(unsigned int i=0; i<signal.size(); i++)
             {
                 double b = background[i];
@@ -208,7 +210,23 @@ class SignificanceMetric
                     else if(i+1 < signal.size()) b = (background[i] + background[i+1])/2;
                     else b = background[i];
                 }
-                s += significance2(signal[i], b, backgroundOut, dataOut, nsignal[i], nbackground[i], nbackgroundOut, ndataOut);
+                si = significance2(signal[i], b, backgroundOut, dataOut, nsignal[i], nbackground[i], nbackgroundOut, ndataOut);
+                s += si;
+
+              //  std::cout << "Calculating sig for bin " << i << std::endl;
+              //  std::cout << "s = " << signal[i] << std::endl
+              //            << "b = " << b << std::endl
+              //            << "bOut = " << backgroundOut << std::endl
+              //            << "dOut = " << dataOut << std::endl
+              //            << "ns = " << nsignal[i] << std::endl
+              //            << "nb = " << nbackground[i] << std::endl
+              //            << "nbOut = " << nbackgroundOut << std::endl
+              //            << "ndOut = " << ndataOut << std::endl
+              //            << "s2 = " << si << std::endl
+              //            << "s2net = " << s << std::endl;
+
+              //  std::cout << std::endl;
+ 
             }
             return s;
         }
@@ -362,7 +380,9 @@ class AsimovSignificance : public SignificanceMetric
                             long long int nsignal, long long int nbackground, long long int nbackgroundOut, long long int ndataOut)
         {
             // scale so that data/mc matches
-            double scale_factor_data = dataOut/backgroundOut;
+            double scale_factor_data = 1;
+            if(scale_data && dataOut <= 0) return 0;
+            if(backgroundOut > 0) scale_factor_data = dataOut/backgroundOut;
 
             // pull downward fluctuations up
             double scale_factor = (1.2*backgroundOut/80)/background;                // scale up by bkg_expected/bkg_mc_seen 
@@ -436,10 +456,10 @@ class PoissonSignificance : public SignificanceMetric
         double significance(double signal, double background, double backgroundOut, double dataOut,
                             long long int nsignal, long long int nbackground, long long int nbackgroundOut, long long int ndataOut)
         {
-            if(dataOut == 0) return 0;
-
-             // scale so that data/mc matches
-            double scale_factor_data = dataOut/backgroundOut;
+            // scale so that data/mc matches
+            double scale_factor_data = 1;
+            if(scale_data && dataOut <= 0) return 0;
+            if(backgroundOut > 0) scale_factor_data = dataOut/backgroundOut;
 
             // pull downward fluctuations up
             double scale_factor = (1.2*backgroundOut/80)/background;                // scale up by bkg_expected/bkg_mc_seen 

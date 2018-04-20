@@ -106,6 +106,7 @@ void loadEventsCSV(std::vector<Event*>& events, std::vector<std::string>& useWhi
                  {
                      Event* e = new Event();
                      e->bin = datamap["bin"];
+                     if(e->bin >= 0) e->bin=0; // Test out zero bins
                      //e->bin = 0;
                      e->data = std::vector<double>();
                      e->data.push_back(0);        // the 0th location is the target, reserved, the rest are for the features
@@ -185,6 +186,7 @@ void loadEventsROOT(std::vector<Event*>& events, std::vector<std::string>& useWh
         {
             Event* e = new Event();
             e->bin = bin;
+            if(e->bin >= 0) e->bin=0; // Test out zero bins
             e->data = std::vector<double>();
             e->data.push_back(0);        // the 0th location is the target, reserved, the rest are for the features
             e->trueValue = is_signal;
