@@ -1,0 +1,13 @@
+<root splitVar="1" splitVarName="BDTMassScaled" splitVal="0.43390075862407684" significanceSquared="0.91386206927280444">
+    <left splitVar="1" splitVarName="BDTMassScaled" splitVal="0.092094719409942627" significanceSquared="0.28663063519741683">
+        <left splitVar="1" splitVarName="BDTMassScaled" splitVal="-0.23954636603593826" significanceSquared="0.08045148475497782">
+            <left splitVar="1" splitVarName="BDTMassScaled" splitVal="-0.4350229799747467" significanceSquared="0.017401378345016406"/>
+            <right splitVar="1" splitVarName="BDTMassScaled" splitVal="-0.096107903867959976" significanceSquared="0.09402455784820174"/>
+        </left>
+        <right splitVar="1" splitVarName="BDTMassScaled" splitVal="0.4337480366230011" significanceSquared="0.39467987583509828"/>
+    </left>
+    <right splitVar="1" splitVarName="BDTMassScaled" splitVal="0.58528631925582886" significanceSquared="1.7226053745546079">
+        <left splitVar="1" splitVarName="BDTMassScaled" splitVal="0.58524799346923828" significanceSquared="0.45872329434028175"/>
+        <right splitVar="1" splitVarName="BDTMassScaled" splitVal="0.58529418706893921" significanceSquared="1.3989755584659549"/>
+    </right>
+</root>

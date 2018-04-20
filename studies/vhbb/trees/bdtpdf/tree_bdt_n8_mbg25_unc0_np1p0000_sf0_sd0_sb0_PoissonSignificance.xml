@@ -1,0 +1,22 @@
+<root splitVar="8" splitVarName="hJetCMVAV2_pt_reg_1" splitVal="78.76776123046875" significanceSquared="2.3893758194358887">
+    <left splitVar="6" splitVarName="max_hJets_pt" splitVal="145.34660339355469" significanceSquared="0.34805044806416185">
+        <left splitVar="16" splitVarName="BDTMassScaled" splitVal="0.21502338349819183" significanceSquared="0.2081478681197112"/>
+        <right splitVar="11" splitVarName="max_aJets_pt" splitVal="19.581960678100586" significanceSquared="0.22244865298015254"/>
+    </left>
+    <right splitVar="28" splitVarName="caloMetPt" splitVal="137.17636871337891" significanceSquared="2.2143382625775816">
+        <left splitVar="16" splitVarName="BDTMassScaled" splitVal="0.15633790194988251" significanceSquared="0.43071655714004065"/>
+        <right splitVar="30" splitVarName="mhtJet30" splitVal="206.16018676757812" significanceSquared="1.8952775380541818">
+            <left splitVar="26" splitVarName="tkMet_pt" splitVal="160.67523956298828" significanceSquared="0.3187615183944178"/>
+            <right splitVar="16" splitVarName="BDTMassScaled" splitVal="0.53305304050445557" significanceSquared="1.6458232447775054">
+                <left splitVar="1" splitVarName="hJet1_cmva" splitVal="0.99954137206077576" significanceSquared="0.35947692492767908">
+                    <left splitVar="19" splitVarName="met_phi" splitVal="2.9845671653747559" significanceSquared="0.2290006709260827"/>
+                    <right splitVar="26" splitVarName="tkMet_pt" splitVal="241.98133087158203" significanceSquared="0.19048010885270122">
+                        <left splitVar="12" splitVarName="HCMVAV2_reg_mass" splitVal="109.79753491628502" significanceSquared="0.23002074162182665"/>
+                        <right splitVar="1" splitVarName="hJet1_cmva" splitVal="0.99954408407211304" significanceSquared="0"/>
+                    </right>
+                </left>
+                <right splitVar="26" splitVarName="tkMet_pt" splitVal="27.026079177856445" significanceSquared="1.3747680990601554"/>
+            </right>
+        </right>
+    </right>
+</root>

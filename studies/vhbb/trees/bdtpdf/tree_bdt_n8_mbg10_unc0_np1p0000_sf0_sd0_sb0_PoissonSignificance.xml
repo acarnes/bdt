@@ -1,0 +1,22 @@
+<root splitVar="8" splitVarName="hJetCMVAV2_pt_reg_1" splitVal="78.76776123046875" significanceSquared="2.3893758194358887">
+    <left splitVar="6" splitVarName="max_hJets_pt" splitVal="145.56588745117188" significanceSquared="0.34805044806416185">
+        <left splitVar="16" splitVarName="BDTMassScaled" splitVal="0.21502338349819183" significanceSquared="0.21396447202782978"/>
+        <right splitVar="39" splitVarName="softActivityVH_HT" splitVal="11.556389331817627" significanceSquared="0.22105803178906816"/>
+    </left>
+    <right splitVar="28" splitVarName="caloMetPt" splitVal="137.17636871337891" significanceSquared="2.2143382625775816">
+        <left splitVar="16" splitVarName="BDTMassScaled" splitVal="0.15633790194988251" significanceSquared="0.43071655714004065"/>
+        <right splitVar="6" splitVarName="max_hJets_pt" splitVal="153.11965942382812" significanceSquared="1.8952775380541818">
+            <left splitVar="27" splitVarName="caloMetPhi" splitVal="0.63631924986839294" significanceSquared="0.5833450932376627">
+                <left splitVar="4" splitVarName="dPhi_hJets" splitVal="1.130524218082428" significanceSquared="0.56695248173105872">
+                    <left splitVar="28" splitVarName="caloMetPt" splitVal="144.68803405761719" significanceSquared="0.64525027033531834">
+                        <left splitVar="27" splitVarName="caloMetPhi" splitVal="0.26647843420505524" significanceSquared="0.0022054845727957693"/>
+                        <right splitVar="10" splitVarName="max_aJets_cmva" splitVal="-0.98704013228416443" significanceSquared="0.72212101810002238"/>
+                    </left>
+                    <right splitVar="27" splitVarName="caloMetPhi" splitVal="0.032885093241930008" significanceSquared="0.00014273942075639128"/>
+                </left>
+                <right splitVar="4" splitVarName="dPhi_hJets" splitVal="0.019684821367263794" significanceSquared="0.16576362627617008"/>
+            </left>
+            <right splitVar="16" splitVarName="BDTMassScaled" splitVal="0.43378233909606934" significanceSquared="1.413960854722965"/>
+        </right>
+    </right>
+</root>

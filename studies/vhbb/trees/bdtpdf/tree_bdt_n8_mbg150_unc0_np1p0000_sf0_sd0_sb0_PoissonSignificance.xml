@@ -1,0 +1,22 @@
+<root splitVar="5" splitVarName="min_hJets_pt" splitVal="89.052898406982422" significanceSquared="2.1460597082252675">
+    <left splitVar="16" splitVarName="BDTMassScaled" splitVal="0.21780578792095184" significanceSquared="0.90704219829969568"/>
+    <right splitVar="9" splitVarName="nJet" splitVal="7.5" significanceSquared="1.3744640158243158">
+        <left splitVar="4" splitVarName="dPhi_hJets" splitVal="-1.0306164622306824" significanceSquared="1.4250279616186532">
+            <left splitVar="1" splitVarName="hJet1_cmva" splitVal="0.94438132643699646" significanceSquared="0"/>
+            <right splitVar="26" splitVarName="tkMet_pt" splitVal="311.36239624023438" significanceSquared="1.4457880054605585">
+                <left splitVar="18" splitVarName="met_mass" splitVal="4.0293789425049908e-06" significanceSquared="1.4737420537660284">
+                    <left splitVar="7" splitVarName="hJetCMVAV2_pt_reg_0" splitVal="329.93327331542969" significanceSquared="1.5043004880600699">
+                        <left splitVar="36" splitVarName="V_new_mass" splitVal="-5.3523151564149885e-06" significanceSquared="1.5382302253971671">
+                            <left splitVar="1" splitVarName="hJet1_cmva" splitVal="0.94473624229431152" significanceSquared="0"/>
+                            <right splitVar="10" splitVarName="max_aJets_cmva" splitVal="-0.98724687099456787" significanceSquared="1.5683738566881631"/>
+                        </left>
+                        <right splitVar="1" splitVarName="hJet1_cmva" splitVal="0.94443804025650024" significanceSquared="0"/>
+                    </left>
+                    <right splitVar="1" splitVarName="hJet1_cmva" splitVal="0.94336482882499695" significanceSquared="0"/>
+                </left>
+                <right splitVar="1" splitVarName="hJet1_cmva" splitVal="0.94516602158546448" significanceSquared="0"/>
+            </right>
+        </left>
+        <right splitVar="32" splitVarName="HVdPhi" splitVal="-3.1151602268218994" significanceSquared="1.960719868622103e-05"/>
+    </right>
+</root>

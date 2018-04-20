@@ -1,0 +1,22 @@
+<root splitVar="16" splitVarName="BDTMassScaled" splitVal="0.639259934425354" significanceSquared="2.3811861752531298">
+    <left splitVar="16" splitVarName="BDTMassScaled" splitVal="0.43390075862407684" significanceSquared="1.1943145827505248">
+        <left splitVar="16" splitVarName="BDTMassScaled" splitVal="0.21778314560651779" significanceSquared="0.51387305306356468"/>
+        <right splitVar="5" splitVarName="min_hJets_pt" splitVal="79.200614929199219" significanceSquared="0.7474385050315836">
+            <left splitVar="4" splitVarName="dPhi_hJets" splitVal="1.310156524181366" significanceSquared="0.19867526399259444"/>
+            <right splitVar="33" splitVarName="abs_dPhi_H_MET" splitVal="2.8075896501541138" significanceSquared="0.63027491179943984"/>
+        </right>
+    </left>
+    <right splitVar="8" splitVarName="hJetCMVAV2_pt_reg_1" splitVal="78.180679321289062" significanceSquared="1.7882037272274072">
+        <left splitVar="1" splitVarName="hJet1_cmva" splitVal="0.94598016142845154" significanceSquared="0"/>
+        <right splitVar="4" splitVarName="dPhi_hJets" splitVal="1.1305922865867615" significanceSquared="1.9386076623999184">
+            <left splitVar="24" splitVarName="met_sumEt" splitVal="11.349565505981445" significanceSquared="1.9974016228546851">
+                <left splitVar="1" splitVarName="hJet1_cmva" splitVal="0.9470670223236084" significanceSquared="0"/>
+                <right splitVar="24" splitVarName="met_sumEt" splitVal="28.19349479675293" significanceSquared="2.0708864839691064">
+                    <left splitVar="15" splitVarName="HCMVAV2_reg_pt" splitVal="172.85979022599597" significanceSquared="1.7014573679452223"/>
+                    <right splitVar="12" splitVarName="HCMVAV2_reg_mass" splitVal="140.57087250898476" significanceSquared="0.56523750103670967"/>
+                </right>
+            </left>
+            <right splitVar="1" splitVarName="hJet1_cmva" splitVal="0.94569435715675354" significanceSquared="0"/>
+        </right>
+    </right>
+</root>

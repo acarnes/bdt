@@ -1,0 +1,22 @@
+<root splitVar="8" splitVarName="hJetCMVAV2_pt_reg_1" splitVal="78.76776123046875" significanceSquared="2.1460597082252675">
+    <left splitVar="8" splitVarName="hJetCMVAV2_pt_reg_1" splitVal="60.387514114379883" significanceSquared="0.34805044806416185"/>
+    <right splitVar="27" splitVarName="caloMetPhi" splitVal="2.0118002891540527" significanceSquared="1.9722816039228268">
+        <left splitVar="18" splitVarName="met_mass" splitVal="1.9281882259747363e-06" significanceSquared="1.782038163989295">
+            <left splitVar="36" splitVarName="V_new_mass" splitVal="-9.4166867370404361e-07" significanceSquared="1.2224045804258319">
+                <left splitVar="23" splitVarName="met_rawSumEt" splitVal="-0.021835940890014172" significanceSquared="0.38323418105273749"/>
+                <right splitVar="10" splitVarName="max_aJets_cmva" splitVal="-0.8090769350528717" significanceSquared="0.92461243290201511">
+                    <left splitVar="3" splitVarName="dEta_hJets" splitVal="-1.1880431175231934" significanceSquared="0.62546173527454729">
+                        <left splitVar="1" splitVarName="hJet1_cmva" splitVal="0.94541451334953308" significanceSquared="0"/>
+                        <right splitVar="24" splitVarName="met_sumEt" splitVal="65.311721801757812" significanceSquared="0.72534371679028875"/>
+                    </left>
+                    <right splitVar="4" splitVarName="dPhi_hJets" splitVal="1.3399115800857544" significanceSquared="0.41720284145207442"/>
+                </right>
+            </left>
+            <right splitVar="34" splitVarName="min_abs_dPhi_jets_MET" splitVal="-0.17602166533470154" significanceSquared="0.67663994164080765">
+                <left splitVar="16" splitVarName="BDTMassScaled" splitVal="0.1998516321182251" significanceSquared="0.77832947191596547"/>
+                <right splitVar="1" splitVarName="hJet1_cmva" splitVal="0.94459930062294006" significanceSquared="0"/>
+            </right>
+        </left>
+        <right splitVar="3" splitVarName="dEta_hJets" splitVal="1.181103527545929" significanceSquared="0.30040689251659697"/>
+    </right>
+</root>

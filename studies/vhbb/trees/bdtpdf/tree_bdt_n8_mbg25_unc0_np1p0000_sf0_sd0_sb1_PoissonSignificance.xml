@@ -1,0 +1,22 @@
+<root splitVar="16" splitVarName="BDTMassScaled" splitVal="0.65051537752151489" significanceSquared="2.4032351403484382">
+    <left splitVar="16" splitVarName="BDTMassScaled" splitVal="0.43390075862407684" significanceSquared="1.2520725398469486">
+        <left splitVar="16" splitVarName="BDTMassScaled" splitVal="0.21778314560651779" significanceSquared="0.51956860350866463"/>
+        <right splitVar="5" splitVarName="min_hJets_pt" splitVal="79.199470520019531" significanceSquared="0.81265940282577676">
+            <left splitVar="31" splitVarName="mhtPhiJet30" splitVal="-2.6863481998443604" significanceSquared="0.2416139577406495"/>
+            <right splitVar="11" splitVarName="max_aJets_pt" splitVal="17.901851654052734" significanceSquared="0.70598311326820262"/>
+        </right>
+    </left>
+    <right splitVar="8" splitVarName="hJetCMVAV2_pt_reg_1" splitVal="81.864166259765625" significanceSquared="1.7441843271208599">
+        <left splitVar="1" splitVarName="hJet1_cmva" splitVal="0.99995863437652588" significanceSquared="0.10120493537973485"/>
+        <right splitVar="12" splitVarName="HCMVAV2_reg_mass" splitVal="134.36347333036588" significanceSquared="1.815844588257024">
+            <left splitVar="3" splitVarName="dEta_hJets" splitVal="-0.013294488191604614" significanceSquared="1.7991946012770386">
+                <left splitVar="20" splitVarName="met_pt" splitVal="578.97726440429688" significanceSquared="1.4210564606183285"/>
+                <right splitVar="3" splitVarName="dEta_hJets" splitVal="0.27859944105148315" significanceSquared="0.67195435498700762">
+                    <left splitVar="15" splitVarName="HCMVAV2_reg_pt" splitVal="185.21439836935826" significanceSquared="0.13497333079505466"/>
+                    <right splitVar="5" splitVarName="min_hJets_pt" splitVal="255.32493591308594" significanceSquared="0.65795279608778501"/>
+                </right>
+            </left>
+            <right splitVar="24" splitVarName="met_sumEt" splitVal="11.371623039245605" significanceSquared="0.2236892973300274"/>
+        </right>
+    </right>
+</root>

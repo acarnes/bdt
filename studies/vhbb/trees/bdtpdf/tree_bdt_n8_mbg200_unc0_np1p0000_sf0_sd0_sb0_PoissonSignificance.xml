@@ -1,0 +1,22 @@
+<root splitVar="5" splitVarName="min_hJets_pt" splitVal="97.264701843261719" significanceSquared="2.1460597082252675">
+    <left splitVar="3" splitVarName="dEta_hJets" splitVal="1.5663427114486694" significanceSquared="1.1661532857863841"/>
+    <right splitVar="4" splitVarName="dPhi_hJets" splitVal="-1.0330271124839783" significanceSquared="1.0604727427329548">
+        <left splitVar="1" splitVarName="hJet1_cmva" splitVal="0.94438132643699646" significanceSquared="0"/>
+        <right splitVar="26" splitVarName="tkMet_pt" splitVal="301.269287109375" significanceSquared="1.0896503613988928">
+            <left splitVar="10" splitVarName="max_aJets_cmva" splitVal="-0.98724687099456787" significanceSquared="1.1178292717338909">
+                <left splitVar="1" splitVarName="hJet1_cmva" splitVal="0.96535611152648926" significanceSquared="0"/>
+                <right splitVar="7" splitVarName="hJetCMVAV2_pt_reg_0" splitVal="329.93327331542969" significanceSquared="1.1317836918757611">
+                    <left splitVar="32" splitVarName="HVdPhi" splitVal="3.1397639513015747" significanceSquared="1.1418106313646321">
+                        <left splitVar="13" splitVarName="HCMVAV2_reg_eta" splitVal="-2.0130084486656274" significanceSquared="1.1480723137665723">
+                            <left splitVar="1" splitVarName="hJet1_cmva" splitVal="0.94403666257858276" significanceSquared="0"/>
+                            <right splitVar="27" splitVarName="caloMetPhi" splitVal="-3.1306719779968262" significanceSquared="1.1533543274435407"/>
+                        </left>
+                        <right splitVar="1" splitVarName="hJet1_cmva" splitVal="0.94511452317237854" significanceSquared="0"/>
+                    </left>
+                    <right splitVar="1" splitVarName="hJet1_cmva" splitVal="0.94553452730178833" significanceSquared="0"/>
+                </right>
+            </left>
+            <right splitVar="1" splitVarName="hJet1_cmva" splitVal="0.94361719489097595" significanceSquared="0"/>
+        </right>
+    </right>
+</root>

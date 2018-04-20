@@ -1,0 +1,22 @@
+<root splitVar="16" splitVarName="BDTMassScaled" splitVal="0.6847628653049469" significanceSquared="2.3811861752531298">
+    <left splitVar="16" splitVarName="BDTMassScaled" splitVal="0.43390075862407684" significanceSquared="1.4610500547684648">
+        <left splitVar="16" splitVarName="BDTMassScaled" splitVal="0.09617011621594429" significanceSquared="0.51387305306356468"/>
+        <right splitVar="4" splitVarName="dPhi_hJets" splitVal="1.3099327087402344" significanceSquared="1.0462857876047105">
+            <left splitVar="29" splitVarName="htJet30" splitVal="172.86587524414062" significanceSquared="1.0877493085066257"/>
+            <right splitVar="1" splitVarName="hJet1_cmva" splitVal="0.95011711120605469" significanceSquared="0"/>
+        </right>
+    </left>
+    <right splitVar="12" splitVarName="HCMVAV2_reg_mass" splitVal="140.55620199375664" significanceSquared="1.4080647833869679">
+        <left splitVar="8" splitVarName="hJetCMVAV2_pt_reg_1" splitVal="66.596286773681641" significanceSquared="1.4995673606196844">
+            <left splitVar="1" splitVarName="hJet1_cmva" splitVal="0.95724329352378845" significanceSquared="0"/>
+            <right splitVar="15" splitVarName="HCMVAV2_reg_pt" splitVal="171.35191550797376" significanceSquared="1.5874673225537825">
+                <left splitVar="1" splitVarName="hJet1_cmva" splitVal="0.95892518758773804" significanceSquared="0"/>
+                <right splitVar="3" splitVarName="dEta_hJets" splitVal="-0.92130416631698608" significanceSquared="1.6848503962991386">
+                    <left splitVar="1" splitVarName="hJet1_cmva" splitVal="0.96962055563926697" significanceSquared="0"/>
+                    <right splitVar="1" splitVarName="hJet1_cmva" splitVal="0.99997636675834656" significanceSquared="1.7600053676492753"/>
+                </right>
+            </right>
+        </left>
+        <right splitVar="1" splitVarName="hJet1_cmva" splitVal="0.94384250044822693" significanceSquared="0"/>
+    </right>
+</root>

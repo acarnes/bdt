@@ -1,0 +1,22 @@
+<root splitVar="16" splitVarName="BDTMassScaled" splitVal="0.65051537752151489" significanceSquared="2.3811861752531298">
+    <left splitVar="16" splitVarName="BDTMassScaled" splitVal="0.43390075862407684" significanceSquared="1.2520725398469486">
+        <left splitVar="16" splitVarName="BDTMassScaled" splitVal="0.21778314560651779" significanceSquared="0.51387305306356468"/>
+        <right splitVar="5" splitVarName="min_hJets_pt" splitVal="79.199470520019531" significanceSquared="0.81265940282577676">
+            <left splitVar="4" splitVarName="dPhi_hJets" splitVal="1.310156524181366" significanceSquared="0.24142534253526496"/>
+            <right splitVar="11" splitVarName="max_aJets_pt" splitVal="18.136582374572754" significanceSquared="0.70593572728966247"/>
+        </right>
+    </left>
+    <right splitVar="15" splitVarName="HCMVAV2_reg_pt" splitVal="252.00841076786793" significanceSquared="1.7338202285832818">
+        <left splitVar="9" splitVarName="nJet" splitVal="3.5" significanceSquared="0.75868754357211965">
+            <left splitVar="34" splitVarName="min_abs_dPhi_jets_MET" splitVal="-0.021892817690968513" significanceSquared="0.64117521105736319"/>
+            <right splitVar="8" splitVarName="hJetCMVAV2_pt_reg_1" splitVal="81.874095916748047" significanceSquared="0.18161523907136856"/>
+        </left>
+        <right splitVar="7" splitVarName="hJetCMVAV2_pt_reg_0" splitVal="191.27066040039062" significanceSquared="1.1210210709523931">
+            <left splitVar="12" splitVarName="HCMVAV2_reg_mass" splitVal="143.07497963105902" significanceSquared="1.0500150208117311">
+                <left splitVar="11" splitVarName="max_aJets_pt" splitVal="307.273193359375" significanceSquared="1.1900125153887811"/>
+                <right splitVar="1" splitVarName="hJet1_cmva" splitVal="0.94568845629692078" significanceSquared="0"/>
+            </left>
+            <right splitVar="13" splitVarName="HCMVAV2_reg_eta" splitVal="1.9042083781861658" significanceSquared="0.19975890172052119"/>
+        </right>
+    </right>
+</root>

@@ -1,0 +1,22 @@
+<root splitVar="8" splitVarName="hJetCMVAV2_pt_reg_1" splitVal="87.337261199951172" significanceSquared="2.1460597082252675">
+    <left splitVar="32" splitVarName="HVdPhi" splitVal="3.1406372785568237" significanceSquared="0.4782331686448148"/>
+    <right splitVar="8" splitVarName="hJetCMVAV2_pt_reg_1" splitVal="124.75339126586914" significanceSquared="1.8253801977126014">
+        <left splitVar="4" splitVarName="dPhi_hJets" splitVal="-1.0681520700454712" significanceSquared="0.83167499265468736">
+            <left splitVar="1" splitVarName="hJet1_cmva" splitVal="0.94324079155921936" significanceSquared="0"/>
+            <right splitVar="3" splitVarName="dEta_hJets" splitVal="-1.1880431175231934" significanceSquared="0.91002016325360313">
+                <left splitVar="1" splitVarName="hJet1_cmva" splitVal="0.94526785612106323" significanceSquared="0"/>
+                <right splitVar="26" splitVarName="tkMet_pt" splitVal="28.133180618286133" significanceSquared="0.9646453833945301">
+                    <left splitVar="1" splitVarName="hJet1_cmva" splitVal="0.96353673934936523" significanceSquared="0"/>
+                    <right splitVar="15" splitVarName="HCMVAV2_reg_pt" splitVal="137.33362212167245" significanceSquared="1.0297797893224674"/>
+                </right>
+            </right>
+        </left>
+        <right splitVar="1" splitVarName="hJet1_cmva" splitVal="0.99985748529434204" significanceSquared="1.1117209431564761">
+            <left splitVar="28" splitVarName="caloMetPt" splitVal="222.08130645751953" significanceSquared="0.7404763275269105">
+                <left splitVar="28" splitVarName="caloMetPt" splitVal="222.03127288818359" significanceSquared="0.35303081685419413"/>
+                <right splitVar="26" splitVarName="tkMet_pt" splitVal="311.62522888183594" significanceSquared="0.45436942825923327"/>
+            </left>
+            <right splitVar="1" splitVarName="hJet1_cmva" splitVal="0.99997657537460327" significanceSquared="0.47489491881849821"/>
+        </right>
+    </right>
+</root>
